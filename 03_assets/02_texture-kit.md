@@ -1,5 +1,12 @@
 # 02 — Texture Kit (grain, bloom, scrims, glints)
 
+> **✅ ASSET GROUP 1 STATUS (2026-07-24)** — see [07_asset-group-1-approved-manifest.md](07_asset-group-1-approved-manifest.md):
+> - **TX-1 Grain: APPROVED as procedural** — 128×128, seed `20260724`, 25.3 KB, staged at `approved/asset-group-1/`. Opacity via `--grain-opacity` token only. **Never spend credits generating grain** (model fails on pure-noise prompts; procedural is spec-superior).
+> - **TX-2 Bloom: APPROVED as-is** (job `415fbee7…`). Screen-blend on-black master. Low-opacity optional overlay in nonessential zones only — never beneath key workout inputs, controls, or dense text.
+> - **TX-3 Scrim: CSS-only confirmed** — no asset exists or should.
+> - **TX-4 Glint: APPROVED with adjustments** (job `97a558d3…`): crop to ~1024×128 strip, slightly desaturate (chrome refraction, not rainbow branding), reserved for the 450–650ms completion moment + rare crest milestones, static reduced-motion fallback.
+> - TX-5 / TX-6 remain optional and ungenerated.
+
 Small, reusable, mostly tiling/alpha overlays that give every screen the Ceremonial Chrome finish **cheaply**. These are the highest-priority assets: with the texture kit + tokens, Kimi can style the whole app even before backplates land.
 
 Reference universal rules in `00_asset-strategy.md`.
