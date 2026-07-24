@@ -1,0 +1,6 @@
+SPLIT: Push
+SCHEDULE: Fri
+
+DAY: Push A
+- Bench Press | 4 | 6-8 | RPE 8 | Rest soon
+- Overhead Press | 3 | 6-8 | RPE 8 | Rest 90x

@@ -1,0 +1,6 @@
+SPLIT: Pull
+SCHEDULE: Tue
+
+DAY: Pull A
+- Deadlift | 3 | 3 to 5 | RPE 8 | Rest 180s
+- Pull-up | 4 | AMRAP | Rest 120s

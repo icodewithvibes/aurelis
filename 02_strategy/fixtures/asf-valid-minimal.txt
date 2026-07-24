@@ -1,0 +1,4 @@
+DAY: Full Body
+- Squat | 3 | 5
+- Bench Press | 3 | 5
+- Row | 3 | 8

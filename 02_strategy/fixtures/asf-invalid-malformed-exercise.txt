@@ -1,0 +1,8 @@
+SPLIT: Push
+SCHEDULE: Mon
+
+DAY: Push A
+- Bench Press 4 6-8 RPE 8 Rest 120s
+- | 3 | 8-10 | RPE 8
+- Cable Fly | 3
+- Incline Press | 3 | 8-10 | RPE 8 | Rest 90s

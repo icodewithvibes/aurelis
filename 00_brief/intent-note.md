@@ -1,0 +1,1 @@
+I want this app to be a private execution tool. It should help me plan training, do difficult tasks, log proof, and return after bad days. The emotional feeling is prismatic mythic discipline: cobalt night, chrome armor, flowers, grain, bloom, restrained rainbow light, calm strength—not a fantasy game or an aggressive military app.
