@@ -6,6 +6,8 @@ Reference the universal rules in `00_asset-strategy.md` (palette, hard negatives
 
 ---
 
+> **✅ BP-1 PRODUCED & APPROVED (Asset Group 2, 2026-07-24)** — blue-hour meadow variant. Finals in `03_assets/approved/asset-group-2/` (WebP 1080×1910 81 KB · JPEG fallback · LQIP), source in `candidates/asset-group-2/`. GPT Image 2 (2k/high, 7 credits), refs M4+M1 (guidance only). Full record: [09_asset-group-2-approved-manifest.md](09_asset-group-2-approved-manifest.md). Text-safe upper third confirmed. The blue-hour version supersedes the dawn phrasing below for the shipped asset.
+
 ## BP-1 — Today / App Ambient Backplate  ·  ESSENTIAL
 - **Intended screen:** Today (home) and default app background.
 - **Aspect ratio:** 9:19.5 portrait · generate 1170×2532 (2× of layout), ship ~1170-wide.
