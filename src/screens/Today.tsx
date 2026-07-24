@@ -5,7 +5,7 @@
  */
 import { motion, useReducedMotion } from "framer-motion";
 import { ScreenSurface } from "../components/ScreenSurface";
-import { ThresholdArch } from "../components/ThresholdArch";
+import { CrestEmblem } from "../components/CrestEmblem";
 import { getTodayView } from "../data/access";
 import type { CrestLevel } from "../components/ThresholdArch";
 
@@ -28,18 +28,20 @@ export function Today() {
   const today = getTodayView();
   const reduce = useReducedMotion();
 
-  const rise = reduce
-    ? {}
-    : {
-        initial: { opacity: 0, y: 8 },
-        animate: { opacity: 1, y: 0 },
-        transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
-      };
+  // Soft staggered entrance for screen content.
+  const stagger = (i: number) =>
+    reduce
+      ? {}
+      : {
+          initial: { opacity: 0, y: 10 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.5, delay: i * 0.09, ease: [0.16, 1, 0.3, 1] as const },
+        };
 
   return (
     <ScreenSurface backplate="meadow" labelledBy="today-heading">
       {/* Upper third = image text-safe zone (manifest 09 §3): heading lives here. */}
-      <motion.header {...rise} className="flex items-start justify-between gap-3 pt-2">
+      <motion.header {...stagger(0)} className="flex items-start justify-between gap-3 pt-2">
         <div>
           <p className="m-0 text-small" style={{ color: "var(--aur-ink-muted)" }}>
             {today.dateLabel}
@@ -49,19 +51,20 @@ export function Today() {
             className="m-0 mt-1"
             style={{
               fontFamily: "var(--font-display)",
-              fontSize: "var(--text-display-sm)",
-              fontWeight: 480,
-              lineHeight: 1.15,
-              letterSpacing: "-0.02em",
+              fontSize: "var(--text-display)",
+              fontWeight: 470,
+              lineHeight: 1.12,
+              letterSpacing: "-0.025em",
+              textShadow: "0 1px 20px rgba(5,9,20,0.55)",
             }}
           >
             {today.greeting}
           </h1>
         </div>
-        <div className="flex flex-col items-center gap-1 pt-1">
-          <ThresholdArch level={today.crestLevel as CrestLevel} size={48} />
+        <div className="flex flex-col items-center gap-1.5 pt-1">
+          <CrestEmblem level={today.crestLevel as CrestLevel} size={72} />
           <span
-            className="font-mono text-[0.6875rem]"
+            className="font-mono text-[0.6875rem] tracking-wide"
             style={{ color: "var(--aur-ink-muted)" }}
           >
             {today.sessionsKept} kept
@@ -71,8 +74,12 @@ export function Today() {
 
       <div className="flex-1" />
 
-      {/* Planned-day card sits low, over the scrim — never on busy imagery. */}
-      <motion.section {...rise} aria-label="Planned session" className="aur-glass p-5">
+      {/* Planned-day card floats as a chrome surface within the meadow. */}
+      <motion.section
+        {...stagger(1)}
+        aria-label="Planned session"
+        className="aur-chrome-surface p-5"
+      >
         <div className="flex items-center justify-between">
           <p
             className="m-0 text-[0.6875rem] uppercase tracking-[0.18em]"

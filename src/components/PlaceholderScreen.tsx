@@ -14,6 +14,8 @@ interface PlaceholderScreenProps {
   intent: string;
   stageNote: string;
   backplate?: BackplateVariant;
+  /** Optional ceremonial visual shown prominently in the open central space. */
+  hero?: ReactNode;
   children?: ReactNode;
 }
 
@@ -23,20 +25,22 @@ export function PlaceholderScreen({
   intent,
   stageNote,
   backplate,
+  hero,
   children,
 }: PlaceholderScreenProps) {
   const reduce = useReducedMotion();
-  const rise = reduce
-    ? {}
-    : {
-        initial: { opacity: 0, y: 8 },
-        animate: { opacity: 1, y: 0 },
-        transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
-      };
+  const stagger = (i: number) =>
+    reduce
+      ? {}
+      : {
+          initial: { opacity: 0, y: 10 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.5, delay: i * 0.09, ease: [0.16, 1, 0.3, 1] as const },
+        };
 
   return (
     <ScreenSurface backplate={backplate} labelledBy={id}>
-      <motion.header {...rise} className="pt-2">
+      <motion.header {...stagger(0)} className="pt-2">
         <h1
           id={id}
           className="m-0"
@@ -54,9 +58,18 @@ export function PlaceholderScreen({
         </p>
       </motion.header>
 
-      <div className="flex-1" />
+      {hero ? (
+        <motion.div
+          {...stagger(1)}
+          className="flex flex-1 items-center justify-center py-8"
+        >
+          {hero}
+        </motion.div>
+      ) : (
+        <div className="flex-1" />
+      )}
 
-      <motion.section {...rise} className="aur-glass p-5">
+      <motion.section {...stagger(hero ? 2 : 1)} className="aur-chrome-surface p-5">
         <p
           className="m-0 text-[0.6875rem] uppercase tracking-[0.18em]"
           style={{ color: "var(--aur-ink-muted)" }}

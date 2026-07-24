@@ -5,6 +5,7 @@
  * (The older "4 tabs + floating Forge + Notes" IA is deferred.)
  */
 import { NavLink } from "react-router-dom";
+import { motion, useReducedMotion } from "framer-motion";
 
 const DESTINATIONS = [
   { to: "/today", label: "Today" },
@@ -71,6 +72,7 @@ function NavGlyph({ name }: { name: string }) {
 }
 
 export function BottomNav() {
+  const reduce = useReducedMotion();
   return (
     <nav
       aria-label="Primary"
@@ -103,13 +105,20 @@ export function BottomNav() {
                   >
                     {d.label}
                   </span>
-                  <span
-                    aria-hidden="true"
-                    className="block h-0.5 w-6 rounded-full"
-                    style={{
-                      background: isActive ? "var(--aur-silver-200)" : "transparent",
-                    }}
-                  />
+                  <span aria-hidden="true" className="relative block h-0.5 w-6">
+                    {isActive && (
+                      <motion.span
+                        layoutId="aur-nav-underline"
+                        className="absolute inset-0 rounded-full"
+                        style={{ background: "var(--aur-silver-200)" }}
+                        transition={
+                          reduce
+                            ? { duration: 0 }
+                            : { type: "spring", stiffness: 420, damping: 34 }
+                        }
+                      />
+                    )}
+                  </span>
                 </>
               )}
             </NavLink>

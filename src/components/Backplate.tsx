@@ -52,6 +52,7 @@ export function Backplate({ variant }: BackplateProps) {
         className="absolute inset-0 h-full w-full object-cover"
         style={{ filter: "blur(18px)", transform: "scale(1.06)" }}
       />
+      {/* Slow atmospheric drift (frozen static by reduced-motion). */}
       <picture>
         <source srcSet={src.webp} type="image/webp" />
         <img
@@ -62,9 +63,9 @@ export function Backplate({ variant }: BackplateProps) {
           loading="lazy"
           decoding="async"
           onLoad={() => setLoaded(true)}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="aur-drift absolute inset-0 h-full w-full object-cover"
           style={{
-            objectPosition: variant === "meadow" ? "center bottom" : "center",
+            objectPosition: variant === "meadow" ? "center bottom" : "center 62%",
             opacity: loaded ? 1 : 0,
             transition: "opacity var(--dur-slow) var(--ease-standard)",
           }}

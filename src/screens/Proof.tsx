@@ -5,6 +5,7 @@
  * reveal (Stage 3).
  */
 import { PlaceholderScreen } from "../components/PlaceholderScreen";
+import { CrestEmblem } from "../components/CrestEmblem";
 import { ThresholdArch, CREST_LEVEL_NAMES, type CrestLevel } from "../components/ThresholdArch";
 
 export function Proof() {
@@ -15,6 +16,17 @@ export function Proof() {
       title="Proof"
       intent="A visible record of kept sessions — consistency you can see."
       stageNote="The consistency streak, chronological timeline, records, and the completion reveal are built in Stage 3. Below is the Chrome Crest (Threshold Arch) progression it will use."
+      hero={
+        <div className="flex flex-col items-center gap-3">
+          <CrestEmblem level={3} size={132} />
+          <span
+            className="text-[0.6875rem] uppercase tracking-[0.2em]"
+            style={{ color: "var(--aur-ink-muted)" }}
+          >
+            Silver Crest
+          </span>
+        </div>
+      }
     >
       <div className="mt-4">
         <p
