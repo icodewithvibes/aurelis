@@ -19,6 +19,8 @@ Reference the universal rules in `00_asset-strategy.md` (palette, hard negatives
 - **Mobile fallback:** if not loaded, flat `--aur-night`→`--aur-cobalt-900` CSS gradient. Provide a **blurred 24px LQIP** (~2 KB) for progressive load.
 - **Essential / optional:** ESSENTIAL (one variant minimum).
 
+> **✅ BP-2 PRODUCED & APPROVED (Asset Group 4, 2026-07-24)** — Forge night-atmosphere variant. Finals in `03_assets/approved/asset-group-4/` (WebP 1080×1910 57 KB · JPEG fallback · LQIP), source in `candidates/asset-group-4/`. GPT Image 2 (2k/high, 7 credits), user-directed refs M2+M8 (guidance only). Full record: [12_asset-group-4-approved-manifest.md](12_asset-group-4-approved-manifest.md). Upper/center text-safe zones confirmed; safe behind 988/911 gentle-flow copy.
+
 ## BP-2 — Forge Backplate  ·  ESSENTIAL
 - **Intended screen:** Forge (resistance → one action).
 - **Aspect ratio:** 9:19.5 portrait, 1170×2532.
