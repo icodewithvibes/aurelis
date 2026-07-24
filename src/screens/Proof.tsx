@@ -5,28 +5,20 @@
  * reveal (Stage 3).
  */
 import { PlaceholderScreen } from "../components/PlaceholderScreen";
-import { CrestEmblem } from "../components/CrestEmblem";
+import { ProofSystem } from "../components/ProofSystem";
+import { getTodayView } from "../data/access";
 import { ThresholdArch, CREST_LEVEL_NAMES, type CrestLevel } from "../components/ThresholdArch";
 
 export function Proof() {
   const levels: CrestLevel[] = [0, 1, 2, 3, 4, 5, 6];
+  const { sessionsKept } = getTodayView();
   return (
     <PlaceholderScreen
       id="proof-heading"
       title="Proof"
       intent="A visible record of kept sessions — consistency you can see."
-      stageNote="The consistency streak, chronological timeline, records, and the completion reveal are built in Stage 3. Below is the Chrome Crest (Threshold Arch) progression it will use."
-      hero={
-        <div className="flex flex-col items-center gap-3">
-          <CrestEmblem level={3} size={132} />
-          <span
-            className="text-[0.6875rem] uppercase tracking-[0.2em]"
-            style={{ color: "var(--aur-ink-muted)" }}
-          >
-            Silver Crest
-          </span>
-        </div>
-      }
+      stageNote="Streak logic, the chronological timeline, records, and the completion reveal are built in Stage 3. The crest, its progress line, and the prismatic accent above preview that proof language."
+      hero={<ProofSystem sessionsKept={sessionsKept} variant="hero" />}
     >
       <div className="mt-4">
         <p

@@ -5,9 +5,8 @@
  */
 import { motion, useReducedMotion } from "framer-motion";
 import { ScreenSurface } from "../components/ScreenSurface";
-import { CrestEmblem } from "../components/CrestEmblem";
+import { ProofSystem } from "../components/ProofSystem";
 import { getTodayView } from "../data/access";
-import type { CrestLevel } from "../components/ThresholdArch";
 
 function MockBadge() {
   return (
@@ -61,15 +60,7 @@ export function Today() {
             {today.greeting}
           </h1>
         </div>
-        <div className="flex flex-col items-center gap-1.5 pt-1">
-          <CrestEmblem level={today.crestLevel as CrestLevel} size={72} />
-          <span
-            className="font-mono text-[0.6875rem] tracking-wide"
-            style={{ color: "var(--aur-ink-muted)" }}
-          >
-            {today.sessionsKept} kept
-          </span>
-        </div>
+        <ProofSystem sessionsKept={today.sessionsKept} variant="compact" />
       </motion.header>
 
       <div className="flex-1" />
