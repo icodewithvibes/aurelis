@@ -1,0 +1,6 @@
+SPLIT: Legs
+SCHEDULE: Wed
+
+DAY: Legs A
+- Back Squat | 4 | 5-7 | RPE hard | Rest 180s
+- Leg Press | 3 | 10-12 | RPE 12 | Rest 90s

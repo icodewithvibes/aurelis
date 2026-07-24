@@ -1,0 +1,6 @@
+SPLIT: Push
+SCHEDULE: Mon
+
+DAY: Push A
+- Bench Press | four | 6-8 | RPE 8 | Rest 120s
+- Incline Press | 3 | 8-10 | RPE 8 | Rest 90s

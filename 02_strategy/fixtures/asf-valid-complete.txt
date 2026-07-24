@@ -1,0 +1,16 @@
+# AURELIS Split Format — full feature sample
+SPLIT: Upper / Lower Power-Hypertrophy
+SCHEDULE: Mon, Tue, Thu, Fri
+UNITS: kg
+NOTES: Deload every 5th week. Warm up before compounds.
+
+DAY: Upper Power
+NOTE: Focus on bar speed.
+- Barbell Bench Press | 4 | 3-5 | RPE 8 | Rest 3m
+- Weighted Pull-up | 4 | AMRAP | @9 | Rest 2m30s
+- Overhead Press | 3 | 5-7 | RPE 7-8 | Rest 120s
+
+DAY: Lower Power
+- Back Squat | 4 | 3-5 | RPE 8 | Rest 3m
+- Romanian Deadlift | 3 | 6-8 | Rest 150s | keep neutral spine
+- Walking Lunge | 3 | 10-12/side | RPE 7 | Rest 90s

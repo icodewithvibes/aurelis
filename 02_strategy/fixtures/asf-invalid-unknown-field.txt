@@ -1,0 +1,7 @@
+SPLIT: Push
+SCHEDULE: Mon
+TEMPO-DEFAULT: 3011
+
+DAY: Push A
+- Bench Press | 4 | 6-8 | RPE 8 | Tempo 3011 | Rest 120s
+- Cable Fly | 3 | 12-15 | RIR 2 | Rest 60s

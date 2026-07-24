@@ -1,0 +1,5 @@
+SPLIT: Push / Pull / Legs
+SCHEDULE: Mon, Wed, Fri
+UNITS: lb
+
+- Bench Press | 4 | 6-8 | RPE 8 | Rest 120s
