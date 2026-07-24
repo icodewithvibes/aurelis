@@ -6,12 +6,14 @@
  */
 import { PlaceholderScreen } from "../components/PlaceholderScreen";
 import { ProofSystem } from "../components/ProofSystem";
-import { getTodayView } from "../data/access";
+import { useAsync } from "../hooks/useAsync";
+import { loadHome } from "../data/access";
 import { ThresholdArch, CREST_LEVEL_NAMES, type CrestLevel } from "../components/ThresholdArch";
 
 export function Proof() {
   const levels: CrestLevel[] = [0, 1, 2, 3, 4, 5, 6];
-  const { sessionsKept } = getTodayView();
+  const { data } = useAsync(loadHome);
+  const sessionsKept = data?.sessionsKept ?? 0;
   return (
     <PlaceholderScreen
       id="proof-heading"
