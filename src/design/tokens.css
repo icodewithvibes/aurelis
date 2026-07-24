@@ -1,0 +1,143 @@
+/* ============================================================
+   AURELIS — Ceremonial Chrome design tokens (Stage 1)
+   Source of truth: 02_strategy/05_design-system-ceremonial-chrome.md §1–4
+   All component styling consumes these custom properties.
+   Do not hardcode raw hex in components.
+   ============================================================ */
+
+:root {
+  /* ---- Cobalt / midnight base ---- */
+  --aur-night: #070c18;
+  --aur-cobalt-900: #0b1430;
+  --aur-cobalt-800: #10204a;
+  --aur-cobalt-600: #1b3a86;
+  --aur-cobalt-500: #2a4fa8;
+  --aur-cobalt-300: #5f82d6;
+
+  /* ---- Chrome / silver neutrals ---- */
+  --aur-chrome-50: #f5f7fb;
+  --aur-silver-200: #d2d9e6;
+  --aur-steel-400: #97a2b8;
+  --aur-graphite-700: #161c2a;
+  --aur-graphite-800: #10151f;
+
+  /* ---- Ink / text ---- */
+  --aur-ink: #eaeff9;
+  --aur-ink-muted: #96a2bc;
+  --aur-ink-faint: #5e6a82;
+
+  /* ---- Meadow accents ---- */
+  --aur-meadow-500: #4f7d4a;
+  --aur-sky-400: #7fb4e6;
+  --aur-sun-400: #e7c273;
+
+  /* ---- Semantic (calm, never alarming) ---- */
+  --aur-success: #8fd1c0;
+  --aur-caution: #e4b679;
+  --aur-danger: #d98a8a;
+
+  /* ---- Prismatic accent — RESTRAINED (thin edge/sweep only) ---- */
+  --aur-prism: linear-gradient(
+    100deg,
+    #7ca9ff 0%,
+    #b79cff 25%,
+    #f0a6d8 50%,
+    #ffd59e 72%,
+    #9ce6d0 100%
+  );
+
+  /* ---- Forged-glass surface (original — NOT the reference liquid-glass) ---- */
+  --aur-glass-bg: rgba(18, 30, 60, 0.42);
+  --aur-glass-blur: 10px;
+  --aur-glass-inset: inset 0 1px 0 rgba(210, 217, 230, 0.14);
+  --aur-glass-border: linear-gradient(
+    160deg,
+    rgba(210, 217, 230, 0.55),
+    rgba(42, 79, 168, 0.15) 55%,
+    rgba(210, 217, 230, 0.3)
+  );
+
+  /* ---- Scrims (legibility over imagery; TX-3 is CSS-first) ---- */
+  --aur-scrim-bottom: linear-gradient(
+    180deg,
+    rgba(7, 12, 24, 0) 0%,
+    rgba(7, 12, 24, 0.55) 55%,
+    rgba(7, 12, 24, 0.92) 100%
+  );
+  --aur-scrim-card: rgba(7, 12, 24, 0.5);
+  --aur-fallback-cobalt: linear-gradient(
+    180deg,
+    var(--aur-night) 0%,
+    var(--aur-cobalt-900) 55%,
+    var(--aur-night) 100%
+  );
+  --aur-fallback-forge: radial-gradient(
+    ellipse at 50% 85%,
+    var(--aur-cobalt-900),
+    var(--aur-night) 70%
+  );
+
+  /* ---- Typography ---- */
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-ui: "Inter Variable", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* type scale (rem — respects user text scaling) */
+  --text-display: 2.25rem;
+  --text-display-sm: 1.75rem;
+  --text-h1: 1.5rem;
+  --text-h2: 1.25rem;
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  --text-mono-data: 1.125rem;
+
+  /* ---- Spacing / radii / elevation ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+  --radius-card: 1.125rem; /* 18px — cards 16–20px per spec */
+  --radius-pill: 999px;
+  --elev-card: 0 8px 28px rgba(0, 0, 0, 0.42);
+  --hairline-chrome: linear-gradient(
+    90deg,
+    rgba(210, 217, 230, 0),
+    rgba(210, 217, 230, 0.45) 50%,
+    rgba(210, 217, 230, 0)
+  );
+
+  /* ---- Grain (TX-1) ---- */
+  --grain-opacity: 0.05; /* spec range 0.04–0.06 */
+
+  /* ---- Motion ---- */
+  --ease-ceremonial: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 480ms;
+  --dur-cinematic: 900ms;
+
+  /* ---- Layout ---- */
+  --touch-min: 44px;
+  --nav-height: 4rem;
+}
+
+/* Reduced motion: honor OS preference (in-app seam is additive, no switcher). */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --dur-cinematic: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,93 @@
+/* AURELIS Stage 1 — global styles. Tailwind v4 + Ceremonial Chrome tokens. */
+@import "tailwindcss";
+@import "./design/tokens.css";
+
+/* Map tokens into Tailwind v4 theme so utilities stay semantic. */
+@theme {
+  --color-night: var(--aur-night);
+  --color-cobalt-900: var(--aur-cobalt-900);
+  --color-cobalt-800: var(--aur-cobalt-800);
+  --color-cobalt-600: var(--aur-cobalt-600);
+  --color-cobalt-500: var(--aur-cobalt-500);
+  --color-cobalt-300: var(--aur-cobalt-300);
+  --color-chrome-50: var(--aur-chrome-50);
+  --color-silver-200: var(--aur-silver-200);
+  --color-steel-400: var(--aur-steel-400);
+  --color-graphite-700: var(--aur-graphite-700);
+  --color-graphite-800: var(--aur-graphite-800);
+  --color-ink: var(--aur-ink);
+  --color-ink-muted: var(--aur-ink-muted);
+  --color-ink-faint: var(--aur-ink-faint);
+  --color-meadow-500: var(--aur-meadow-500);
+  --color-sky-400: var(--aur-sky-400);
+  --color-sun-400: var(--aur-sun-400);
+  --color-success: var(--aur-success);
+  --color-caution: var(--aur-caution);
+  --color-danger: var(--aur-danger);
+  --font-display: var(--font-display);
+  --font-ui: var(--font-ui);
+  --font-mono: var(--font-mono);
+  --radius-card: var(--radius-card);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--aur-night);
+  color: var(--aur-ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Visible keyboard focus everywhere (a11y). */
+:focus-visible {
+  outline: 2px solid var(--aur-cobalt-300);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Forged-glass panel — original AURELIS surface (see 05 §3). */
+.aur-glass {
+  position: relative;
+  background: var(--aur-glass-bg);
+  backdrop-filter: blur(var(--aur-glass-blur));
+  -webkit-backdrop-filter: blur(var(--aur-glass-blur));
+  box-shadow: var(--aur-glass-inset), var(--elev-card);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.aur-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--aur-glass-border);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Chrome hairline divider. */
+.aur-hairline {
+  height: 1px;
+  background: var(--hairline-chrome);
+  border: none;
+}
+
+/* Minimum touch target helper. */
+.aur-touch {
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+}
