@@ -14,6 +14,8 @@ import { ScreenSurface } from "../components/ScreenSurface";
 import { ProofSystem } from "../components/ProofSystem";
 import { useAsync } from "../hooks/useAsync";
 import { loadHome } from "../data/access";
+import { loadWeek } from "../features/planning/planningRepo";
+import { WeekStrip } from "../components/WeekStrip";
 import { startSession } from "../data/repositories/sessionRepo";
 import type { DayWithExercises } from "../data/repositories/splitRepo";
 
@@ -22,6 +24,7 @@ const LABEL_CLASS = "aur-label m-0";
 export function Today() {
   const nav = useNavigate();
   const { data, loading } = useAsync(loadHome);
+  const { data: week } = useAsync(loadWeek);
   const reduce = useMotionDisabled();
   const [showOthers, setShowOthers] = useState(false);
   const stagger = (i: number) =>
@@ -118,6 +121,21 @@ export function Today() {
               <p className="m-0 mt-3 text-small" style={{ color: "var(--aur-ink-faint)" }}>
                 Next: {data.nextUp.day.name}, {data.nextUp.label}
               </p>
+            )}
+
+            {/* The week ahead — one glance, no calendar grid. */}
+            {week && week.ahead.length > 0 && (
+              <div className="mt-4">
+                <hr className="aur-hairline mb-3" />
+                <p className="aur-label m-0 mb-2">The week ahead</p>
+                <WeekStrip
+                  days={week.ahead}
+                  onSelect={(d) => {
+                    if (d.sessionId) nav(`/session/${d.sessionId}`);
+                    else nav("/train");
+                  }}
+                />
+              </div>
             )}
 
             {/* SECONDARY — everything else, folded away. */}

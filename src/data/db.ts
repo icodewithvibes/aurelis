@@ -140,12 +140,29 @@ export interface NoteRow {
   updatedAt: number;
   deletedAt: number | null;
 }
+/** Token-based looks; all share one information architecture. */
+export type ThemeName =
+  | "ceremonial-chrome"
+  | "luminous-meadow"
+  | "chrome-rider"
+  | "quiet-forge";
+/** auto = honour Save-Data; save-data = never fetch optional rasters. */
+export type ImageMode = "auto" | "save-data" | "always";
+/** How the logger asks about effort. */
+export type RpeMode = "simple" | "advanced" | "hidden";
+
 export interface SettingsRow {
   id: "app";
   units: "lb" | "kg";
   reducedMotion: "auto" | "on" | "off";
   streakCountMode: "sessions"; // LOCKED
   crisisRegion: "US-MA"; // LOCKED
+  /* Stage 4 preferences. Optional so rows written earlier still open;
+     `DEFAULT_PREFERENCES` fills the gaps. */
+  theme?: ThemeName;
+  imageMode?: ImageMode;
+  rpeMode?: RpeMode;
+  defaultRestSec?: number;
   /**
    * Crisis copy (02_strategy/02 §5), seeded from features/forge.
    * Optional so rows written before this field still open; the module

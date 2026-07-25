@@ -1,0 +1,77 @@
+name: Deploy to GitHub Pages
+
+# Builds the static app from `main` and publishes it.
+#
+# What gets published is ONLY the Vite build output. Private mood
+# references (01_references/) and raw generation candidates
+# (03_assets/candidates/) are never imported by src/, so they cannot end
+# up in dist/. A guard step below fails the build if that ever changes.
+#
+# The app is local-first: there is no server, no account and no secret to
+# configure. Nothing in this workflow reads a repository secret.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege: read the repo, write a Pages deployment, nothing else.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; let a newer commit supersede an older run.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
+      # Quality gates — a broken build must never reach the live site.
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test -- --run
+      - run: npm run build
+
+      # SPA fallback: hash routing means this is belt-and-braces, but a
+      # direct hit on an unknown path should still return the app shell.
+      - name: Add 404 fallback
+        run: cp dist/index.html dist/404.html
+
+      # Guard: fail loudly if anything private ever reaches the artifact.
+      - name: Verify no private material in the artifact
+        run: |
+          set -e
+          if find dist -iname '*reference*' -o -iname '*candidate*' -o -iname '*.env*' | grep -q .; then
+            echo "Private or candidate material found in dist/ — refusing to publish."
+            find dist -iname '*reference*' -o -iname '*candidate*' -o -iname '*.env*'
+            exit 1
+          fi
+          echo "dist/ is clean."
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

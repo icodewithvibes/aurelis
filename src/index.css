@@ -1,6 +1,8 @@
 /* AURELIS Stage 1 — global styles. Tailwind v4 + Ceremonial Chrome tokens. */
 @import "tailwindcss";
 @import "./design/tokens.css";
+/* Theme overrides must follow the base tokens they replace. */
+@import "./design/themes.css";
 
 /* Map tokens into Tailwind v4 theme so utilities stay semantic. */
 @theme {
@@ -36,8 +38,22 @@ body,
   height: 100%;
 }
 
+/* Decorative bleed (crest halos, bloom, the drifting backplate) is meant
+   to extend past its box. `clip` keeps that from producing a horizontal
+   scrollbar at 390px without turning these into scroll containers, which
+   `hidden` would do and which breaks sticky positioning. */
+html,
+#root {
+  overflow-x: clip;
+}
+
 body {
   margin: 0;
+  /* Decorative bleed — crest halos, bloom, the drifting backplate — is
+     meant to extend past its box. `clip` stops that from creating a
+     horizontal scrollbar at 390px WITHOUT making body a scroll
+     container, which `hidden` would do (breaking sticky positioning). */
+  overflow-x: clip;
   background: var(--aur-night);
   color: var(--aur-ink);
   font-family: var(--font-ui);
@@ -178,6 +194,50 @@ body {
   height: 1px;
   background: var(--hairline-chrome);
   border: none;
+}
+
+/* Press response (Stage 4).
+   Touch devices have no hover, and most phones give no haptic to a web
+   app, so a press has to be felt visually: the surface dips slightly and
+   a specular highlight crosses it. Transform and opacity only — nothing
+   here can trigger layout. Reduced motion keeps the state change but
+   removes the movement. */
+.aur-press {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--dur-fast) var(--ease-standard),
+    filter var(--dur-fast) var(--ease-standard);
+  will-change: transform;
+}
+.aur-press::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--aur-glass-specular);
+  opacity: 0;
+  transform: translate3d(-40%, 0, 0);
+  transition:
+    opacity var(--dur-fast) var(--ease-standard),
+    transform var(--dur-slow) var(--ease-standard);
+  pointer-events: none;
+}
+.aur-press:active {
+  transform: scale(0.975);
+  filter: brightness(1.06);
+}
+.aur-press:active::after {
+  opacity: 1;
+  transform: translate3d(40%, 0, 0);
+}
+:root[data-reduced-motion="true"] .aur-press {
+  transition: filter var(--dur-fast) var(--ease-standard);
+}
+:root[data-reduced-motion="true"] .aur-press:active {
+  transform: none;
+}
+:root[data-reduced-motion="true"] .aur-press::after {
+  display: none;
 }
 
 /* Minimum touch target helper. */

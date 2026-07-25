@@ -16,7 +16,7 @@
  *   band's image is ever requested.
  */
 import { useState } from "react";
-import { saveDataRequested } from "../lib/media";
+import { imageryAllowed } from "../lib/media";
 import { heroForTime } from "../design/heroes";
 import { useTimeBand } from "../hooks/useTimeBand";
 
@@ -60,12 +60,25 @@ export function Backplate({ variant }: BackplateProps) {
   const band = useTimeBand();
   // Track *which* source finished so a band change fades in cleanly.
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  /**
+   * Which source FAILED. A broken <img> — even with alt="" — paints a
+   * broken-image glyph in Safari, so a 404 or an offline load would
+   * show an error where the atmosphere belongs. Unmounting the raster
+   * hands the screen back to the solid CSS environment underneath,
+   * which is the real background anyway.
+   */
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const [lqipFailed, setLqipFailed] = useState<string | null>(null);
 
-  // Save-Data: skip optional raster imagery entirely.
-  if (saveDataRequested()) return null;
+  // Save-Data, or the user opted out of optional imagery: render nothing.
+  if (!imageryAllowed()) return null;
 
   const src: PlateSource = variant === "hero" ? heroForTime() : STATIC_SOURCES[variant];
   const loaded = loadedSrc === src.jpg;
+
+  // Nothing to show: the parent surface's cobalt atmosphere stands alone,
+  // and it is designed to look intentional rather than empty.
+  if (failedSrc === src.jpg) return null;
 
   return (
     <div
@@ -75,14 +88,18 @@ export function Backplate({ variant }: BackplateProps) {
       data-band={variant === "hero" ? band : undefined}
     >
       {/* LQIP blur-up (inline-sized, ~0.1 KB) */}
-      <img
-        src={src.lqip}
-        alt=""
-        width={1080}
-        height={1910}
-        className="absolute inset-0 h-full w-full object-cover"
-        style={{ filter: "blur(18px)", transform: "scale(1.06)" }}
-      />
+      {lqipFailed !== src.lqip && (
+        <img
+          key={`lqip-${src.lqip}`}
+          src={src.lqip}
+          alt=""
+          width={1080}
+          height={1910}
+          onError={() => setLqipFailed(src.lqip)}
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ filter: "blur(18px)", transform: "scale(1.06)" }}
+        />
+      )}
       {/* Slow atmospheric drift (frozen static by reduced-motion). */}
       <picture>
         <source srcSet={src.webp} type="image/webp" />
@@ -99,6 +116,7 @@ export function Backplate({ variant }: BackplateProps) {
           fetchPriority="low"
           decoding="async"
           onLoad={() => setLoadedSrc(src.jpg)}
+          onError={() => setFailedSrc(src.jpg)}
           /* A cached image finishes loading before React attaches onLoad,
              and `load` never fires again — so on a repeat visit the plate
              would stay at opacity 0 behind the blur. Catch that here. */

@@ -1,0 +1,105 @@
+/**
+ * AURELIS themes (Stage 4) — token overrides only.
+ *
+ * Rules every theme keeps:
+ * - Same information architecture; nothing moves, only the light changes.
+ * - Ink stays high-contrast against its surface (AA for body text).
+ * - The app is correct with NO imagery: each theme's fallback gradient is
+ *   a finished background, not a placeholder for a missing photo.
+ * - No fantasy-game or cyberpunk clichés: no neon, no black voids, no
+ *   saturated magenta/acid green, no glow-on-everything.
+ * - Applied via `data-theme` on <html>, so a theme change is one attribute
+ *   and never a re-render of the tree.
+ *
+ * Ceremonial Chrome is the base defined in tokens.css; it is repeated here
+ * only where a value must be reset after another theme has been applied.
+ */
+
+/* ---------------------------------------- 1. Ceremonial Chrome (base) */
+:root[data-theme="ceremonial-chrome"] {
+  --aur-night: #070c18;
+  --aur-cobalt-900: #0b1430;
+  --aur-ink: #eef2f8;
+  --aur-ink-muted: #a8b4c8;
+  --aur-ink-faint: #7d8aa0;
+
+  --aur-fallback-cobalt: linear-gradient(180deg, var(--aur-night) 0%, #0d1a3c 55%, #0a1330 100%);
+  --aur-fallback-forge: radial-gradient(120% 96% at 50% 40%, #1a3a7a 0%, #0d1c44 52%, #070f26 100%);
+  --aur-glass-tint: rgba(210, 217, 230, 0.07);
+  --aur-glass-rim: rgba(210, 217, 230, 0.16);
+}
+
+/* ------------------------------------------- 2. Luminous Meadow */
+/* Brighter dreamy bloom: cobalt/azure light with blue-white flowers.
+   Lifted surfaces, softer rims, and a horizon glow low in the frame. */
+:root[data-theme="luminous-meadow"] {
+  --aur-night: #0c1730;
+  --aur-cobalt-900: #14265a;
+  --aur-ink: #f4f7fc;
+  --aur-ink-muted: #bcc9df;
+  --aur-ink-faint: #90a0bd;
+
+  --aur-fallback-cobalt: linear-gradient(
+    180deg,
+    #16295e 0%,
+    #1d3c86 42%,
+    #2a5aa8 78%,
+    #35407e 100%
+  );
+  --aur-fallback-forge: radial-gradient(120% 96% at 50% 42%, #2a5aa8 0%, #17306e 55%, #0e1d42 100%);
+  --aur-glass-tint: rgba(228, 238, 255, 0.11);
+  --aur-glass-rim: rgba(228, 238, 255, 0.24);
+  --veil-hero: linear-gradient(
+    180deg,
+    rgba(10, 20, 48, 0.66) 0%,
+    rgba(12, 24, 56, 0.24) 42%,
+    rgba(12, 24, 56, 0.5) 100%
+  );
+}
+
+/* ---------------------------------------------- 3. Chrome Rider */
+/* Cinematic chrome and cape-blue light: deeper contrast, a colder
+   specular ink, and a stronger rim so surfaces read as polished metal. */
+:root[data-theme="chrome-rider"] {
+  --aur-night: #050a16;
+  --aur-cobalt-900: #0a1330;
+  --aur-ink: #f2f6ff;
+  --aur-ink-muted: #aebbd4;
+  --aur-ink-faint: #7f8ea9;
+
+  --aur-fallback-cobalt: radial-gradient(
+    130% 100% at 50% 78%,
+    #23539c 0%,
+    #12285e 46%,
+    #060c1c 100%
+  );
+  --aur-fallback-forge: radial-gradient(120% 96% at 50% 40%, #1d4489 0%, #0c1c46 52%, #050b1c 100%);
+  --aur-glass-tint: rgba(214, 226, 248, 0.09);
+  --aur-glass-rim: rgba(226, 236, 255, 0.28);
+}
+
+/* ------------------------------------------------ 4. Quiet Forge */
+/* A reflective blue sanctuary: moonlit haze, low contrast between
+   surfaces, never dead-black and never oppressive. */
+:root[data-theme="quiet-forge"] {
+  --aur-night: #091428;
+  --aur-cobalt-900: #102a52;
+  --aur-ink: #eef4fb;
+  --aur-ink-muted: #b0c1d6;
+  --aur-ink-faint: #8496ae;
+
+  --aur-fallback-cobalt: radial-gradient(
+    120% 90% at 50% 30%,
+    #1b4272 0%,
+    #10294f 55%,
+    #091528 100%
+  );
+  --aur-fallback-forge: radial-gradient(
+    125% 100% at 50% 38%,
+    #24568c 0%,
+    #143160 50%,
+    #0a1830 100%
+  );
+  --aur-glass-tint: rgba(206, 224, 242, 0.1);
+  --aur-glass-rim: rgba(206, 224, 242, 0.2);
+}

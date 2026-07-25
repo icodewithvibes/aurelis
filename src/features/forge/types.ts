@@ -48,6 +48,11 @@ export interface ForgeResponse {
    * without re-running the screen. Never set outside safety mode.
    */
   safetyCategory?: SafetyCategory;
+  /**
+   * Additive, optional: which topic family answered, when the note named
+   * one. Diagnostic only — the UI reads the three text fields.
+   */
+  topic?: string;
 }
 
 /** Voice length budget (02_strategy/02 §1). Enforced by tests. */
