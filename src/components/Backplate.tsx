@@ -92,9 +92,19 @@ export function Backplate({ variant }: BackplateProps) {
           alt=""
           width={1080}
           height={1910}
-          loading="lazy"
+          /* Always in the initial viewport, so `lazy` would only delay it;
+             low priority keeps it behind the app's own work, and Save-Data
+             skips this component entirely. */
+          loading="eager"
+          fetchPriority="low"
           decoding="async"
           onLoad={() => setLoadedSrc(src.jpg)}
+          /* A cached image finishes loading before React attaches onLoad,
+             and `load` never fires again — so on a repeat visit the plate
+             would stay at opacity 0 behind the blur. Catch that here. */
+          ref={(el) => {
+            if (el?.complete && el.naturalWidth > 0) setLoadedSrc(src.jpg);
+          }}
           className="aur-drift absolute inset-0 h-full w-full object-cover"
           style={{
             objectPosition: src.objectPosition,
