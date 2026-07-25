@@ -11,6 +11,9 @@ import { ProofSystem } from "../components/ProofSystem";
 import { useAsync } from "../hooks/useAsync";
 import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import { loadProof } from "../features/proof/proofRepo";
+import { loadExerciseHistory } from "../features/history/historyRepo";
+import { Sparkline } from "../components/Sparkline";
+import { useUiStore } from "../state/ui";
 import type { ProofEventRow } from "../data/db";
 
 const EVENT_LABEL: Record<ProofEventRow["type"], string> = {
@@ -32,6 +35,8 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 export function Proof() {
   const { data, loading } = useAsync(loadProof);
+  const { data: history } = useAsync(loadExerciseHistory);
+  const units = useUiStore((s) => s.units);
   const reduce = useMotionDisabled();
   const rise = reduce ? {} : {
     initial: { opacity: 0, y: 10 },
@@ -110,6 +115,45 @@ export function Proof() {
                 : "Nothing was owed this week. Anything kept is a bonus."}
             </p>
           </motion.section>
+
+          {/* Per-lift progress — drawn only from completed sets. */}
+          {history && history.length > 0 && (
+            <motion.section {...rise} className="mt-4 aur-chrome-surface p-5" aria-label="Per-lift progress">
+              <p className="aur-label m-0">Per-lift progress</p>
+              <ul className="m-0 mt-3 flex list-none flex-col gap-3 p-0">
+                {history.slice(0, 8).map((h) => {
+                  const change = h.changeEst1RM;
+                  const trend =
+                    change === null
+                      ? "one session so far"
+                      : change > 0
+                        ? `up ${change} ${units}`
+                        : change < 0
+                          ? `down ${Math.abs(change)} ${units}`
+                          : "holding steady";
+                  return (
+                    <li key={h.name} className="flex items-center justify-between gap-3">
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">{h.name}</span>
+                        <span className="aur-meta">
+                          {h.latest.topWeight > 0 ? `${h.latest.topWeight} ${units} · ` : ""}
+                          {h.sessions} {h.sessions === 1 ? "session" : "sessions"} · {trend}
+                        </span>
+                      </span>
+                      <Sparkline
+                        values={h.points.map((p) => p.est1RM || p.bestReps)}
+                        label={`${h.name}: estimated one-rep max across ${h.sessions} sessions, ${trend}`}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="aur-meta m-0 mt-3">
+                Estimated from your heaviest completed set each day. An estimate, not a max you
+                have tested.
+              </p>
+            </motion.section>
+          )}
 
           <motion.section {...rise} className="mt-4 aur-chrome-surface p-5" aria-label="Timeline">
             <p className="aur-label m-0">Timeline</p>

@@ -3,8 +3,10 @@
  * lets you start/resume logging a day, and import/replace the split.
  * Reads real data from Dexie; honest empty state when no split exists.
  */
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useMotionDisabled } from "../hooks/useMotionDisabled";
+import { SplitEditor } from "../components/SplitEditor";
 import { useNavigate } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { useAsync } from "../hooks/useAsync";
@@ -17,9 +19,16 @@ import type { DayWithExercises } from "../data/repositories/splitRepo";
 
 export function Train() {
   const nav = useNavigate();
-  const { data, loading } = useAsync(loadHome);
-  const { data: week } = useAsync(loadWeek);
+  const { data, loading, reload } = useAsync(loadHome);
+  const { data: week, reload: reloadWeek } = useAsync(loadWeek);
+  const [editing, setEditing] = useState(false);
   const reduce = useMotionDisabled();
+
+  /** After any split edit, re-read both views so nothing goes stale. */
+  const refresh = () => {
+    reload();
+    reloadWeek();
+  };
   const rise = reduce ? {} : {
     initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 },
     transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const },
@@ -37,10 +46,23 @@ export function Train() {
           <h1 id="train-heading" className="aur-title">Train</h1>
           {data?.hasSplit && <p className="aur-date m-0 mt-1">{data.splitName}</p>}
         </div>
-        <button type="button" onClick={() => nav("/import")} className="aur-touch rounded-full px-4 text-small"
-          style={{ background: "rgba(210,217,230,0.1)", color: "var(--aur-ink)", border: "none" }}>
-          {data?.hasSplit ? "Replace" : "Import"}
-        </button>
+        <div className="flex shrink-0 gap-2">
+          {data?.hasSplit && (
+            <button type="button" onClick={() => setEditing((v) => !v)} aria-pressed={editing}
+              className="aur-press aur-touch rounded-full px-4 text-small"
+              style={{
+                background: editing ? "var(--aur-chrome-50)" : "var(--aur-glass-tint)",
+                color: editing ? "var(--aur-night)" : "var(--aur-ink)",
+                border: "1px solid var(--aur-glass-rim)",
+              }}>
+              {editing ? "Done" : "Edit"}
+            </button>
+          )}
+          <button type="button" onClick={() => nav("/import")} className="aur-press aur-touch rounded-full px-4 text-small"
+            style={{ background: "var(--aur-glass-tint)", color: "var(--aur-ink)", border: "1px solid var(--aur-glass-rim)" }}>
+            {data?.hasSplit ? "Replace" : "Import"}
+          </button>
+        </div>
       </motion.header>
 
       {loading && <p className="mt-6 text-body" style={{ color: "var(--aur-ink-muted)" }}>Loading…</p>}
@@ -79,7 +101,17 @@ export function Train() {
         </motion.section>
       )}
 
-      {!loading && data?.hasSplit && (
+      {!loading && data?.hasSplit && editing && (
+        <>
+          <p className="aur-meta m-0 mt-5">
+            Rename, reorder, or change any exercise. Sessions you already recorded keep their own
+            copy and never change.
+          </p>
+          <SplitEditor days={data.days} onChanged={refresh} />
+        </>
+      )}
+
+      {!loading && data?.hasSplit && !editing && (
         <div className="mt-5 flex flex-col gap-4">
           {data.days.map((d) => (
             <motion.section key={d.id} {...rise} className="aur-chrome-surface p-4" aria-label={d.name}>
