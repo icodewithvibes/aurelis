@@ -17,7 +17,7 @@ import { loadHome } from "../data/access";
 import { startSession } from "../data/repositories/sessionRepo";
 import type { DayWithExercises } from "../data/repositories/splitRepo";
 
-const LABEL_CLASS = "m-0 text-[0.6875rem] uppercase tracking-[0.18em]";
+const LABEL_CLASS = "aur-label m-0";
 
 export function Today() {
   const nav = useNavigate();
@@ -46,10 +46,11 @@ export function Today() {
       <motion.header {...stagger(0)} className="flex items-start justify-between gap-3 pt-2">
         <div>
           <p className="aur-date m-0">{data?.dateLabel ?? ""}</p>
-          <h1 id="today-heading" className="m-0 mt-1" style={{
-            fontFamily: "var(--font-display)", fontSize: "var(--text-display)", fontWeight: 470,
-            lineHeight: 1.12, letterSpacing: "-0.025em", textShadow: "0 1px 20px rgba(5,9,20,0.55)",
-          }}>
+          <h1
+            id="today-heading"
+            className="aur-display mt-1"
+            style={{ textShadow: "0 1px 20px rgba(5,9,20,0.55)" }}
+          >
             {!data?.hasSplit ? "Begin." : data.isTrainingDay ? "A training day." : "Rest, honored."}
           </h1>
         </div>
@@ -63,8 +64,8 @@ export function Today() {
 
         {!loading && data && !data.hasSplit && (
           <>
-            <p className={LABEL_CLASS} style={{ color: "var(--aur-ink-muted)" }}>No split yet</p>
-            <h2 className="m-0 mt-1" style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-h1)", fontWeight: 500 }}>Import your program</h2>
+            <p className={LABEL_CLASS}>No split yet</p>
+            <h2 className="aur-heading mt-1">Import your program</h2>
             <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
               Paste a split in AURELIS Split Format to know exactly what to train.
             </p>
@@ -78,18 +79,16 @@ export function Today() {
         {!loading && data?.hasSplit && (
           <>
             <div className="flex items-center justify-between gap-3">
-              <p className={LABEL_CLASS} style={{ color: "var(--aur-ink-muted)" }}>
+              <p className={LABEL_CLASS}>
                 {primary ? "Today" : "Rest day"}
               </p>
-              <span className="truncate font-mono text-[0.6875rem]" style={{ color: "var(--aur-ink-muted)" }}>{data.splitName}</span>
+              <span className="aur-metric truncate text-[0.6875rem]" style={{ color: "var(--aur-ink-muted)" }}>{data.splitName}</span>
             </div>
 
             {/* PRIMARY — the single action for today. */}
             {primary && (
               <>
-                <h2 className="m-0 mt-1" style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-h1)", fontWeight: 500 }}>
-                  {primary.name}
-                </h2>
+                <h2 className="aur-heading mt-1">{primary.name}</h2>
                 <p className="m-0 mt-1 text-small" style={{ color: "var(--aur-ink-muted)" }}>
                   {primary.exercises.length} exercises
                   {primaryDone ? " · kept today ✓" : ""}
@@ -142,7 +141,7 @@ export function Today() {
                               <span className="block font-medium">{d.name}</span>
                               <span className="block text-small" style={{ color: "var(--aur-ink-muted)" }}>{d.exercises.length} exercises</span>
                             </span>
-                            <span className="font-mono text-small" style={{ color: s?.status === "completed" ? "var(--aur-success)" : "var(--aur-ink-muted)" }}>
+                            <span className="aur-metric text-small" style={{ color: s?.status === "completed" ? "var(--aur-success)" : "var(--aur-ink-muted)" }}>
                               {s?.status === "completed" ? "kept ✓" : s ? "resume" : "start"}
                             </span>
                           </button>

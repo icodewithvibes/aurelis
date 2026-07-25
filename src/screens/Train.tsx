@@ -43,7 +43,7 @@ export function Train() {
 
       {!loading && data && !data.hasSplit && (
         <motion.section {...rise} className="mt-6 aur-chrome-surface p-5">
-          <p className="m-0 text-[0.6875rem] uppercase tracking-[0.18em]" style={{ color: "var(--aur-ink-muted)" }}>No split yet</p>
+          <p className="aur-label m-0">No split yet</p>
           <p className="m-0 mt-2 text-body">Import a program in AURELIS Split Format to begin.</p>
           <button type="button" onClick={() => nav("/import")} className="aur-touch mt-4 w-full rounded-full text-body font-medium"
             style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.875rem 1.5rem" }}>
@@ -57,17 +57,17 @@ export function Train() {
           {data.days.map((d) => (
             <motion.section key={d.id} {...rise} className="aur-chrome-surface p-4" aria-label={d.name}>
               <div className="flex items-center justify-between">
-                <h2 className="m-0 flex items-baseline gap-2" style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-h2)", fontWeight: 500 }}>
+                <h2 className="aur-section flex items-baseline gap-2">
                   {d.name}
                   {d.id === data.todayDay?.id && (
                     <span className="rounded-full px-2 py-0.5 text-[0.625rem] uppercase tracking-[0.14em]"
-                      style={{ background: "rgba(210,217,230,0.12)", color: "var(--aur-ink-muted)", fontFamily: "var(--font-ui)" }}>
+                      style={{ background: "rgba(210,217,230,0.12)", color: "var(--aur-ink-muted)" }}>
                       Today
                     </span>
                   )}
                   {d.id === data.nextUp?.day.id && d.id !== data.todayDay?.id && (
                     <span className="rounded-full px-2 py-0.5 text-[0.625rem] uppercase tracking-[0.14em]"
-                      style={{ background: "rgba(210,217,230,0.06)", color: "var(--aur-ink-faint)", fontFamily: "var(--font-ui)" }}>
+                      style={{ background: "rgba(210,217,230,0.06)", color: "var(--aur-ink-faint)" }}>
                       {data.nextUp.label}
                     </span>
                   )}
@@ -82,7 +82,7 @@ export function Train() {
                 {d.exercises.map((ex) => (
                   <li key={ex.id} className="flex items-baseline justify-between gap-3">
                     <span className="text-body">{ex.name}</span>
-                    <span className="whitespace-nowrap font-mono text-small" style={{ color: "var(--aur-ink-muted)" }}>
+                    <span className="aur-metric whitespace-nowrap text-small" style={{ color: "var(--aur-ink-muted)" }}>
                       {ex.sets}×{ex.repScheme === "amrap" ? "AMRAP" : ex.repMin === ex.repMax ? ex.repMin : `${ex.repMin}-${ex.repMax}`}
                       {ex.rpeMin ? ` · RPE ${ex.rpeMin}` : ""}
                     </span>

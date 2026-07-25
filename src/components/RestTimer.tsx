@@ -58,10 +58,10 @@ export function RestTimer({ seconds, onDone, onDismiss }: RestTimerProps) {
         />
       </svg>
       <div className="flex-1">
-        <p className="m-0 text-[0.6875rem] uppercase tracking-[0.18em]" style={{ color: "var(--aur-ink-muted)" }}>
+        <p className="aur-label m-0">
           Rest
         </p>
-        <p className="m-0 font-mono text-2xl" style={{ color: low ? "var(--aur-cobalt-300)" : "var(--aur-ink)" }}>
+        <p className="aur-metric m-0 text-2xl" style={{ color: low ? "var(--aur-cobalt-300)" : "var(--aur-ink)" }}>
           {mm}:{ss}
         </p>
       </div>

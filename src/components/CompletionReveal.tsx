@@ -79,16 +79,7 @@ export function CompletionReveal({ result, crestLevel, onDone }: CompletionRevea
         </div>
 
         <div>
-          <p
-            className="m-0"
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "var(--text-h1)",
-              fontWeight: 500,
-            }}
-          >
-            Proof recorded
-          </p>
+          <p className="aur-heading">Proof recorded</p>
           <p className="m-0 mt-1 aur-metric text-small" style={{ color: "var(--aur-ink-muted)" }}>
             {result.keptCount} {result.keptCount === 1 ? "session" : "sessions"} kept
             {result.streak > 1 ? ` · ${result.streak} in a row` : ""}

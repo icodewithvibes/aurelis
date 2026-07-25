@@ -331,12 +331,7 @@ export function Forge() {
           aria-label="Recorded"
           role="status"
         >
-          <p
-            className="m-0"
-            style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-h1)", fontWeight: 500 }}
-          >
-            Recorded.
-          </p>
+          <p className="aur-heading">Recorded.</p>
           <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
             {commit ? "Today's commitment is kept." : "One step, done. That's the whole point."}
           </p>

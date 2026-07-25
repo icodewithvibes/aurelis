@@ -70,10 +70,7 @@ export function BottomNav() {
               {({ isActive }) => (
                 <>
                   <NavGlyph icon={d.icon} active={isActive} />
-                  <span
-                    className="text-[0.6875rem] tracking-wide"
-                    style={{ fontFamily: "var(--font-ui)" }}
-                  >
+                  <span className="text-[0.6875rem] tracking-wide">
                     {d.label}
                   </span>
                   <span aria-hidden="true" className="relative block h-0.5 w-6">

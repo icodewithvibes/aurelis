@@ -50,7 +50,7 @@ export function Import() {
   return (
     <ScreenSurface labelledBy="import-heading">
       <header className="pt-2">
-        <h1 id="import-heading" className="m-0" style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-display-sm)", fontWeight: 480 }}>
+        <h1 id="import-heading" className="aur-title">
           Import a split
         </h1>
         <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
@@ -59,7 +59,7 @@ export function Import() {
       </header>
 
       <section className="mt-4 aur-chrome-surface p-4">
-        <label htmlFor="asf" className="text-[0.6875rem] uppercase tracking-[0.18em]" style={{ color: "var(--aur-ink-muted)" }}>
+        <label htmlFor="asf" className="aur-label">
           ASF text
         </label>
         <textarea
@@ -68,7 +68,7 @@ export function Import() {
           onChange={(e) => setText(e.target.value)}
           placeholder={"SPLIT: …\nSCHEDULE: Mon, Wed, Fri\n\nDAY: Push A\n- Bench Press | 4 | 6-8 | RPE 8 | Rest 120s"}
           spellCheck={false}
-          className="mt-2 w-full rounded-lg p-3 font-mono text-small"
+          className="aur-metric mt-2 w-full rounded-lg p-3 text-small"
           style={{
             minHeight: "9rem", resize: "vertical", color: "var(--aur-ink)",
             background: "rgba(7,12,24,0.55)", border: "1px solid rgba(210,217,230,0.14)",
@@ -91,10 +91,10 @@ export function Import() {
       {result && (
         <section className="mt-4 aur-chrome-surface p-4" aria-label="Parse review">
           <div className="flex items-center justify-between">
-            <p className="m-0 text-[0.6875rem] uppercase tracking-[0.18em]" style={{ color: "var(--aur-ink-muted)" }}>
+            <p className="aur-label m-0">
               Review
             </p>
-            <span className="font-mono text-[0.6875rem]" style={{
+            <span className="aur-metric text-[0.6875rem]" style={{
               color: outcome === "INVALID" ? "var(--aur-danger)" : outcome === "VALID_WITH_REVIEW" ? "var(--aur-caution)" : "var(--aur-success)",
             }}>
               {outcome === "INVALID" ? "Needs fixes" : outcome === "VALID_WITH_REVIEW" ? "Review warnings" : "Ready"}
@@ -119,7 +119,7 @@ export function Import() {
                   {d.exercises.map((ex, ei) => (
                     <li key={ei} className="flex items-baseline justify-between gap-2 text-small">
                       <span style={{ color: ex.flags.length ? "var(--aur-caution)" : "var(--aur-ink)" }}>{ex.name || "(unnamed)"}</span>
-                      <span className="whitespace-nowrap font-mono" style={{ color: "var(--aur-ink-muted)" }}>
+                      <span className="aur-metric whitespace-nowrap" style={{ color: "var(--aur-ink-muted)" }}>
                         {ex.sets ?? "—"}×{ex.repScheme === "amrap" ? "AMRAP" : ex.repMin === ex.repMax ? ex.repMin ?? "—" : `${ex.repMin ?? "?"}-${ex.repMax ?? "?"}`}
                       </span>
                     </li>
