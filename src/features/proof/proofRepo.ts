@@ -30,11 +30,22 @@ import {
 
 /** Build the contiguous day-fact log the engine folds over. */
 export async function collectDayFacts(today = localDay()): Promise<DayFacts[]> {
-  const [sessions, marks, active] = await Promise.all([
+  const [sessions, marks, forgeEntries, active] = await Promise.all([
     db.sessions.toArray(),
     db.dayMarks.toArray(),
+    db.forgeEntries.toArray(),
     getActiveSplit(),
   ]);
+
+  // A Forge daily commitment is an obligation the user set themselves;
+  // keeping it counts as a kept day on a non-scheduled day (§1.1).
+  const commitments = forgeEntries.filter(
+    (e) => !e.deletedAt && e.isDailyCommitment && !e.safety && e.status !== "skipped",
+  );
+  const commitmentSetDates = new Set(commitments.map((e) => e.dateLocal));
+  const commitmentKeptDates = new Set(
+    commitments.filter((e) => e.status === "done").map((e) => e.dateLocal),
+  );
 
   const live = sessions.filter((s) => !s.deletedAt);
   const keptDates = new Set(
@@ -50,6 +61,7 @@ export async function collectDayFacts(today = localDay()): Promise<DayFacts[]> {
   const earliest = [
     ...live.map((s) => s.dateLocal),
     ...liveMarks.map((m) => m.dateLocal),
+    ...commitments.map((e) => e.dateLocal),
     ...(splitStart ? [splitStart] : []),
     today,
   ].sort()[0];
@@ -71,8 +83,8 @@ export async function collectDayFacts(today = localDay()): Promise<DayFacts[]> {
       date,
       scheduled,
       keptSession: keptDates.has(date),
-      commitmentSet: mark?.dailyCommitmentForgeId != null,
-      commitmentKept: false, // wired when the Forge engine lands
+      commitmentSet: commitmentSetDates.has(date) || mark?.dailyCommitmentForgeId != null,
+      commitmentKept: commitmentKeptDates.has(date),
       recoveryHonored: mark?.recoveryHonored === true,
     };
   });
@@ -113,6 +125,32 @@ export async function loadProof(today = localDay()): Promise<ProofState> {
       .slice(0, 50),
     prs: prs.filter((p) => !p.deletedAt),
   };
+}
+
+/**
+ * Recompute the all-time records row from the log. Called after any
+ * event that can change it — a session, a Forge commitment, an edit —
+ * so the totals are always a fold, never an increment that can drift.
+ */
+export async function refreshRecords(today = localDay()): Promise<void> {
+  const facts = await collectDayFacts(today);
+  const [sessions, forgeEntries] = await Promise.all([
+    db.sessions.toArray(),
+    db.forgeEntries.toArray(),
+  ]);
+
+  await db.records.put({
+    id: "alltime",
+    totalSessionsKept: countKeptDays(facts, today),
+    totalWorkoutsCompleted: sessions.filter(
+      (s) => !s.deletedAt && s.status === "completed" && s.qualified,
+    ).length,
+    totalCommitmentsCompleted: forgeEntries.filter(
+      (e) => !e.deletedAt && e.isDailyCommitment && e.status === "done",
+    ).length,
+    bestStreak: computeBestStreak(facts, today),
+    updatedAt: nowMs(),
+  });
 }
 
 export interface ProofResult {
@@ -213,7 +251,6 @@ export async function recordProof(sessionId: string, qualified = true): Promise<
   const facts = await collectDayFacts(today);
   const keptCount = countKeptDays(facts, today);
   const streak = computeStreak(facts, today);
-  const bestStreak = computeBestStreak(facts, today);
   const crest = crestStateForSessions(keptCount);
 
   const crestLevelUp =
@@ -239,16 +276,7 @@ export async function recordProof(sessionId: string, qualified = true): Promise<
   });
   for (const e of events) await db.proofEvents.put(e);
 
-  await db.records.put({
-    id: "alltime",
-    totalSessionsKept: keptCount,
-    totalWorkoutsCompleted: (await db.sessions.toArray()).filter(
-      (s) => !s.deletedAt && s.status === "completed" && s.qualified,
-    ).length,
-    totalCommitmentsCompleted: 0, // wired when the Forge engine lands
-    bestStreak,
-    updatedAt: now,
-  });
+  await refreshRecords(today);
 
   if (settings) {
     await db.settings.update("app", { lastCrestLevel: crest.level, updatedAt: now });

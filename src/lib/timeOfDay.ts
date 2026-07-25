@@ -7,6 +7,8 @@
  * days when a band holds more than one scene.
  */
 
+import { hashIndex } from "./hash";
+
 export type TimeBand = "dawn" | "day" | "dusk" | "night";
 
 export const TIME_BANDS: readonly TimeBand[] = ["dawn", "day", "dusk", "night"] as const;
@@ -39,13 +41,6 @@ export function msUntilNextBand(d: Date = new Date()): number {
  * always yields the same scene; different days rotate through variants.
  */
 export function variantIndex(count: number, date: Date = new Date(), seed = 0): number {
-  if (count <= 1) return 0;
   const key = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}|${bandForDate(date)}|${seed}`;
-  // FNV-1a — small, stable, no dependencies.
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < key.length; i++) {
-    hash ^= key.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193) >>> 0;
-  }
-  return hash % count;
+  return hashIndex(key, count);
 }
