@@ -16,7 +16,7 @@
  *   band's image is ever requested.
  */
 import { useState } from "react";
-import { saveDataRequested } from "../lib/media";
+import { imageryAllowed } from "../lib/media";
 import { heroForTime } from "../design/heroes";
 import { useTimeBand } from "../hooks/useTimeBand";
 
@@ -70,8 +70,8 @@ export function Backplate({ variant }: BackplateProps) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const [lqipFailed, setLqipFailed] = useState<string | null>(null);
 
-  // Save-Data: skip optional raster imagery entirely.
-  if (saveDataRequested()) return null;
+  // Save-Data, or the user opted out of optional imagery: render nothing.
+  if (!imageryAllowed()) return null;
 
   const src: PlateSource = variant === "hero" ? heroForTime() : STATIC_SOURCES[variant];
   const loaded = loadedSrc === src.jpg;

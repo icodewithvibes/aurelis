@@ -13,17 +13,17 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import { App } from "./App";
 import { initDb } from "./data/db";
-import { getSettings } from "./data/repositories/settingsRepo";
-import { useUiStore, applyMotionAttribute } from "./state/ui";
+import { DEFAULT_PREFERENCES, loadPreferences } from "./data/repositories/settingsRepo";
+import { useUiStore, applyMotionAttribute, applyThemeAttribute } from "./state/ui";
 
 // Fire-and-forget: schema init must never block first paint.
-// After init, hydrate the persisted motion preference and apply it.
+// After init, hydrate every persisted preference and apply it.
 void initDb().then(async () => {
-  const s = await getSettings();
-  const mode = s?.reducedMotion ?? "auto";
-  useUiStore.getState().hydrateReducedMotion(mode);
+  useUiStore.getState().hydrate(await loadPreferences());
 });
-applyMotionAttribute("auto"); // sensible default before hydration
+// Sensible defaults before hydration so the first paint is never unstyled.
+applyMotionAttribute(DEFAULT_PREFERENCES.reducedMotion);
+applyThemeAttribute(DEFAULT_PREFERENCES.theme);
 
 // Keep 'auto' resolution live if the OS preference changes.
 if (typeof window !== "undefined" && window.matchMedia) {

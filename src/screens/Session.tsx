@@ -20,7 +20,7 @@ import {
 } from "../data/repositories/sessionRepo";
 import { recordProof, replayDerivedState, type ProofResult } from "../features/proof/proofRepo";
 import { crestStateForSessions } from "../lib/crest";
-import { getSettings } from "../data/repositories/settingsRepo";
+import { useUiStore } from "../state/ui";
 
 interface Cell {
   weight: string;
@@ -31,7 +31,6 @@ interface Cell {
 type Grid = Record<string, Cell>;
 const cellKey = (exKey: string, i: number) => `${exKey}:${i}`;
 
-const REST_DEFAULT_SEC = 90;
 
 function targetReps(ex: SessionSnapshotExercise): string {
   if (ex.repMax == null) return ""; // AMRAP → user enters actual
@@ -50,7 +49,11 @@ export function Session() {
   const [ghosts, setGhosts] = useState<Record<string, { weight?: number; reps?: number }>>({});
   const [advanced, setAdvanced] = useState<Record<string, boolean>>({});
   const [rest, setRest] = useState<{ secs: number } | null>(null);
-  const [units, setUnits] = useState<"lb" | "kg">("lb");
+  // Preferences are live: changing units or the effort mode in Settings
+  // is reflected here without a reload.
+  const units = useUiStore((s) => s.units);
+  const rpeMode = useUiStore((s) => s.rpeMode);
+  const defaultRestSec = useUiStore((s) => s.defaultRestSec);
   const [ready, setReady] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [result, setResult] = useState<ProofResult | null>(null);
@@ -62,9 +65,7 @@ export function Session() {
     let alive = true;
     (async () => {
       const s = await getSession(id);
-      const settings = await getSettings();
       if (!alive) return;
-      if (settings?.units) setUnits(settings.units);
       if (!s) {
         setReady(true);
         return;
@@ -206,7 +207,10 @@ export function Session() {
 
       <div className="mt-4 flex flex-col gap-4">
         {snapshot?.exercises.map((ex) => {
-          const showAdvanced = advanced[ex.key] ?? false;
+          // Effort check: advanced always shows it, simple hides it behind
+          // a plain-language disclosure, hidden leaves it out entirely.
+          const disclosed = advanced[ex.key] ?? false;
+          const showEffort = rpeMode === "advanced" || (rpeMode === "simple" && disclosed);
           const ghost = ghosts[ex.key];
           return (
             <section key={ex.key} className="aur-chrome-surface p-4" aria-label={ex.name}>
@@ -216,8 +220,30 @@ export function Session() {
                   {ex.sets} × {repRangeHint(ex)}
                 </span>
               </div>
+              {/* A suggestion, never a prescription — it is last time's
+                  number, and tapping it fills the empty sets so the common
+                  case is one tap instead of four. */}
               {ghost && (ghost.weight != null) && (
-                <p className="aur-meta m-0 mt-1">Last time: {ghost.weight} {units}{ghost.reps != null ? ` × ${ghost.reps}` : ""}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    for (let i = 0; i < Math.max(1, ex.sets); i++) {
+                      if (!cell(cellKey(ex.key, i)).weight) {
+                        update(ex.key, ex.name, i, { weight: String(ghost.weight) });
+                      }
+                    }
+                  }}
+                  className="aur-press mt-1 rounded-full px-3 py-1 text-left"
+                  style={{
+                    background: "var(--aur-glass-tint)",
+                    border: "1px solid var(--aur-glass-rim)",
+                    color: "var(--aur-ink-muted)",
+                    fontSize: "0.6875rem",
+                  }}
+                >
+                  Suggested from last time: {ghost.weight} {units}
+                  {ghost.reps != null ? ` × ${ghost.reps}` : ""} — tap to use
+                </button>
               )}
 
               <div className="mt-3 flex flex-col gap-2">
@@ -250,12 +276,16 @@ export function Session() {
                         className="aur-touch w-14 shrink-0 rounded-lg px-2 text-center aur-metric"
                         style={{ height: 44, color: "var(--aur-ink)", background: "rgba(7,12,24,0.55)", border: "1px solid rgba(210,217,230,0.14)" }}
                       />
-                      {showAdvanced && (
+                      {showEffort && (
                         <input
-                          aria-label={`Set ${i + 1} — how hard did it feel, 1 to 10`}
+                          aria-label={
+                            rpeMode === "advanced"
+                              ? `Set ${i + 1} — RPE, 1 to 10`
+                              : `Set ${i + 1} — how hard did that set feel, 1 to 10`
+                          }
                           value={c.rpe}
                           inputMode="numeric"
-                          placeholder="feel"
+                          placeholder={rpeMode === "advanced" ? "RPE" : "feel"}
                           onChange={(e) => update(ex.key, ex.name, i, { rpe: e.target.value.replace(/[^\d]/g, "") })}
                           className="aur-touch w-12 shrink-0 rounded-lg px-1 text-center aur-metric"
                           style={{ height: 44, color: "var(--aur-ink)", background: "rgba(7,12,24,0.45)", border: "1px solid rgba(210,217,230,0.1)" }}
@@ -267,9 +297,9 @@ export function Session() {
                         aria-label={`Complete set ${i + 1}`}
                         onClick={() => {
                           const next = update(ex.key, ex.name, i, { done: !c.done });
-                          if (next.done) setRest({ secs: ex.restSec ?? REST_DEFAULT_SEC });
+                          if (next.done) setRest({ secs: ex.restSec ?? defaultRestSec });
                         }}
-                        className="aur-touch grid shrink-0 place-items-center rounded-full"
+                        className="aur-press aur-touch grid shrink-0 place-items-center rounded-full"
                         style={{
                           width: 44, height: 44,
                           background: c.done ? "var(--aur-success)" : "rgba(210,217,230,0.1)",
@@ -284,17 +314,29 @@ export function Session() {
                 })}
               </div>
 
-              <button
-                type="button"
-                aria-expanded={showAdvanced}
-                onClick={() => setAdvanced((a) => ({ ...a, [ex.key]: !showAdvanced }))}
-                className="aur-touch mt-2 text-small"
-                style={{ background: "transparent", border: "none", color: "var(--aur-ink-muted)", padding: "0.25rem 0" }}
-              >
-                {showAdvanced ? "Hide advanced" : "Advanced details"}
-              </button>
-              {showAdvanced && (
-                <p className="aur-meta m-0">"Feel" = how hard the set felt, 1–10 (10 = no reps left). Optional.</p>
+              {rpeMode === "simple" && (
+                <>
+                  <button
+                    type="button"
+                    aria-expanded={disclosed}
+                    onClick={() => setAdvanced((a) => ({ ...a, [ex.key]: !disclosed }))}
+                    className="aur-touch mt-2 text-small"
+                    style={{ background: "transparent", border: "none", color: "var(--aur-ink-muted)", padding: "0.25rem 0" }}
+                  >
+                    {disclosed ? "Hide effort check" : "How hard did that feel?"}
+                  </button>
+                  {disclosed && (
+                    <p className="aur-meta m-0">
+                      Rate 1–10, where 10 means you had nothing left. Always optional — a session
+                      counts without it.
+                    </p>
+                  )}
+                </>
+              )}
+              {rpeMode === "advanced" && (
+                <p className="aur-meta m-0 mt-2">
+                  RPE 1–10 (10 = no reps in reserve). Optional.
+                </p>
               )}
             </section>
           );
