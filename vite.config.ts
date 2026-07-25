@@ -9,6 +9,23 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   base: "./",
   plugins: [react(), tailwindcss()],
+  build: {
+    rollupOptions: {
+      output: {
+        /**
+         * Split the dependencies that change on a different clock from
+         * app code, so a copy edit doesn't invalidate React or Dexie in
+         * a returning user's cache. Route chunks come from React.lazy in
+         * App.tsx; this only groups vendor code.
+         */
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          motion: ["framer-motion"],
+          data: ["dexie", "zustand"],
+        },
+      },
+    },
+  },
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
