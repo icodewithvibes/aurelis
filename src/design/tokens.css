@@ -212,7 +212,9 @@
   --nav-height: 4rem;
 }
 
-/* Reduced motion: honor OS preference (in-app seam is additive, no switcher). */
+/* Reduced motion — freeze ambient/CSS motion to elegant static states.
+   Triggered by the OS preference OR the in-app control (data attribute
+   set by the UI store), so the Settings motion control works app-wide. */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --dur-fast: 0ms;
@@ -220,6 +222,14 @@
     --dur-slow: 0ms;
     --dur-cinematic: 0ms;
   }
+}
+:root[data-reduced-motion="true"] {
+  --dur-fast: 0ms;
+  --dur-base: 0ms;
+  --dur-slow: 0ms;
+  --dur-cinematic: 0ms;
+}
+@media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
@@ -227,4 +237,11 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+:root[data-reduced-motion="true"] *,
+:root[data-reduced-motion="true"] *::before,
+:root[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }

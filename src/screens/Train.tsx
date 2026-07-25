@@ -3,7 +3,8 @@
  * lets you start/resume logging a day, and import/replace the split.
  * Reads real data from Dexie; honest empty state when no split exists.
  */
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import { useNavigate } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { useAsync } from "../hooks/useAsync";
@@ -14,7 +15,7 @@ import type { DayWithExercises } from "../data/repositories/splitRepo";
 export function Train() {
   const nav = useNavigate();
   const { data, loading } = useAsync(loadHome);
-  const reduce = useReducedMotion();
+  const reduce = useMotionDisabled();
   const rise = reduce ? {} : {
     initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 },
     transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const },

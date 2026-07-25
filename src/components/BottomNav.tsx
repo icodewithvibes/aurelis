@@ -5,7 +5,8 @@
  * (The older "4 tabs + floating Forge + Notes" IA is deferred.)
  */
 import { NavLink } from "react-router-dom";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMotionDisabled } from "../hooks/useMotionDisabled";
 
 const DESTINATIONS = [
   { to: "/today", label: "Today" },
@@ -72,7 +73,7 @@ function NavGlyph({ name }: { name: string }) {
 }
 
 export function BottomNav() {
-  const reduce = useReducedMotion();
+  const reduce = useMotionDisabled();
   return (
     <nav
       aria-label="Primary"

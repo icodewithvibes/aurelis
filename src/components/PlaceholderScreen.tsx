@@ -4,7 +4,8 @@
  * No functional controls, inputs, journal text, or safety copy.
  */
 import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import { ScreenSurface } from "./ScreenSurface";
 import type { BackplateVariant } from "./Backplate";
 
@@ -28,7 +29,7 @@ export function PlaceholderScreen({
   hero,
   children,
 }: PlaceholderScreenProps) {
-  const reduce = useReducedMotion();
+  const reduce = useMotionDisabled();
   const stagger = (i: number) =>
     reduce
       ? {}

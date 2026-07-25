@@ -5,7 +5,8 @@
  * - split + rest day → calm rest state
  * Meadow backplate (approved Group 2) is allowed here ONLY.
  */
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import { useNavigate } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { ProofSystem } from "../components/ProofSystem";
@@ -17,7 +18,7 @@ import type { DayWithExercises } from "../data/repositories/splitRepo";
 export function Today() {
   const nav = useNavigate();
   const { data, loading } = useAsync(loadHome);
-  const reduce = useReducedMotion();
+  const reduce = useMotionDisabled();
   const stagger = (i: number) =>
     reduce ? {} : {
       initial: { opacity: 0, y: 10 },
