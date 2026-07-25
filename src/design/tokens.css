@@ -65,11 +65,25 @@
     var(--aur-cobalt-900) 52%,
     var(--aur-night) 100%
   );
+  /* Luminous reflective-blue sanctuary (Stage 3 retint — brighter azure). */
   --aur-fallback-forge: radial-gradient(
-    130% 90% at 50% 6%,
-    var(--aur-cobalt-900) 0%,
-    #060a16 62%,
-    var(--aur-night) 100%
+    120% 96% at 50% 40%,
+    #1a3a7a 0%,
+    var(--aur-cobalt-800) 48%,
+    #08122c 100%
+  );
+
+  /* Today "hero veil": the Chrome Rider hero already has a deep-cobalt sky.
+     Keep the upper third readable for text, let the figure + radiant light +
+     flowers shine, a faint anchor under the nav. */
+  --veil-hero: linear-gradient(
+    180deg,
+    rgba(6, 10, 22, 0.62) 0%,
+    rgba(6, 10, 22, 0.34) 16%,
+    rgba(6, 10, 22, 0.06) 34%,
+    rgba(6, 10, 22, 0) 52%,
+    rgba(6, 10, 22, 0) 74%,
+    rgba(6, 10, 22, 0.4) 100%
   );
 
   /* Today "meadow veil": dark & text-safe up top, CLEARS through the flower
@@ -88,16 +102,16 @@
      that keeps the upper/center journal zone calm and dark. */
   --veil-forge: linear-gradient(
     180deg,
-    rgba(6, 10, 22, 0.9) 0%,
-    rgba(6, 10, 22, 0.7) 30%,
-    rgba(6, 10, 22, 0.5) 52%,
-    rgba(6, 10, 22, 0.18) 74%,
-    rgba(6, 10, 22, 0.5) 100%
+    rgba(8, 16, 40, 0.72) 0%,
+    rgba(10, 22, 58, 0.42) 30%,
+    rgba(14, 30, 74, 0.18) 52%,
+    rgba(14, 30, 74, 0.05) 72%,
+    rgba(6, 10, 22, 0.4) 100%
   );
   --veil-forge-vignette: radial-gradient(
-    120% 100% at 50% 42%,
-    rgba(6, 10, 22, 0) 46%,
-    rgba(6, 10, 22, 0.55) 100%
+    120% 100% at 50% 40%,
+    rgba(6, 10, 22, 0) 54%,
+    rgba(6, 10, 22, 0.42) 100%
   );
 
   /* Page-level atmospheric scrim (very light, unifies depth). */

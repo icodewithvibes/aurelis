@@ -68,6 +68,16 @@ export function ThresholdArch({
           <stop offset="0.72" stopColor="#FFD59E" />
           <stop offset="1" stopColor="#9CE6D0" />
         </linearGradient>
+        {/* Group 6 (Option B): reflective chrome-material sheen for the
+            silver strokes — a code-driven premium chrome look, geometry
+            unchanged. Stops use design tokens; SVG remains the a11y source. */}
+        <linearGradient id={`${gid}-chrome`} x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop offset="0" stopColor="var(--aur-chrome-50)" />
+          <stop offset="0.32" stopColor="var(--aur-silver-200)" />
+          <stop offset="0.52" stopColor="var(--aur-steel-400)" />
+          <stop offset="0.68" stopColor="var(--aur-silver-200)" />
+          <stop offset="1" stopColor="var(--aur-chrome-50)" />
+        </linearGradient>
       </defs>
 
       {/* L0 — Unmarked: faint central stem */}
@@ -79,9 +89,9 @@ export function ThresholdArch({
         opacity="0.45"
       />
 
-      {/* L1 — First Mark: closed silver arch + baseline */}
+      {/* L1 — First Mark: closed silver arch + baseline (chrome-material) */}
       {show(1) && (
-        <g data-layer="1" stroke="var(--aur-silver-200)" strokeWidth="2">
+        <g data-layer="1" stroke={`url(#${gid}-chrome)`} strokeWidth="2">
           <path d="M18 50 C18 28 24 15 32 12 C40 15 46 28 46 50" />
           <path d="M18 50 H46" />
         </g>

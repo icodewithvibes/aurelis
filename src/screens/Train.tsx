@@ -29,8 +29,8 @@ export function Train() {
     <ScreenSurface labelledBy="train-heading">
       <motion.header {...rise} className="flex items-start justify-between gap-3 pt-2">
         <div>
-          <h1 id="train-heading" className="m-0" style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-display-sm)", fontWeight: 480 }}>Train</h1>
-          {data?.hasSplit && <p className="m-0 mt-1 text-body" style={{ color: "var(--aur-ink-muted)" }}>{data.splitName}</p>}
+          <h1 id="train-heading" className="aur-title">Train</h1>
+          {data?.hasSplit && <p className="aur-date m-0 mt-1">{data.splitName}</p>}
         </div>
         <button type="button" onClick={() => nav("/import")} className="aur-touch rounded-full px-4 text-small"
           style={{ background: "rgba(210,217,230,0.1)", color: "var(--aur-ink)", border: "none" }}>

@@ -185,3 +185,54 @@ body {
   min-width: var(--touch-min);
   min-height: var(--touch-min);
 }
+
+/* ---- Typography hierarchy (05 §type; Stage 3 correction) ----
+   Display / titles / date-context use the Fraunces display serif
+   consistently; body & dense forms stay Inter for readability;
+   data uses the mono metric style. No browser-default-looking type. */
+.aur-display {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  font-weight: 470;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+.aur-title {
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  font-weight: 480;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+/* Date / context title — the corrected role (was plain sans). */
+.aur-date {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 440;
+  letter-spacing: -0.01em;
+  color: var(--aur-ink-muted);
+}
+.aur-section {
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.aur-label {
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--aur-ink-muted);
+}
+.aur-meta {
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  color: var(--aur-ink-faint);
+}
+.aur-metric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

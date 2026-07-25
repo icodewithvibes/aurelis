@@ -48,7 +48,7 @@ export function ProofSystem({ sessionsKept, variant = "hero" }: ProofSystemProps
           {s.name}
         </p>
         <p className="m-0 mt-0.5 font-mono text-small" style={{ color: "var(--aur-ink-muted)" }}>
-          {sessionsKept} sessions kept
+          {sessionsKept} {sessionsKept === 1 ? "session" : "sessions"} kept
         </p>
       </div>
 

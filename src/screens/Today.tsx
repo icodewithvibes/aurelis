@@ -31,10 +31,10 @@ export function Today() {
   }
 
   return (
-    <ScreenSurface backplate="meadow" labelledBy="today-heading">
+    <ScreenSurface backplate="hero" labelledBy="today-heading">
       <motion.header {...stagger(0)} className="flex items-start justify-between gap-3 pt-2">
         <div>
-          <p className="m-0 text-small" style={{ color: "var(--aur-ink-muted)" }}>{data?.dateLabel ?? ""}</p>
+          <p className="aur-date m-0">{data?.dateLabel ?? ""}</p>
           <h1 id="today-heading" className="m-0 mt-1" style={{
             fontFamily: "var(--font-display)", fontSize: "var(--text-display)", fontWeight: 470,
             lineHeight: 1.12, letterSpacing: "-0.025em", textShadow: "0 1px 20px rgba(5,9,20,0.55)",

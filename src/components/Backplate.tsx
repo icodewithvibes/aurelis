@@ -21,8 +21,12 @@ import meadowLqip from "../design/assets/backplates/meadow_lqip.webp";
 import forgeWebp from "../design/assets/backplates/forge_1080x1910.webp";
 import forgeJpg from "../design/assets/backplates/forge_1080x1910.jpg";
 import forgeLqip from "../design/assets/backplates/forge_lqip.webp";
+import heroWebp from "../design/assets/backplates/hero_1080x1910.webp";
+import heroJpg from "../design/assets/backplates/hero_1080x1910.jpg";
+import heroLqip from "../design/assets/backplates/hero_lqip.webp";
 
 const SOURCES = {
+  hero: { webp: heroWebp, jpg: heroJpg, lqip: heroLqip },
   meadow: { webp: meadowWebp, jpg: meadowJpg, lqip: meadowLqip },
   forge: { webp: forgeWebp, jpg: forgeJpg, lqip: forgeLqip },
 } as const;
@@ -65,7 +69,8 @@ export function Backplate({ variant }: BackplateProps) {
           onLoad={() => setLoaded(true)}
           className="aur-drift absolute inset-0 h-full w-full object-cover"
           style={{
-            objectPosition: variant === "meadow" ? "center bottom" : "center 62%",
+            objectPosition:
+              variant === "meadow" || variant === "hero" ? "center bottom" : "center 62%",
             opacity: loaded ? 1 : 0,
             transition: "opacity var(--dur-slow) var(--ease-standard)",
           }}

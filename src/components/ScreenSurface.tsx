@@ -27,7 +27,9 @@ export function ScreenSurface({ children, backplate, labelledBy }: ScreenSurface
       ? "var(--veil-forge)"
       : backplate === "meadow"
         ? "var(--veil-meadow)"
-        : undefined;
+        : backplate === "hero"
+          ? "var(--veil-hero)"
+          : undefined;
 
   return (
     <div
@@ -39,8 +41,8 @@ export function ScreenSurface({ children, backplate, labelledBy }: ScreenSurface
 
       {/* Forge sanctuary: approved analog bloom as a restrained horizon glow. */}
       {backplate === "forge" && (
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-[22%] flex justify-center">
-          <BloomLayer opacity={0.14} className="aur-halo-slow h-64 w-[130%] max-w-none" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-[20%] flex justify-center">
+          <BloomLayer opacity={0.24} className="aur-halo-slow h-72 w-[140%] max-w-none" />
         </div>
       )}
 
