@@ -1,65 +1,70 @@
 # AURELIS — NEXT SESSION BRIEF (resume here)
 
-Rewritten 2026-07-25 (session 2). Read this first, then `02_strategy/00_INDEX.md`, then `03_assets/16_asset-groups-9-12-approved-manifest.md`. This supersedes the previous brief.
+Rewritten 2026-07-25 (session 2, second half). Read this first, then `02_strategy/00_INDEX.md`. Supersedes the previous brief.
 
 ---
 
 ## 0. Where things stand
 
-**Repo:** `icodewithvibes/aurelis` (PRIVATE, Pages disabled, owner-only). `gh` is at `"C:\Program Files\GitHub CLI\gh.exe"` — **not on PATH**, call by full path.
+**Repo:** `icodewithvibes/aurelis` (PRIVATE, Pages disabled, owner-only). `gh` is at `"C:\Program Files\GitHub CLI\gh.exe"` — **not on PATH**.
 
-**PowerShell gotchas:** `<` and `>` in a here-string break `git commit -m` — write the message to a file and use `git commit -F`. Multi-part `-q` jq strings also mangle; query one field at a time.
+**PowerShell gotchas:** `<` and `>` in a here-string break `git commit -m` — write the message to a file and use `git commit -F`. Multi-part `-q` jq strings mangle too.
 
-**Merge state:**
-- PR **#7** (Stage 1) and **#8** (Stage 2) are **MERGED**.
-- `main` contains Stage 1 only — **#8 merged into `frontend-v1/stage-1-app-shell`, not into `main`**, because GitHub did not retarget it. `frontend-v1/stage-1-app-shell` now holds Stage 1 + Stage 2.
-- PR **#9** (Stage 3 visual) is still **OPEN**, based on `frontend-v1/stage-2-core-workflows`.
-- **To finish the stack:** merge #9 into `frontend-v1/stage-2-core-workflows`, then open one PR from `frontend-v1/stage-2-core-workflows` → `main` (it carries Stage 1+2+3), then retarget this branch.
-- Working branch: `frontend-v1/stage-3-proof-forge-and-visual-assets`, tip `8e5e9e3`.
+**Merge state — one trap:**
+- PR **#7** (Stage 1) and **#8** (Stage 2) are **MERGED**, but #8 landed in `frontend-v1/stage-1-app-shell`, **not `main`** — GitHub only retargets a stacked PR when its base branch is deleted, and it wasn't. `main` still contains Stage 1 only.
+- PR **#9** is still **OPEN**, based on `frontend-v1/stage-2-core-workflows`.
+- **To finish:** merge #9 into `frontend-v1/stage-2-core-workflows`, then open ONE PR from `frontend-v1/stage-2-core-workflows` → `main` (it carries Stage 1+2+3), then retarget this branch.
+- Working branch `frontend-v1/stage-3-proof-forge-and-visual-assets`, tip `7db3df6`.
 
-**Toolchain:** Node 24, Vite 6 + React 18 + TS strict + Tailwind v4 + Framer Motion + Zustand + Dexie + Vitest. **95 tests pass**, typecheck and lint clean. Python 3.14 + Pillow for all image compression.
+**Toolchain:** Node 24, Vite 6 + React 18 + TS strict + Tailwind v4 + Framer Motion + Zustand + Dexie + Vitest. **179 tests pass**, typecheck and lint clean.
 
-**Dev server:** `.claude/launch.json` has `autoPort: true`, but Vite ignores the assigned port and picks its own (5174 when 5173 is taken) — read `preview_logs` for the real URL, then `navigate` there. Hash routing: set `location.hash`, don't navigate to `/#/path`.
+**Dev server:** Vite ignores the harness-assigned port and picks its own — read `preview_logs` for the real URL. Hash routing: set `location.hash`, don't navigate to `/#/path`. Note each localhost **port is its own origin, so each has its own IndexedDB** — data from one port won't appear on another.
 
-**Credits:** ~**381** remaining (147 spent this session on 21 GPT Image 2 renders).
+**Credits:** ~**381** (147 spent on 21 GPT Image 2 renders; no renders since).
 
 ---
 
-## 1. What was built this session
+## 1. STAGE 3 IS COMPLETE
 
-**Assets** (all GPT Image 2 2k/high — see manifest 16 for the full table):
-- **8-scene time-of-day hero cycle**: two scenes per band (dawn/day/dusk/night), one back-facing and one facing the viewer in the M8 register. The approved Chrome Rider keeps a dusk slot.
-- **Nav icon set regenerated** as flat monoline glyphs (sun/barbell/anvil/laurel/gear), replacing the rejected glossy raster set.
-- **App icon**: armoured gauntlet gripping a barbell → PWA 192/512/maskable, apple-touch, favicon. Installable via `public/manifest.webmanifest`.
-- **Chrome Crest L1–L7** engraved medallions, one silhouette with additive detail. L2–L4 were re-rendered so the early tiers are actually distinguishable.
+All four items in `docs/stage-3-product-and-ux-plan.md` §5 are built, plus editing.
 
-**Code:**
-- `lib/timeOfDay` + `design/heroes` + `useTimeBand`: deterministic per-day scene selection, re-resolves at band boundaries and on tab focus, empty bands fall back to the Chrome Rider.
-- `lib/schedule`: weekday → split-day mapping (Mon/Wed/Fri → Push A/Pull A/Legs A). Splits with more days than weekly slots rotate forward each week, phased from the import week. **Pure function of the date — no stored pointer, no drift, no migration.** (The brief's original `nextDayPointer` idea was deliberately not used; revisit only if "missing a day shouldn't skip that day" turns out to matter.)
-- Today leads with one action; rest days get a calm state; both show "Next: <day>, <when>". Train tags today and next.
-- **Proof engine** (`features/proof/`): `resolveDayStatus`, `computeStreak`, `computeBestStreak`, `weekCompletion`, `countKeptDays`, Epley `est1RM`, PR detection. All pure folds over the event log — nothing derived is stored as truth.
-- `recordProof()` persists session status, PRs, proof events, records and crest level **before** the reveal animation.
-- `CompletionReveal`: 550 ms edge-light trace, prismatic glint, "Proof recorded — N sessions kept", 900 ms flourish on a tier crossing; skippable, reduced-motion safe.
-- Proof screen rebuilt on real data: tier, exact count, current/best run, week completion, all-time totals, timeline.
+**1. Proof engine + surface + completion reveal**
+- `features/proof/engine.ts` — pure folds: `resolveDayStatus`, `computeStreak`, `computeBestStreak`, `weekCompletion`, `countKeptDays`, Epley `est1RM`, PR detection. Nothing derived is stored as truth.
+- `recordProof()` persists session status, PRs, events, records and crest level **before** the reveal plays.
+- `CompletionReveal` — 550 ms edge-light trace, prismatic glint, 900 ms flourish on a tier crossing, skippable, reduced-motion safe.
+- Proof screen: tier, exact count, current/best run, week completion, all-time totals, timeline.
+
+**2. Beginner logger UX** — was already delivered (prefilled reps, weight-first, RPE behind "Advanced details", ghost defaults, units, rest timer).
+
+**3. Typography** — no component declares a font family inline. New `.aur-heading`; `.aur-label` and `.aur-metric` replace the ad-hoc patterns. Verified: Fraunces 36/470 display, Fraunces 18.4/440 date-context, Inter 11 labels, IBM Plex Mono metrics, Inter 16 body.
+
+**4. Forge engine + safety** (`features/forge/`, per `02_strategy/02` exactly)
+- `route() → safetyScreen() → generateResponse()`. `generateResponse` is the only AI-swappable unit; the safety screen can't be bypassed.
+- Seven states × three variants, `hash(stateKey + localDate + note) % 3`. No randomness anywhere.
+- Voice rules are **enforced by tests**: the 12/24/16 word budget and a forbidden-lexicon check.
+- Safety: four categories, curated lexicon, word-boundary matching, and **deliberately narrow negation** — only short symptom words ("not suicidal", "no pain") can be cancelled; multi-word phrases that carry their own negation ("i dont want to be here anymore") are never cancellable. A flagged note gets no task, no time box, gentle tone, and can never become a commitment. US/MA copy (988 / 911 / a trusted person), seeded into settings. The UI states plainly it is not a diagnosis.
+- Daily commitments feed the streak: kept counts as a kept day, open doesn't, skipped never becomes an unmet obligation.
+
+**Plus: editable sessions with deterministic replay.** `replayDerivedState()` rebuilds the PR table and its events from the log in order, then the records row, so a fat-fingered 225 that was really 125 cannot leave a personal best behind. Today's primary action on a kept day opens the recorded session for review/edit.
 
 ---
 
 ## 2. NOT built — pick up here
 
-1. **Forge deterministic engine + safety** (`02_strategy/02`) — the last big Stage 3 item. Seven states → template families selected by `hash(stateKey+localDate+note) % variants`; **safety rails run FIRST**; US/MA 988/911 copy. The plan says *do not implement the crisis UI until reviewed* — confirm with Yuriel before writing it. Daily commitments are already seamed into `DayFacts` (`commitmentSet` / `commitmentKept`) and stay inert until this lands; wire `totalCommitmentsCompleted` at the same time.
-2. **Split editing** — reorder days, rename, edit exercises after import. Item 5 of the old brief's split-logic list; the only part not delivered.
-3. **Session editing + replay** — a completed session is meant to stay editable, with streak/PR/records recomputed. The engine already supports it (pure folds); the UI does not exist.
-4. **Stage 4 backlog** (highest value first): exercise history & progress chart, PR timeline surface, plate calculator, warm-up suggestions, supersets, per-exercise + session notes, JSON export/import backup, weekly review, body-weight log, rest-timer presets + haptics, quick-add exercise mid-session, wire the Settings units toggle (still read-only).
+1. **Split editing** — reorder days, rename, edit exercises after import. Currently import-only. The last unbuilt item from the old split-logic list.
+2. **Notes** — still explicitly out of scope in the plan; confirm before building.
+3. **Stage 4 backlog** (highest value first): exercise history & progress chart, PR timeline surface, plate calculator, warm-up suggestions, supersets/circuits, per-exercise + session notes, JSON export/import backup, weekly review, body-weight log, rest-timer presets + haptics, quick-add exercise mid-session, wire the Settings units toggle (still read-only).
+4. **Worth a look:** the Proof timeline shows the last 50 events with no paging, and `collectDayFacts` walks every day since the first activity on each load — both are fine now and would want attention with a year of data.
 
 ---
 
 ## 3. Standing rules (unchanged)
 
-- Local-only. No backend, accounts, analytics, sync, or deploy. PWA install is fine; a service worker is not yet in scope.
-- Images are always optional: solid CSS fallback, Save-Data skips rasters, LQIP blur-up, reduced-motion static.
+- Local-only. No backend, accounts, analytics, sync, or deploy. PWA install works; no service worker yet.
+- Images always optional: solid CSS fallback, Save-Data skips rasters, LQIP blur-up, reduced-motion static.
 - 44 px targets, no 390 px overflow, one-handed iPhone.
 - **`01_references/` and `03_assets/candidates/` are git-ignored — never commit, never redistribute.** Only compressed approved exports ship.
-- Asset model policy: **`gpt_image_2` at 2k/high** for everything (~7 credits). Max **8 concurrent jobs**; renders take 2–8 min.
-- Prompt recipe that works: name the exact qualities to borrow, state an explicit compositional zone plan, name specific materials, and list strict exclusions (always including `no watermark, no reversed text`). For emblems add "flat centred, orthographic, generous margin, must read at 48 px".
+- Asset policy: **`gpt_image_2` at 2k/high** (~7 credits). Max **8 concurrent jobs**; 2–8 min each. Review candidates with Yuriel **before** compressing or committing.
+- Prompt recipe: name the exact qualities to borrow, give an explicit compositional zone plan, name specific materials, list strict exclusions (always `no watermark, no reversed text`). For emblems add "flat centred, orthographic, generous margin, must read at 48 px".
 - Berserk is an **abstract register only** — never a character, armour design, panel composition, or the name/logo.
-- Review candidates with Yuriel **before** compressing or committing.
+- **Safety copy is binding.** Any change to `features/forge/safety/` or the crisis copy should be reviewed against `02_strategy/02` §4–5, never loosened casually, and the negation rule in `lexicon.ts` must stay narrow.
