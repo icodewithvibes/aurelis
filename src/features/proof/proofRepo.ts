@@ -153,6 +153,85 @@ export async function refreshRecords(today = localDay()): Promise<void> {
   });
 }
 
+/**
+ * Deterministic replay (04_data-model §4) — rebuild everything derived
+ * from the log, in order, as if it were being recorded for the first
+ * time. This is what makes editing history safe: a corrected session
+ * cannot leave behind a PR that never happened.
+ *
+ * Rebuilt: the `prs` table and its proof events, then the records row.
+ * Left alone: workout, forge and recovery events — those record that
+ * something *happened*, which an edit does not undo.
+ */
+export async function replayDerivedState(today = localDay()): Promise<void> {
+  const now = nowMs();
+  const [sessions, allLogs, events] = await Promise.all([
+    db.sessions.toArray(),
+    db.setLogs.toArray(),
+    db.proofEvents.toArray(),
+  ]);
+
+  const logsBySession = new Map<string, typeof allLogs>();
+  for (const l of allLogs) {
+    if (l.deletedAt) continue;
+    const list = logsBySession.get(l.sessionId) ?? [];
+    list.push(l);
+    logsBySession.set(l.sessionId, list);
+  }
+
+  const kept = sessions
+    .filter((s) => !s.deletedAt && s.status === "completed" && s.qualified)
+    .sort((a, b) => (a.completedAt ?? a.startedAt) - (b.completedAt ?? b.startedAt));
+
+  await db.prs.clear();
+  for (const e of events) {
+    if (e.type === "pr") await db.proofEvents.delete(e.id);
+  }
+
+  const standing = new Map<string, number>();
+  for (const session of kept) {
+    const logs = logsBySession.get(session.id) ?? [];
+    const beaten = newPRs(
+      prCandidates(
+        logs.map((l) => ({
+          exerciseName: l.exerciseName,
+          weight: l.weight,
+          reps: l.reps,
+          done: l.done,
+        })),
+      ),
+      standing,
+    );
+
+    for (const pr of beaten) {
+      standing.set(`${pr.exerciseName}|${pr.metric}`, pr.value);
+      await db.prs.put({
+        id: newId(),
+        exerciseName: pr.exerciseName,
+        metric: pr.metric,
+        value: pr.value,
+        dateLocal: session.dateLocal,
+        sessionId: session.id,
+        updatedAt: now,
+        deletedAt: null,
+      });
+      await db.proofEvents.put({
+        id: newId(),
+        dateLocal: session.dateLocal,
+        type: "pr",
+        refId: session.id,
+        title: `${pr.exerciseName} — ${PR_LABEL[pr.metric]}`,
+        summary: `${pr.value}`,
+        createdAt: session.completedAt ?? session.startedAt,
+        updatedAt: now,
+        deletedAt: null,
+      });
+    }
+  }
+
+  await refreshRecords(today);
+}
+
 export interface ProofResult {
   keptCount: number;
   streak: number;

@@ -94,9 +94,16 @@ export function Today() {
                   {primary.exercises.length} exercises
                   {primaryDone ? " · kept today ✓" : ""}
                 </p>
-                <button type="button" onClick={() => start(primary)} className="aur-touch mt-4 w-full rounded-full text-body font-medium"
+                <button
+                  type="button"
+                  onClick={() =>
+                    primaryDone && primaryState
+                      ? nav(`/session/${primaryState.id}`)
+                      : void start(primary)
+                  }
+                  className="aur-touch mt-4 w-full rounded-full text-body font-medium"
                   style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.875rem 1.5rem" }}>
-                  {primaryDone ? "Train it again" : primaryState ? `Resume ${primary.name}` : `Start ${primary.name}`}
+                  {primaryDone ? "Review or edit today's session" : primaryState ? `Resume ${primary.name}` : `Start ${primary.name}`}
                 </button>
               </>
             )}

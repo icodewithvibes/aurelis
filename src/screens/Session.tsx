@@ -18,7 +18,7 @@ import {
   type SessionSnapshot,
   type SessionSnapshotExercise,
 } from "../data/repositories/sessionRepo";
-import { recordProof, type ProofResult } from "../features/proof/proofRepo";
+import { recordProof, replayDerivedState, type ProofResult } from "../features/proof/proofRepo";
 import { crestStateForSessions } from "../lib/crest";
 import { getSettings } from "../data/repositories/settingsRepo";
 
@@ -54,6 +54,9 @@ export function Session() {
   const [ready, setReady] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [result, setResult] = useState<ProofResult | null>(null);
+  /** Already recorded: this visit is an edit, not a first completion. */
+  const [recorded, setRecorded] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -93,6 +96,7 @@ export function Session() {
       setSnapshot(s.snapshot);
       setGrid(g);
       setGhosts(gh);
+      setRecorded(s.session.status === "completed" || s.session.status === "partial");
       setReady(true);
     })();
     return () => {
@@ -123,6 +127,7 @@ export function Session() {
     const next = { ...cell(k), ...patch };
     setGrid((g) => ({ ...g, [k]: next }));
     void persist(exKey, exName, i, next);
+    if (recorded) setSaved(false); // the replay is now out of date
     return next;
   };
 
@@ -148,6 +153,25 @@ export function Session() {
     }
   }
 
+  /**
+   * Editing an already-recorded session. Set logs are saved as you type,
+   * so this only has to replay everything derived from them — the PR
+   * table and the records row — leaving no claim the log no longer
+   * supports. No second reveal: nothing new was completed.
+   */
+  async function onSaveEdits() {
+    if (finishing) return;
+    setFinishing(true);
+    try {
+      await replayDerivedState();
+      setSaved(true);
+    } catch (err) {
+      console.error("[aurelis] could not replay derived state", err);
+    } finally {
+      setFinishing(false);
+    }
+  }
+
   if (ready && !snapshot) {
     return (
       <ScreenSurface labelledBy="session-heading">
@@ -170,7 +194,7 @@ export function Session() {
         />
       )}
       <header className="pt-2">
-        <p className="aur-label m-0">Logging · {units}</p>
+        <p className="aur-label m-0">{recorded ? "Recorded · editing" : "Logging"} · {units}</p>
         <h1 id="session-heading" className="aur-section">{snapshot?.dayName}</h1>
       </header>
 
@@ -278,23 +302,56 @@ export function Session() {
       </div>
 
       <div className="mt-5 flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={() => onFinish()}
-          disabled={finishing}
-          className="aur-touch w-full rounded-full text-body font-medium"
-          style={{
-            background: qualified ? "var(--aur-chrome-50)" : "rgba(210,217,230,0.16)",
-            color: qualified ? "var(--aur-night)" : "var(--aur-ink)",
-            border: "none", padding: "0.875rem 1.5rem",
-            opacity: finishing ? 0.6 : 1,
-          }}
-        >
-          {finishing ? "Recording proof…" : qualified ? "Record proof" : "Record proof — count it"}
-        </button>
-        <p className="aur-meta m-0 text-center">
-          Saved as you go. Blank sets are simply skipped. Edit anytime — your proof stays accurate.
-        </p>
+        {recorded ? (
+          <>
+            <button
+              type="button"
+              onClick={() => void onSaveEdits()}
+              disabled={finishing}
+              className="aur-touch w-full rounded-full text-body font-medium"
+              style={{
+                background: saved ? "rgba(210,217,230,0.16)" : "var(--aur-chrome-50)",
+                color: saved ? "var(--aur-ink)" : "var(--aur-night)",
+                border: "none", padding: "0.875rem 1.5rem",
+                opacity: finishing ? 0.6 : 1,
+              }}
+            >
+              {finishing ? "Recalculating…" : saved ? "Proof updated ✓" : "Save changes"}
+            </button>
+            <button
+              type="button"
+              onClick={() => nav("/proof")}
+              className="aur-touch w-full rounded-full text-body"
+              style={{ background: "transparent", color: "var(--aur-ink-muted)", border: "none" }}
+            >
+              Back to Proof
+            </button>
+            <p className="aur-meta m-0 text-center">
+              This session already counts. Saving recalculates your records from the log, so
+              nothing claims a best you no longer have.
+            </p>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => onFinish()}
+              disabled={finishing}
+              className="aur-touch w-full rounded-full text-body font-medium"
+              style={{
+                background: qualified ? "var(--aur-chrome-50)" : "rgba(210,217,230,0.16)",
+                color: qualified ? "var(--aur-night)" : "var(--aur-ink)",
+                border: "none", padding: "0.875rem 1.5rem",
+                opacity: finishing ? 0.6 : 1,
+              }}
+            >
+              {finishing ? "Recording proof…" : qualified ? "Record proof" : "Record proof — count it"}
+            </button>
+            <p className="aur-meta m-0 text-center">
+              Saved as you go. Blank sets are simply skipped. Edit anytime — your proof stays accurate.
+            </p>
+          </>
+        )}
       </div>
     </ScreenSurface>
   );
