@@ -11,6 +11,8 @@ import { Train } from "./screens/Train";
 import { Forge } from "./screens/Forge";
 import { Proof } from "./screens/Proof";
 import { Settings } from "./screens/Settings";
+import { Import } from "./screens/Import";
+import { Session } from "./screens/Session";
 
 export function App() {
   return (
@@ -36,6 +38,8 @@ export function App() {
           <Route path="/" element={<Navigate to="/today" replace />} />
           <Route path="/today" element={<Today />} />
           <Route path="/train" element={<Train />} />
+          <Route path="/import" element={<Import />} />
+          <Route path="/session/:id" element={<Session />} />
           <Route path="/forge" element={<Forge />} />
           <Route path="/proof" element={<Proof />} />
           <Route path="/settings" element={<Settings />} />
