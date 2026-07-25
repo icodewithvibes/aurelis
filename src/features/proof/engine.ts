@@ -121,6 +121,13 @@ export function countKeptDays(days: readonly DayFacts[], today: string): number 
 
 export type PrMetric = "topWeight" | "est1RM" | "repPR";
 
+/** Plain-language names — a beginner should not have to decode "1RM". */
+export const PR_LABEL: Record<PrMetric, string> = {
+  topWeight: "heaviest set",
+  est1RM: "estimated 1RM",
+  repPR: "most reps",
+};
+
 export interface SetResult {
   exerciseName: string;
   weight?: number;

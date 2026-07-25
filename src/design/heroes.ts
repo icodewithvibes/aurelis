@@ -24,6 +24,18 @@ import dayLqip from "./assets/backplates/hero_day_lqip.webp";
 import nightWebp from "./assets/backplates/hero_night_1080x1910.webp";
 import nightJpg from "./assets/backplates/hero_night_1080x1910.jpg";
 import nightLqip from "./assets/backplates/hero_night_lqip.webp";
+import dawnFrontWebp from "./assets/backplates/hero_dawn_front_1080x1910.webp";
+import dawnFrontJpg from "./assets/backplates/hero_dawn_front_1080x1910.jpg";
+import dawnFrontLqip from "./assets/backplates/hero_dawn_front_lqip.webp";
+import dayFrontWebp from "./assets/backplates/hero_day_front_1080x1910.webp";
+import dayFrontJpg from "./assets/backplates/hero_day_front_1080x1910.jpg";
+import dayFrontLqip from "./assets/backplates/hero_day_front_lqip.webp";
+import duskFrontWebp from "./assets/backplates/hero_dusk_front_1080x1910.webp";
+import duskFrontJpg from "./assets/backplates/hero_dusk_front_1080x1910.jpg";
+import duskFrontLqip from "./assets/backplates/hero_dusk_front_lqip.webp";
+import nightFrontWebp from "./assets/backplates/hero_night_front_1080x1910.webp";
+import nightFrontJpg from "./assets/backplates/hero_night_front_1080x1910.jpg";
+import nightFrontLqip from "./assets/backplates/hero_night_front_lqip.webp";
 
 export interface HeroScene {
   /** Stable id — used by tests and the asset manifests. */
@@ -78,14 +90,32 @@ const nightKnight: HeroScene = {
 };
 
 /**
+ * Approved Group 9b — the knight facing the viewer, sword point-down,
+ * prismatic flare across the plate. One per band, alternating daily with
+ * the scene above.
+ */
+const front = (
+  id: string,
+  band: TimeBand,
+  webp: string,
+  jpg: string,
+  lqip: string,
+): HeroScene => ({ id, band, webp, jpg, lqip, objectPosition: "center bottom" });
+
+const dawnFacing = front("knight-dawn-facing", "dawn", dawnFrontWebp, dawnFrontJpg, dawnFrontLqip);
+const dayFacing = front("knight-day-facing", "day", dayFrontWebp, dayFrontJpg, dayFrontLqip);
+const duskFacing = front("knight-dusk-facing", "dusk", duskFrontWebp, duskFrontJpg, duskFrontLqip);
+const nightFacing = front("knight-night-facing", "night", nightFrontWebp, nightFrontJpg, nightFrontLqip);
+
+/**
  * Scenes per band. A band with more than one scene rotates
  * deterministically by day; an empty band falls back to the Chrome Rider.
  */
 export const HERO_SCENES: Record<TimeBand, HeroScene[]> = {
-  dawn: [dawnKnight],
-  day: [dayKnight],
-  dusk: [chromeRider],
-  night: [nightKnight],
+  dawn: [dawnKnight, dawnFacing],
+  day: [dayKnight, dayFacing],
+  dusk: [chromeRider, duskFacing],
+  night: [nightKnight, nightFacing],
 };
 
 export const DEFAULT_HERO = chromeRider;

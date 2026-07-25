@@ -17,6 +17,7 @@ import { CrestEmblem } from "./CrestEmblem";
 import { PrismaticGlint } from "./PrismaticGlint";
 import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import type { ProofResult } from "../features/proof/proofRepo";
+import { PR_LABEL } from "../features/proof/engine";
 
 const REVEAL_MS = 550;
 const LEVEL_UP_MS = 900;
@@ -116,7 +117,7 @@ export function CompletionReveal({ result, crestLevel, onDone }: CompletionRevea
                 className="aur-metric text-small"
                 style={{ color: "var(--aur-ink-muted)" }}
               >
-                {pr.exerciseName} — new best {pr.value}
+                {pr.exerciseName} — {PR_LABEL[pr.metric]} {pr.value}
               </li>
             ))}
           </ul>

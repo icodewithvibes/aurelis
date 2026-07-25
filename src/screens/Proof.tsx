@@ -40,6 +40,7 @@ export function Proof() {
   };
 
   const week = data?.week;
+  const owed = !!week && week.obligations > 0;
   const weekPct = week ? Math.round(week.ratio * 100) : 0;
 
   return (
@@ -70,27 +71,31 @@ export function Proof() {
             <div className="flex items-baseline justify-between gap-3">
               <p className="aur-label m-0">This week</p>
               <span className="aur-metric text-small" style={{ color: "var(--aur-ink-muted)" }}>
-                {week?.kept ?? 0}/{week?.obligations ?? 0} kept
+                {owed
+                  ? `${week!.kept}/${week!.obligations} kept`
+                  : `${week?.kept ?? 0} kept`}
               </span>
             </div>
-            <div
-              className="relative mt-2 h-[3px] overflow-hidden rounded-full"
-              role="img"
-              aria-label={`${weekPct}% of this week's scheduled sessions kept`}
-              style={{ background: "rgba(210,217,230,0.14)" }}
-            >
+            {owed && (
               <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${weekPct}%`,
-                  background: "linear-gradient(90deg, var(--aur-cobalt-500), var(--aur-silver-200))",
-                }}
-              />
-            </div>
+                className="relative mt-2 h-[3px] overflow-hidden rounded-full"
+                role="img"
+                aria-label={`${weekPct}% of this week's scheduled sessions kept`}
+                style={{ background: "rgba(210,217,230,0.14)" }}
+              >
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${weekPct}%`,
+                    background: "linear-gradient(90deg, var(--aur-cobalt-500), var(--aur-silver-200))",
+                  }}
+                />
+              </div>
+            )}
             <p className="aur-meta m-0 mt-2">
-              {week && week.obligations === 0
-                ? "Nothing scheduled this week yet."
-                : "Counts only days already owed — future days aren't held against you."}
+              {owed
+                ? "Counts only days already owed — future days aren't held against you."
+                : "Nothing was owed this week. Anything kept is a bonus."}
             </p>
           </motion.section>
 

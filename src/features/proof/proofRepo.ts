@@ -21,6 +21,7 @@ import {
   countKeptDays,
   newPRs,
   prCandidates,
+  PR_LABEL,
   weekCompletion,
   type DayFacts,
   type PrCandidate,
@@ -122,12 +123,6 @@ export interface ProofResult {
   prs: PrCandidate[];
 }
 
-const PR_LABEL: Record<PrCandidate["metric"], string> = {
-  topWeight: "heaviest set",
-  est1RM: "estimated 1RM",
-  repPR: "most reps",
-};
-
 /**
  * Finish a session and persist every derived consequence — session
  * status, PRs, proof events, records, crest level — BEFORE the reveal
@@ -173,6 +168,7 @@ export async function recordProof(sessionId: string, qualified = true): Promise<
     : [];
 
   const dayName = (session.splitDaySnapshot as { dayName?: string } | null)?.dayName ?? "Session";
+  const doneSets = logs.filter((l) => l.done).length;
   const events: ProofEventRow[] = [];
 
   for (const pr of prs) {
@@ -206,7 +202,7 @@ export async function recordProof(sessionId: string, qualified = true): Promise<
       type: "workout",
       refId: sessionId,
       title: dayName,
-      summary: `${logs.filter((l) => l.done).length} sets logged`,
+      summary: `${doneSets} ${doneSets === 1 ? "set" : "sets"} logged`,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
@@ -228,13 +224,19 @@ export async function recordProof(sessionId: string, qualified = true): Promise<
       dateLocal: today,
       type: "crest_levelup",
       title: crest.name,
-      summary: `${keptCount} sessions kept`,
+      summary: `${keptCount} ${keptCount === 1 ? "session" : "sessions"} kept`,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
     });
   }
 
+  // Stamp descending timestamps so the timeline keeps this deliberate
+  // order (session, then its PRs, then the tier crossing) instead of
+  // relying on an unstable sort of identical milliseconds.
+  events.forEach((e, i) => {
+    e.createdAt = now - i;
+  });
   for (const e of events) await db.proofEvents.put(e);
 
   await db.records.put({
