@@ -1,10 +1,12 @@
 /**
- * Today — real Stage 2 home. Reads the active split from Dexie:
+ * Today — real Stage 2/3 home. Reads the active split from Dexie and
+ * leads with ONE clear action:
  * - no split → invitation to import
- * - split + training day → today's day list to start logging
- * - split + rest day → calm rest state
- * Meadow backplate (approved Group 2) is allowed here ONLY.
+ * - training day → today's scheduled day, primary; everything else demoted
+ * - rest day → calm honored-rest state + what comes next
+ * The time-of-day hero backplate is allowed here ONLY.
  */
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import { useNavigate } from "react-router-dom";
@@ -15,10 +17,13 @@ import { loadHome } from "../data/access";
 import { startSession } from "../data/repositories/sessionRepo";
 import type { DayWithExercises } from "../data/repositories/splitRepo";
 
+const LABEL_CLASS = "m-0 text-[0.6875rem] uppercase tracking-[0.18em]";
+
 export function Today() {
   const nav = useNavigate();
   const { data, loading } = useAsync(loadHome);
   const reduce = useMotionDisabled();
+  const [showOthers, setShowOthers] = useState(false);
   const stagger = (i: number) =>
     reduce ? {} : {
       initial: { opacity: 0, y: 10 },
@@ -30,6 +35,11 @@ export function Today() {
     const sid = await startSession(day);
     nav(`/session/${sid}`);
   }
+
+  const primary = data?.todayDay ?? null;
+  const primaryState = primary ? data?.todaySessionByDay[primary.id] : undefined;
+  const primaryDone = primaryState?.status === "completed";
+  const others = data?.otherDays ?? [];
 
   return (
     <ScreenSurface backplate="hero" labelledBy="today-heading">
@@ -53,7 +63,7 @@ export function Today() {
 
         {!loading && data && !data.hasSplit && (
           <>
-            <p className="m-0 text-[0.6875rem] uppercase tracking-[0.18em]" style={{ color: "var(--aur-ink-muted)" }}>No split yet</p>
+            <p className={LABEL_CLASS} style={{ color: "var(--aur-ink-muted)" }}>No split yet</p>
             <h2 className="m-0 mt-1" style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-h1)", fontWeight: 500 }}>Import your program</h2>
             <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
               Paste a split in AURELIS Split Format to know exactly what to train.
@@ -65,38 +75,76 @@ export function Today() {
           </>
         )}
 
-        {!loading && data && data.hasSplit && (
+        {!loading && data?.hasSplit && (
           <>
-            <div className="flex items-center justify-between">
-              <p className="m-0 text-[0.6875rem] uppercase tracking-[0.18em]" style={{ color: "var(--aur-ink-muted)" }}>
-                {data.isTrainingDay ? "Scheduled today" : "Your split"}
+            <div className="flex items-center justify-between gap-3">
+              <p className={LABEL_CLASS} style={{ color: "var(--aur-ink-muted)" }}>
+                {primary ? "Today" : "Rest day"}
               </p>
-              <span className="font-mono text-[0.6875rem]" style={{ color: "var(--aur-ink-muted)" }}>{data.splitName}</span>
+              <span className="truncate font-mono text-[0.6875rem]" style={{ color: "var(--aur-ink-muted)" }}>{data.splitName}</span>
             </div>
-            <ul className="m-0 mt-3 flex list-none flex-col gap-2 p-0">
-              {data.days.map((d) => {
-                const done = data.todaySessionByDay[d.id]?.status === "completed";
-                return (
-                  <li key={d.id}>
-                    <button type="button" onClick={() => start(d)}
-                      className="aur-touch flex w-full items-center justify-between rounded-xl px-4 py-3 text-left"
-                      style={{ background: "rgba(210,217,230,0.06)", border: "1px solid rgba(210,217,230,0.1)", color: "var(--aur-ink)" }}>
-                      <span>
-                        <span className="block font-medium">{d.name}</span>
-                        <span className="block text-small" style={{ color: "var(--aur-ink-muted)" }}>{d.exercises.length} exercises</span>
-                      </span>
-                      <span className="font-mono text-small" style={{ color: done ? "var(--aur-success)" : "var(--aur-ink-muted)" }}>
-                        {done ? "kept ✓" : data.todaySessionByDay[d.id] ? "resume" : "start"}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-            {!data.isTrainingDay && (
-              <p className="m-0 mt-3 text-[0.6875rem]" style={{ color: "var(--aur-ink-faint)" }}>
-                Not scheduled today — training any day still counts.
+
+            {/* PRIMARY — the single action for today. */}
+            {primary && (
+              <>
+                <h2 className="m-0 mt-1" style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-h1)", fontWeight: 500 }}>
+                  {primary.name}
+                </h2>
+                <p className="m-0 mt-1 text-small" style={{ color: "var(--aur-ink-muted)" }}>
+                  {primary.exercises.length} exercises
+                  {primaryDone ? " · kept today ✓" : ""}
+                </p>
+                <button type="button" onClick={() => start(primary)} className="aur-touch mt-4 w-full rounded-full text-body font-medium"
+                  style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.875rem 1.5rem" }}>
+                  {primaryDone ? "Train it again" : primaryState ? `Resume ${primary.name}` : `Start ${primary.name}`}
+                </button>
+              </>
+            )}
+
+            {/* REST — calm, not a list of everything. */}
+            {!primary && (
+              <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
+                Nothing is scheduled today. Recovery is part of the work.
               </p>
+            )}
+
+            {data.nextUp && (
+              <p className="m-0 mt-3 text-small" style={{ color: "var(--aur-ink-faint)" }}>
+                Next: {data.nextUp.day.name}, {data.nextUp.label}
+              </p>
+            )}
+
+            {/* SECONDARY — everything else, folded away. */}
+            {others.length > 0 && (
+              <>
+                <button type="button" onClick={() => setShowOthers((v) => !v)} aria-expanded={showOthers}
+                  className="aur-touch mt-3 w-full rounded-full text-small"
+                  style={{ background: "transparent", color: "var(--aur-ink-muted)", border: "1px solid rgba(210,217,230,0.14)" }}>
+                  {showOthers ? "Hide other days" : primary ? "Or train something else" : "Train anyway"}
+                </button>
+                {showOthers && (
+                  <ul className="m-0 mt-3 flex list-none flex-col gap-2 p-0">
+                    {others.map((d) => {
+                      const s = data.todaySessionByDay[d.id];
+                      return (
+                        <li key={d.id}>
+                          <button type="button" onClick={() => start(d)}
+                            className="aur-touch flex w-full items-center justify-between rounded-xl px-4 py-3 text-left"
+                            style={{ background: "rgba(210,217,230,0.06)", border: "1px solid rgba(210,217,230,0.1)", color: "var(--aur-ink)" }}>
+                            <span>
+                              <span className="block font-medium">{d.name}</span>
+                              <span className="block text-small" style={{ color: "var(--aur-ink-muted)" }}>{d.exercises.length} exercises</span>
+                            </span>
+                            <span className="font-mono text-small" style={{ color: s?.status === "completed" ? "var(--aur-success)" : "var(--aur-ink-muted)" }}>
+                              {s?.status === "completed" ? "kept ✓" : s ? "resume" : "start"}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </>
             )}
           </>
         )}

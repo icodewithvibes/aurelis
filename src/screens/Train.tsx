@@ -57,7 +57,21 @@ export function Train() {
           {data.days.map((d) => (
             <motion.section key={d.id} {...rise} className="aur-chrome-surface p-4" aria-label={d.name}>
               <div className="flex items-center justify-between">
-                <h2 className="m-0" style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-h2)", fontWeight: 500 }}>{d.name}</h2>
+                <h2 className="m-0 flex items-baseline gap-2" style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-h2)", fontWeight: 500 }}>
+                  {d.name}
+                  {d.id === data.todayDay?.id && (
+                    <span className="rounded-full px-2 py-0.5 text-[0.625rem] uppercase tracking-[0.14em]"
+                      style={{ background: "rgba(210,217,230,0.12)", color: "var(--aur-ink-muted)", fontFamily: "var(--font-ui)" }}>
+                      Today
+                    </span>
+                  )}
+                  {d.id === data.nextUp?.day.id && d.id !== data.todayDay?.id && (
+                    <span className="rounded-full px-2 py-0.5 text-[0.625rem] uppercase tracking-[0.14em]"
+                      style={{ background: "rgba(210,217,230,0.06)", color: "var(--aur-ink-faint)", fontFamily: "var(--font-ui)" }}>
+                      {data.nextUp.label}
+                    </span>
+                  )}
+                </h2>
                 <button type="button" onClick={() => start(d)} className="aur-touch rounded-full px-4 text-small font-medium"
                   style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none" }}>
                   {data.todaySessionByDay[d.id] ? "Resume" : "Start"}

@@ -11,9 +11,14 @@
  * - Decorative only: alt="" + aria-hidden; never required for use.
  * - meadow → Today/onboarding surfaces ONLY.
  * - forge  → Forge surfaces ONLY.
+ * - hero   → Today. Resolved per time-of-day band (src/design/heroes),
+ *   so the scene follows dawn → day → dusk → night. Only the active
+ *   band's image is ever requested.
  */
 import { useState } from "react";
 import { saveDataRequested } from "../lib/media";
+import { heroForTime } from "../design/heroes";
+import { useTimeBand } from "../hooks/useTimeBand";
 
 import meadowWebp from "../design/assets/backplates/meadow_1080x1910.webp";
 import meadowJpg from "../design/assets/backplates/meadow_1080x1910.jpg";
@@ -21,32 +26,54 @@ import meadowLqip from "../design/assets/backplates/meadow_lqip.webp";
 import forgeWebp from "../design/assets/backplates/forge_1080x1910.webp";
 import forgeJpg from "../design/assets/backplates/forge_1080x1910.jpg";
 import forgeLqip from "../design/assets/backplates/forge_lqip.webp";
-import heroWebp from "../design/assets/backplates/hero_1080x1910.webp";
-import heroJpg from "../design/assets/backplates/hero_1080x1910.jpg";
-import heroLqip from "../design/assets/backplates/hero_lqip.webp";
 
-const SOURCES = {
-  hero: { webp: heroWebp, jpg: heroJpg, lqip: heroLqip },
-  meadow: { webp: meadowWebp, jpg: meadowJpg, lqip: meadowLqip },
-  forge: { webp: forgeWebp, jpg: forgeJpg, lqip: forgeLqip },
+interface PlateSource {
+  webp: string;
+  jpg: string;
+  lqip: string;
+  objectPosition: string;
+}
+
+const STATIC_SOURCES = {
+  meadow: {
+    webp: meadowWebp,
+    jpg: meadowJpg,
+    lqip: meadowLqip,
+    objectPosition: "center bottom",
+  },
+  forge: {
+    webp: forgeWebp,
+    jpg: forgeJpg,
+    lqip: forgeLqip,
+    objectPosition: "center 62%",
+  },
 } as const;
 
-export type BackplateVariant = keyof typeof SOURCES;
+export type BackplateVariant = "hero" | keyof typeof STATIC_SOURCES;
 
 interface BackplateProps {
   variant: BackplateVariant;
 }
 
 export function Backplate({ variant }: BackplateProps) {
-  const [loaded, setLoaded] = useState(false);
+  // Re-resolves the hero when the band turns over while the app is open.
+  const band = useTimeBand();
+  // Track *which* source finished so a band change fades in cleanly.
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
 
   // Save-Data: skip optional raster imagery entirely.
   if (saveDataRequested()) return null;
 
-  const src = SOURCES[variant];
+  const src: PlateSource = variant === "hero" ? heroForTime() : STATIC_SOURCES[variant];
+  const loaded = loadedSrc === src.jpg;
 
   return (
-    <div aria-hidden="true" className="absolute inset-0 overflow-hidden" data-backplate={variant}>
+    <div
+      aria-hidden="true"
+      className="absolute inset-0 overflow-hidden"
+      data-backplate={variant}
+      data-band={variant === "hero" ? band : undefined}
+    >
       {/* LQIP blur-up (inline-sized, ~0.1 KB) */}
       <img
         src={src.lqip}
@@ -60,17 +87,17 @@ export function Backplate({ variant }: BackplateProps) {
       <picture>
         <source srcSet={src.webp} type="image/webp" />
         <img
+          key={src.jpg}
           src={src.jpg}
           alt=""
           width={1080}
           height={1910}
           loading="lazy"
           decoding="async"
-          onLoad={() => setLoaded(true)}
+          onLoad={() => setLoadedSrc(src.jpg)}
           className="aur-drift absolute inset-0 h-full w-full object-cover"
           style={{
-            objectPosition:
-              variant === "meadow" || variant === "hero" ? "center bottom" : "center 62%",
+            objectPosition: src.objectPosition,
             opacity: loaded ? 1 : 0,
             transition: "opacity var(--dur-slow) var(--ease-standard)",
           }}
