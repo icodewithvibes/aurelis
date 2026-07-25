@@ -10,6 +10,8 @@ import { ScreenSurface } from "../components/ScreenSurface";
 import { SegmentedControl } from "../components/SegmentedControl";
 import { SCHEMA_VERSION, type ImageMode, type RpeMode, type ThemeName } from "../data/db";
 import { clearLocalData, REST_PRESETS } from "../data/repositories/settingsRepo";
+import { exportBackup, restoreBackupFromText } from "../features/backup/backupRepo";
+import { backupFilename, summarizeBackup } from "../features/backup/backup";
 import { useUiStore, type ReducedMotionSetting } from "../state/ui";
 
 const THEMES: { value: ThemeName; label: string; hint: string }[] = [
@@ -66,11 +68,42 @@ export function Settings() {
   const prefs = useUiStore();
   const [confirmClear, setConfirmClear] = useState(false);
   const [cleared, setCleared] = useState(false);
+  const [exported, setExported] = useState(false);
+  const [restoreMsg, setRestoreMsg] = useState<string | null>(null);
 
   async function doClear() {
     await clearLocalData();
     setCleared(true);
     setConfirmClear(false);
+  }
+
+  /** Hand the user a file. Nothing is transmitted — this is a local blob. */
+  async function doExport() {
+    const file = await exportBackup();
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(file, null, 2)], { type: "application/json" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = backupFilename();
+    a.click();
+    URL.revokeObjectURL(url);
+    setExported(true);
+  }
+
+  async function onPickRestore(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file
+    if (!file) return;
+
+    const result = await restoreBackupFromText(await file.text());
+    if (!result.ok) {
+      setRestoreMsg(result.error ?? "That backup could not be restored.");
+      return;
+    }
+    setRestoreMsg(`Restored ${summarizeBackup(result.counts ?? {})}. Reloading…`);
+    // A full reload is the honest way to re-hydrate every screen at once.
+    setTimeout(() => window.location.reload(), 900);
   }
 
   return (
@@ -175,6 +208,43 @@ export function Settings() {
           It opens full-screen with its own icon. Your data stays in this browser's local storage —
           installing does not upload anything.
         </p>
+      </Card>
+
+      <Card
+        title="Backup"
+        hint="Nothing is uploaded, so a lost browser profile is a lost history. Export a file you keep."
+      >
+        <button
+          type="button"
+          onClick={() => void doExport()}
+          className="aur-press aur-touch mt-3 w-full rounded-full text-body font-medium"
+          style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.875rem 1.5rem" }}
+        >
+          {exported ? "Exported ✓" : "Export a backup file"}
+        </button>
+
+        <label
+          className="aur-press aur-touch mt-2 block w-full rounded-full text-center text-body"
+          style={{ background: "var(--aur-glass-tint)", color: "var(--aur-ink)", border: "1px solid var(--aur-glass-rim)", padding: "0.875rem 1.5rem", cursor: "pointer" }}
+        >
+          Restore from a backup
+          <input
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            onChange={(e) => void onPickRestore(e)}
+          />
+        </label>
+
+        <p className="aur-meta m-0 mt-2">
+          Restoring <strong>replaces</strong> everything currently on this device — it does not
+          merge, because merging two histories would invent training that never happened.
+        </p>
+        {restoreMsg && (
+          <p className="m-0 mt-2 text-small" role="status" style={{ color: "var(--aur-ink)" }}>
+            {restoreMsg}
+          </p>
+        )}
       </Card>
 
       <Card title="Accessibility">
