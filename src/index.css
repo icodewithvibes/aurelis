@@ -36,8 +36,22 @@ body,
   height: 100%;
 }
 
+/* Decorative bleed (crest halos, bloom, the drifting backplate) is meant
+   to extend past its box. `clip` keeps that from producing a horizontal
+   scrollbar at 390px without turning these into scroll containers, which
+   `hidden` would do and which breaks sticky positioning. */
+html,
+#root {
+  overflow-x: clip;
+}
+
 body {
   margin: 0;
+  /* Decorative bleed — crest halos, bloom, the drifting backplate — is
+     meant to extend past its box. `clip` stops that from creating a
+     horizontal scrollbar at 390px WITHOUT making body a scroll
+     container, which `hidden` would do (breaking sticky positioning). */
+  overflow-x: clip;
   background: var(--aur-night);
   color: var(--aur-ink);
   font-family: var(--font-ui);

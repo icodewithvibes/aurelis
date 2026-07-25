@@ -9,12 +9,16 @@ import { useNavigate } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { useAsync } from "../hooks/useAsync";
 import { loadHome } from "../data/access";
+import { loadWeek } from "../features/planning/planningRepo";
+import { WeekStrip } from "../components/WeekStrip";
+import { STATUS_LABEL } from "../features/planning/week";
 import { startSession } from "../data/repositories/sessionRepo";
 import type { DayWithExercises } from "../data/repositories/splitRepo";
 
 export function Train() {
   const nav = useNavigate();
   const { data, loading } = useAsync(loadHome);
+  const { data: week } = useAsync(loadWeek);
   const reduce = useMotionDisabled();
   const rise = reduce ? {} : {
     initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 },
@@ -40,6 +44,29 @@ export function Train() {
       </motion.header>
 
       {loading && <p className="mt-6 text-body" style={{ color: "var(--aur-ink-muted)" }}>Loading…</p>}
+
+      {/* How the last seven days actually went — from the record only. */}
+      {!loading && week?.hasSplit && (
+        <motion.section {...rise} className="mt-5 aur-chrome-surface p-4" aria-label="This week">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="aur-label m-0">Last seven days</p>
+            <span className="aur-metric text-small" style={{ color: "var(--aur-ink-muted)" }}>
+              {week.summary.kept} kept
+            </span>
+          </div>
+          <div className="mt-3">
+            <WeekStrip
+              days={week.trailing}
+              onSelect={(d) => d.sessionId && nav(`/session/${d.sessionId}`)}
+            />
+          </div>
+          <p className="aur-meta m-0 mt-3">
+            {week.summary.open > 0
+              ? `${week.summary.open} scheduled ${week.summary.open === 1 ? "day" : "days"} ${STATUS_LABEL.open}. Pick it up whenever — the next session is still there.`
+              : "Everything scheduled this week is on the record."}
+          </p>
+        </motion.section>
+      )}
 
       {!loading && data && !data.hasSplit && (
         <motion.section {...rise} className="mt-6 aur-chrome-surface p-5">
