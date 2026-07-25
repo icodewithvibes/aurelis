@@ -1,0 +1,187 @@
+/* AURELIS Stage 1 — global styles. Tailwind v4 + Ceremonial Chrome tokens. */
+@import "tailwindcss";
+@import "./design/tokens.css";
+
+/* Map tokens into Tailwind v4 theme so utilities stay semantic. */
+@theme {
+  --color-night: var(--aur-night);
+  --color-cobalt-900: var(--aur-cobalt-900);
+  --color-cobalt-800: var(--aur-cobalt-800);
+  --color-cobalt-600: var(--aur-cobalt-600);
+  --color-cobalt-500: var(--aur-cobalt-500);
+  --color-cobalt-300: var(--aur-cobalt-300);
+  --color-chrome-50: var(--aur-chrome-50);
+  --color-silver-200: var(--aur-silver-200);
+  --color-steel-400: var(--aur-steel-400);
+  --color-graphite-700: var(--aur-graphite-700);
+  --color-graphite-800: var(--aur-graphite-800);
+  --color-ink: var(--aur-ink);
+  --color-ink-muted: var(--aur-ink-muted);
+  --color-ink-faint: var(--aur-ink-faint);
+  --color-meadow-500: var(--aur-meadow-500);
+  --color-sky-400: var(--aur-sky-400);
+  --color-sun-400: var(--aur-sun-400);
+  --color-success: var(--aur-success);
+  --color-caution: var(--aur-caution);
+  --color-danger: var(--aur-danger);
+  --font-display: var(--font-display);
+  --font-ui: var(--font-ui);
+  --font-mono: var(--font-mono);
+  --radius-card: var(--radius-card);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--aur-night);
+  color: var(--aur-ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Visible keyboard focus everywhere (a11y). */
+:focus-visible {
+  outline: 2px solid var(--aur-cobalt-300);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Forged-glass panel — original AURELIS surface (see 05 §3). */
+.aur-glass {
+  position: relative;
+  background: var(--aur-glass-bg);
+  backdrop-filter: blur(var(--aur-glass-blur));
+  -webkit-backdrop-filter: blur(var(--aur-glass-blur));
+  box-shadow: var(--aur-glass-inset), var(--elev-card);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.aur-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--aur-glass-border);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Chrome surface — a dark translucent chrome object floating in the world.
+   Rim light (top), soft inner shadow (depth), quiet chrome edge, and an
+   optional slow specular sheen. Distinct from generic glassmorphism. */
+.aur-chrome-surface {
+  position: relative;
+  isolation: isolate;
+  background: var(--chrome-surface-fill);
+  backdrop-filter: blur(var(--chrome-surface-blur)) saturate(1.08);
+  -webkit-backdrop-filter: blur(var(--chrome-surface-blur)) saturate(1.08);
+  border-radius: var(--radius-card);
+  box-shadow: var(--chrome-rim-light), var(--chrome-inner-shadow), var(--elev-card);
+  overflow: hidden;
+}
+/* chrome edge (masked 1px gradient) */
+.aur-chrome-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--chrome-rim);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+/* slow chrome-light sheen travelling across the surface */
+.aur-chrome-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--chrome-sheen);
+  background-size: 220% 100%;
+  background-position: -60% 0;
+  pointer-events: none;
+  z-index: 1;
+  animation: aur-sheen var(--dur-rest-sheen) var(--ease-rest) infinite;
+}
+
+/* Soft halo behind a ceremonial object (crest). */
+.aur-halo {
+  position: absolute;
+  inset: -40%;
+  background: var(--crest-halo);
+  pointer-events: none;
+  animation: aur-breathe var(--dur-rest-breathe) var(--ease-rest) infinite;
+}
+/* Reflective silver glow on a presented crest (chrome emerging from shadow). */
+.aur-crest-emblem [data-crest-level] {
+  filter: drop-shadow(0 1px 6px rgba(150, 180, 235, 0.3));
+}
+/* Slow-breathing ambient bloom (e.g., Forge horizon glow). */
+.aur-halo-slow {
+  animation: aur-breathe calc(var(--dur-rest-breathe) * 1.6) var(--ease-rest) infinite;
+}
+
+/* ---- Ambient keyframes (frozen to static by reduced-motion rule below) ---- */
+@keyframes aur-breathe {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+@keyframes aur-drift {
+  0% {
+    transform: scale(1.08) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.13) translate3d(0, -1.4%, 0);
+  }
+}
+@keyframes aur-sheen {
+  0% {
+    background-position: -60% 0;
+  }
+  55%,
+  100% {
+    background-position: 160% 0;
+  }
+}
+
+.aur-drift {
+  animation: aur-drift var(--dur-rest-drift) var(--ease-rest) infinite alternate;
+  will-change: transform;
+}
+
+/* Chrome hairline divider. */
+.aur-hairline {
+  height: 1px;
+  background: var(--hairline-chrome);
+  border: none;
+}
+
+/* Minimum touch target helper. */
+.aur-touch {
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+}
