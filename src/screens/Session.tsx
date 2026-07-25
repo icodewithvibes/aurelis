@@ -10,14 +10,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { RestTimer } from "../components/RestTimer";
+import { CompletionReveal } from "../components/CompletionReveal";
 import {
   getSession,
   upsertSetLog,
-  finishSession,
   lastSetForExercise,
   type SessionSnapshot,
   type SessionSnapshotExercise,
 } from "../data/repositories/sessionRepo";
+import { recordProof, type ProofResult } from "../features/proof/proofRepo";
+import { crestStateForSessions } from "../lib/crest";
 import { getSettings } from "../data/repositories/settingsRepo";
 
 interface Cell {
@@ -50,6 +52,8 @@ export function Session() {
   const [rest, setRest] = useState<{ secs: number } | null>(null);
   const [units, setUnits] = useState<"lb" | "kg">("lb");
   const [ready, setReady] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [result, setResult] = useState<ProofResult | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -132,8 +136,16 @@ export function Session() {
 
   async function onFinish() {
     // Tapping Finish is the intentional confirmation the session counts.
-    await finishSession(id, true);
-    nav("/today");
+    // Persist proof FIRST; the reveal is decoration over a stored fact.
+    if (finishing) return;
+    setFinishing(true);
+    try {
+      setResult(await recordProof(id, true));
+    } catch (err) {
+      console.error("[aurelis] could not record proof", err);
+      setFinishing(false);
+      nav("/today");
+    }
   }
 
   if (ready && !snapshot) {
@@ -150,6 +162,13 @@ export function Session() {
 
   return (
     <ScreenSurface labelledBy="session-heading">
+      {result && (
+        <CompletionReveal
+          result={result}
+          crestLevel={crestStateForSessions(result.keptCount).level}
+          onDone={() => nav("/today")}
+        />
+      )}
       <header className="pt-2">
         <p className="aur-label m-0">Logging · {units}</p>
         <h1 id="session-heading" className="aur-section">{snapshot?.dayName}</h1>
@@ -262,17 +281,19 @@ export function Session() {
         <button
           type="button"
           onClick={() => onFinish()}
+          disabled={finishing}
           className="aur-touch w-full rounded-full text-body font-medium"
           style={{
             background: qualified ? "var(--aur-chrome-50)" : "rgba(210,217,230,0.16)",
             color: qualified ? "var(--aur-night)" : "var(--aur-ink)",
             border: "none", padding: "0.875rem 1.5rem",
+            opacity: finishing ? 0.6 : 1,
           }}
         >
-          {qualified ? "Finish session" : "Finish — count it"}
+          {finishing ? "Recording proof…" : qualified ? "Record proof" : "Record proof — count it"}
         </button>
         <p className="aur-meta m-0 text-center">
-          Saved as you go. Blank sets are simply skipped. You can edit this later. Streak &amp; proof arrive with the proof engine.
+          Saved as you go. Blank sets are simply skipped. Edit anytime — your proof stays accurate.
         </p>
       </div>
     </ScreenSurface>

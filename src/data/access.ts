@@ -12,6 +12,8 @@ import { db } from "./db";
 import { getActiveSplit, type DayWithExercises } from "./repositories/splitRepo";
 import { localDay, localWeekday } from "../lib/date";
 import { planSchedule, relativeDayLabel } from "../lib/schedule";
+import { collectDayFacts } from "../features/proof/proofRepo";
+import { computeStreak, countKeptDays } from "../features/proof/engine";
 
 export interface NextUp {
   day: DayWithExercises;
@@ -35,7 +37,10 @@ export interface HomeData {
   otherDays: DayWithExercises[];
   /** The next scheduled session after today. */
   nextUp: NextUp | null;
+  /** Kept DAYS, derived by the proof engine — not a raw session tally. */
   sessionsKept: number;
+  /** Current unbroken run of kept obligations. */
+  streak: number;
   todaySessionByDay: Record<string, { id: string; status: string }>;
 }
 
@@ -46,11 +51,14 @@ function dateLabel(d = new Date()): string {
 export async function loadHome(): Promise<HomeData> {
   const active = await getActiveSplit();
   const weekday = localWeekday();
-  const sessionsKept = (await db.sessions.toArray()).filter(
-    (s) => s.status === "completed" && !s.deletedAt,
-  ).length;
-
   const today = localDay();
+
+  // Proof language reads from the engine, so Today and Proof can never
+  // disagree about what has actually been kept.
+  const facts = await collectDayFacts(today);
+  const sessionsKept = countKeptDays(facts, today);
+  const streak = computeStreak(facts, today);
+
   const todaySessionByDay: Record<string, { id: string; status: string }> = {};
   for (const s of await db.sessions.where("dateLocal").equals(today).toArray()) {
     if (s.splitDayId && !s.deletedAt && s.status !== "discarded") {
@@ -70,6 +78,7 @@ export async function loadHome(): Promise<HomeData> {
       otherDays: [],
       nextUp: null,
       sessionsKept,
+      streak,
       todaySessionByDay,
     };
   }
@@ -105,6 +114,7 @@ export async function loadHome(): Promise<HomeData> {
     otherDays,
     nextUp,
     sessionsKept,
+    streak,
     todaySessionByDay,
   };
 }
