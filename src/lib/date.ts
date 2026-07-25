@@ -19,3 +19,28 @@ export function localWeekday(d: Date = new Date()): number {
 export function nowMs(): number {
   return Date.now();
 }
+
+/** Parse a YYYY-MM-DD local day back into a local-midnight Date. */
+export function parseLocalDay(day: string): Date {
+  const [y, m, d] = day.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+export function addDays(day: string, delta: number): string {
+  const d = parseLocalDay(day);
+  d.setDate(d.getDate() + delta);
+  return localDay(d);
+}
+
+/** Every local day from `from` to `to`, inclusive. Empty if from > to. */
+export function daysBetween(from: string, to: string): string[] {
+  const out: string[] = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) out.push(d);
+  return out;
+}
+
+/** The Sunday-anchored calendar week containing `day`, as seven days. */
+export function weekOf(day: string): string[] {
+  const start = addDays(day, -parseLocalDay(day).getDay());
+  return daysBetween(start, addDays(start, 6));
+}

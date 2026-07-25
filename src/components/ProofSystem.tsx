@@ -25,7 +25,7 @@ export function ProofSystem({ sessionsKept, variant = "hero" }: ProofSystemProps
     return (
       <div className="flex flex-col items-center gap-1.5 pt-1" aria-label="Proof (sample)">
         <CrestEmblem level={s.level} size={72} />
-        <span className="font-mono text-[0.6875rem] tracking-wide" style={{ color: "var(--aur-ink-muted)" }}>
+        <span className="aur-metric text-[0.6875rem] tracking-wide" style={{ color: "var(--aur-ink-muted)" }}>
           {s.name}
         </span>
       </div>
@@ -37,18 +37,9 @@ export function ProofSystem({ sessionsKept, variant = "hero" }: ProofSystemProps
       <CrestEmblem level={s.level} size={140} richBloom />
 
       <div className="text-center">
-        <p
-          className="m-0"
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "var(--text-h2)",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {s.name}
-        </p>
-        <p className="m-0 mt-0.5 font-mono text-small" style={{ color: "var(--aur-ink-muted)" }}>
-          {sessionsKept} sessions kept
+        <p className="aur-section">{s.name}</p>
+        <p className="aur-metric m-0 mt-0.5 text-small" style={{ color: "var(--aur-ink-muted)" }}>
+          {sessionsKept} {sessionsKept === 1 ? "session" : "sessions"} kept
         </p>
       </div>
 

@@ -3,7 +3,8 @@
  * lets you start/resume logging a day, and import/replace the split.
  * Reads real data from Dexie; honest empty state when no split exists.
  */
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import { useNavigate } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { useAsync } from "../hooks/useAsync";
@@ -14,7 +15,7 @@ import type { DayWithExercises } from "../data/repositories/splitRepo";
 export function Train() {
   const nav = useNavigate();
   const { data, loading } = useAsync(loadHome);
-  const reduce = useReducedMotion();
+  const reduce = useMotionDisabled();
   const rise = reduce ? {} : {
     initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 },
     transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const },
@@ -29,8 +30,8 @@ export function Train() {
     <ScreenSurface labelledBy="train-heading">
       <motion.header {...rise} className="flex items-start justify-between gap-3 pt-2">
         <div>
-          <h1 id="train-heading" className="m-0" style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-display-sm)", fontWeight: 480 }}>Train</h1>
-          {data?.hasSplit && <p className="m-0 mt-1 text-body" style={{ color: "var(--aur-ink-muted)" }}>{data.splitName}</p>}
+          <h1 id="train-heading" className="aur-title">Train</h1>
+          {data?.hasSplit && <p className="aur-date m-0 mt-1">{data.splitName}</p>}
         </div>
         <button type="button" onClick={() => nav("/import")} className="aur-touch rounded-full px-4 text-small"
           style={{ background: "rgba(210,217,230,0.1)", color: "var(--aur-ink)", border: "none" }}>
@@ -42,7 +43,7 @@ export function Train() {
 
       {!loading && data && !data.hasSplit && (
         <motion.section {...rise} className="mt-6 aur-chrome-surface p-5">
-          <p className="m-0 text-[0.6875rem] uppercase tracking-[0.18em]" style={{ color: "var(--aur-ink-muted)" }}>No split yet</p>
+          <p className="aur-label m-0">No split yet</p>
           <p className="m-0 mt-2 text-body">Import a program in AURELIS Split Format to begin.</p>
           <button type="button" onClick={() => nav("/import")} className="aur-touch mt-4 w-full rounded-full text-body font-medium"
             style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.875rem 1.5rem" }}>
@@ -56,7 +57,21 @@ export function Train() {
           {data.days.map((d) => (
             <motion.section key={d.id} {...rise} className="aur-chrome-surface p-4" aria-label={d.name}>
               <div className="flex items-center justify-between">
-                <h2 className="m-0" style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-h2)", fontWeight: 500 }}>{d.name}</h2>
+                <h2 className="aur-section flex items-baseline gap-2">
+                  {d.name}
+                  {d.id === data.todayDay?.id && (
+                    <span className="rounded-full px-2 py-0.5 text-[0.625rem] uppercase tracking-[0.14em]"
+                      style={{ background: "rgba(210,217,230,0.12)", color: "var(--aur-ink-muted)" }}>
+                      Today
+                    </span>
+                  )}
+                  {d.id === data.nextUp?.day.id && d.id !== data.todayDay?.id && (
+                    <span className="rounded-full px-2 py-0.5 text-[0.625rem] uppercase tracking-[0.14em]"
+                      style={{ background: "rgba(210,217,230,0.06)", color: "var(--aur-ink-faint)" }}>
+                      {data.nextUp.label}
+                    </span>
+                  )}
+                </h2>
                 <button type="button" onClick={() => start(d)} className="aur-touch rounded-full px-4 text-small font-medium"
                   style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none" }}>
                   {data.todaySessionByDay[d.id] ? "Resume" : "Start"}
@@ -67,7 +82,7 @@ export function Train() {
                 {d.exercises.map((ex) => (
                   <li key={ex.id} className="flex items-baseline justify-between gap-3">
                     <span className="text-body">{ex.name}</span>
-                    <span className="whitespace-nowrap font-mono text-small" style={{ color: "var(--aur-ink-muted)" }}>
+                    <span className="aur-metric whitespace-nowrap text-small" style={{ color: "var(--aur-ink-muted)" }}>
                       {ex.sets}×{ex.repScheme === "amrap" ? "AMRAP" : ex.repMin === ex.repMax ? ex.repMin : `${ex.repMin}-${ex.repMax}`}
                       {ex.rpeMin ? ` · RPE ${ex.rpeMin}` : ""}
                     </span>

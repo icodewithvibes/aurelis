@@ -13,6 +13,7 @@
  * hygiene only. V1 builds NO sync/auth/backend.
  */
 import Dexie, { type EntityTable } from "dexie";
+import { crisisResourcesFor } from "../features/forge/crisisResources";
 
 /* ---- Entity types (shape stubs; fleshed out by feature stages) ---- */
 export interface SplitRow {
@@ -145,6 +146,17 @@ export interface SettingsRow {
   reducedMotion: "auto" | "on" | "off";
   streakCountMode: "sessions"; // LOCKED
   crisisRegion: "US-MA"; // LOCKED
+  /**
+   * Crisis copy (02_strategy/02 §5), seeded from features/forge.
+   * Optional so rows written before this field still open; the module
+   * remains the fallback and the canonical source.
+   */
+  crisisResources?: {
+    region: string;
+    immediate: string;
+    distress: string;
+    physical: string;
+  };
   lastCrestLevel: number;
   updatedAt: number;
 }
@@ -227,14 +239,22 @@ export function getDeviceId(): string {
 export async function seedDefaults(): Promise<void> {
   const now = Date.now();
   await db.transaction("rw", db.settings, db.records, db.meta, async () => {
-    if (!(await db.settings.get("app"))) {
+    const settings = await db.settings.get("app");
+    if (!settings) {
       await db.settings.put({
         id: "app",
         units: "lb",
         reducedMotion: "auto",
         streakCountMode: "sessions",
         crisisRegion: "US-MA",
+        crisisResources: crisisResourcesFor("US-MA"),
         lastCrestLevel: 0,
+        updatedAt: now,
+      });
+    } else if (!settings.crisisResources) {
+      // Backfill for rows written before the field existed.
+      await db.settings.update("app", {
+        crisisResources: crisisResourcesFor(settings.crisisRegion),
         updatedAt: now,
       });
     }
