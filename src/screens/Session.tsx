@@ -1,8 +1,10 @@
 /**
- * Session — the workout logger (Stage 2). Log sets (weight/reps/RPE),
- * mark sets done (which starts a rest timer using the exercise's rest),
- * then finish. One-handed on iPhone; every value persists to Dexie and
- * survives reload. NO streak/PR/completion-reveal (Stage 3).
+ * Session — beginner-friendly workout logger (Stage 3).
+ * Targets come from the split (reps prefilled, range shown as a hint).
+ * The common action is simple: enter weight, tap Complete. RPE is hidden
+ * behind a plain-language "Advanced details" disclosure. Ghost defaults
+ * show last time's numbers. Everything persists locally and survives
+ * reload. No streak/PR/completion reveal here (Stage 3 proof engine).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -12,8 +14,11 @@ import {
   getSession,
   upsertSetLog,
   finishSession,
+  lastSetForExercise,
   type SessionSnapshot,
+  type SessionSnapshotExercise,
 } from "../data/repositories/sessionRepo";
+import { getSettings } from "../data/repositories/settingsRepo";
 
 interface Cell {
   weight: string;
@@ -24,22 +29,46 @@ interface Cell {
 type Grid = Record<string, Cell>;
 const cellKey = (exKey: string, i: number) => `${exKey}:${i}`;
 
+const REST_DEFAULT_SEC = 90;
+
+function targetReps(ex: SessionSnapshotExercise): string {
+  if (ex.repMax == null) return ""; // AMRAP → user enters actual
+  return String(ex.repMax);
+}
+function repRangeHint(ex: SessionSnapshotExercise): string {
+  if (ex.repMin == null || ex.repMax == null) return "AMRAP";
+  return ex.repMin === ex.repMax ? `${ex.repMin} reps` : `${ex.repMin}–${ex.repMax} reps`;
+}
+
 export function Session() {
   const { id = "" } = useParams();
   const nav = useNavigate();
   const [snapshot, setSnapshot] = useState<SessionSnapshot | null>(null);
   const [grid, setGrid] = useState<Grid>({});
+  const [ghosts, setGhosts] = useState<Record<string, { weight?: number; reps?: number }>>({});
+  const [advanced, setAdvanced] = useState<Record<string, boolean>>({});
   const [rest, setRest] = useState<{ secs: number } | null>(null);
+  const [units, setUnits] = useState<"lb" | "kg">("lb");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    getSession(id).then((s) => {
-      if (!alive || !s) {
-        if (alive) setReady(true);
+    (async () => {
+      const s = await getSession(id);
+      const settings = await getSettings();
+      if (!alive) return;
+      if (settings?.units) setUnits(settings.units);
+      if (!s) {
+        setReady(true);
         return;
       }
+      // Seed grid from existing logs; prefill reps from targets otherwise.
       const g: Grid = {};
+      for (const ex of s.snapshot.exercises) {
+        for (let i = 0; i < Math.max(1, ex.sets); i++) {
+          g[cellKey(ex.key, i)] = { weight: "", reps: targetReps(ex), rpe: "", done: false };
+        }
+      }
       for (const l of s.logs) {
         g[cellKey(l.exerciseKey, l.setIndex)] = {
           weight: l.weight?.toString() ?? "",
@@ -48,10 +77,20 @@ export function Session() {
           done: l.done,
         };
       }
+      // Ghost defaults (last time) per exercise.
+      const gh: Record<string, { weight?: number; reps?: number }> = {};
+      await Promise.all(
+        s.snapshot.exercises.map(async (ex) => {
+          const last = await lastSetForExercise(ex.name);
+          if (last) gh[ex.key] = last;
+        }),
+      );
+      if (!alive) return;
       setSnapshot(s.snapshot);
       setGrid(g);
+      setGhosts(gh);
       setReady(true);
-    });
+    })();
     return () => {
       alive = false;
     };
@@ -91,9 +130,8 @@ export function Session() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapshot, grid]);
 
-  // Tapping Finish is the intentional confirmation that the session counts
-  // (doc 01 §5: complete when all exercises have a set OR the user confirms).
   async function onFinish() {
+    // Tapping Finish is the intentional confirmation the session counts.
     await finishSession(id, true);
     nav("/today");
   }
@@ -101,7 +139,7 @@ export function Session() {
   if (ready && !snapshot) {
     return (
       <ScreenSurface labelledBy="session-heading">
-        <h1 id="session-heading" className="pt-2" style={{ fontFamily: "var(--font-display)" }}>Session not found</h1>
+        <h1 id="session-heading" className="aur-title pt-2">Session not found</h1>
         <button type="button" onClick={() => nav("/train")} className="aur-touch mt-4 rounded-full px-5"
           style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none" }}>
           Back to Train
@@ -113,12 +151,8 @@ export function Session() {
   return (
     <ScreenSurface labelledBy="session-heading">
       <header className="pt-2">
-        <p className="m-0 text-[0.6875rem] uppercase tracking-[0.18em]" style={{ color: "var(--aur-ink-muted)" }}>
-          Logging
-        </p>
-        <h1 id="session-heading" className="m-0" style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-h1)", fontWeight: 500 }}>
-          {snapshot?.dayName}
-        </h1>
+        <p className="aur-label m-0">Logging · {units}</p>
+        <h1 id="session-heading" className="aur-section">{snapshot?.dayName}</h1>
       </header>
 
       {rest && (
@@ -129,18 +163,19 @@ export function Session() {
 
       <div className="mt-4 flex flex-col gap-4">
         {snapshot?.exercises.map((ex) => {
-          const repLabel =
-            ex.repMin != null && ex.repMax != null
-              ? ex.repMin === ex.repMax ? `${ex.repMin}` : `${ex.repMin}-${ex.repMax}`
-              : "AMRAP";
+          const showAdvanced = advanced[ex.key] ?? false;
+          const ghost = ghosts[ex.key];
           return (
             <section key={ex.key} className="aur-chrome-surface p-4" aria-label={ex.name}>
-              <div className="flex items-baseline justify-between">
-                <h2 className="m-0" style={{ fontSize: "var(--text-h2)", fontFamily: "var(--font-display)", fontWeight: 500 }}>{ex.name}</h2>
-                <span className="font-mono text-small" style={{ color: "var(--aur-ink-muted)" }}>
-                  {ex.sets}×{repLabel}{ex.rpeMin ? ` · RPE ${ex.rpeMin}${ex.rpeMax && ex.rpeMax !== ex.rpeMin ? `-${ex.rpeMax}` : ""}` : ""}
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 className="aur-section">{ex.name}</h2>
+                <span className="aur-metric text-small" style={{ color: "var(--aur-ink-muted)" }}>
+                  {ex.sets} × {repRangeHint(ex)}
                 </span>
               </div>
+              {ghost && (ghost.weight != null) && (
+                <p className="aur-meta m-0 mt-1">Last time: {ghost.weight} {units}{ghost.reps != null ? ` × ${ghost.reps}` : ""}</p>
+              )}
 
               <div className="mt-3 flex flex-col gap-2">
                 {Array.from({ length: Math.max(1, ex.sets) }).map((_, i) => {
@@ -148,22 +183,50 @@ export function Session() {
                   const c = cell(k);
                   return (
                     <div key={i} className="flex items-center gap-2">
-                      <span className="w-5 font-mono text-small" style={{ color: "var(--aur-ink-faint)" }}>{i + 1}</span>
-                      <NumInput label={`Set ${i + 1} weight`} value={c.weight} placeholder="wt"
-                        onChange={(v) => update(ex.key, ex.name, i, { weight: v })} />
-                      <NumInput label={`Set ${i + 1} reps`} value={c.reps} placeholder="reps"
-                        onChange={(v) => update(ex.key, ex.name, i, { reps: v })} />
-                      <NumInput label={`Set ${i + 1} RPE`} value={c.rpe} placeholder="rpe"
-                        onChange={(v) => update(ex.key, ex.name, i, { rpe: v })} />
+                      <span className="w-4 shrink-0 aur-metric text-small" style={{ color: "var(--aur-ink-faint)" }}>{i + 1}</span>
+                      <label className="sr-only" htmlFor={`${k}-w`}>{`Set ${i + 1} weight in ${units}`}</label>
+                      <div className="relative flex-1">
+                        <input
+                          id={`${k}-w`}
+                          value={c.weight}
+                          inputMode="decimal"
+                          placeholder={ghost?.weight != null ? String(ghost.weight) : units}
+                          onChange={(e) => update(ex.key, ex.name, i, { weight: e.target.value.replace(/[^\d.]/g, "") })}
+                          className="aur-touch w-full rounded-lg px-2 text-center aur-metric"
+                          style={{ height: 44, color: "var(--aur-ink)", background: "rgba(7,12,24,0.55)", border: "1px solid rgba(210,217,230,0.14)" }}
+                        />
+                      </div>
+                      <span className="aur-meta shrink-0" style={{ width: 14 }}>×</span>
+                      <label className="sr-only" htmlFor={`${k}-r`}>{`Set ${i + 1} reps`}</label>
+                      <input
+                        id={`${k}-r`}
+                        value={c.reps}
+                        inputMode="numeric"
+                        placeholder="reps"
+                        onChange={(e) => update(ex.key, ex.name, i, { reps: e.target.value.replace(/[^\d]/g, "") })}
+                        className="aur-touch w-14 shrink-0 rounded-lg px-2 text-center aur-metric"
+                        style={{ height: 44, color: "var(--aur-ink)", background: "rgba(7,12,24,0.55)", border: "1px solid rgba(210,217,230,0.14)" }}
+                      />
+                      {showAdvanced && (
+                        <input
+                          aria-label={`Set ${i + 1} — how hard did it feel, 1 to 10`}
+                          value={c.rpe}
+                          inputMode="numeric"
+                          placeholder="feel"
+                          onChange={(e) => update(ex.key, ex.name, i, { rpe: e.target.value.replace(/[^\d]/g, "") })}
+                          className="aur-touch w-12 shrink-0 rounded-lg px-1 text-center aur-metric"
+                          style={{ height: 44, color: "var(--aur-ink)", background: "rgba(7,12,24,0.45)", border: "1px solid rgba(210,217,230,0.1)" }}
+                        />
+                      )}
                       <button
                         type="button"
                         aria-pressed={c.done}
-                        aria-label={`Mark set ${i + 1} ${c.done ? "not done" : "done"}`}
+                        aria-label={`Complete set ${i + 1}`}
                         onClick={() => {
                           const next = update(ex.key, ex.name, i, { done: !c.done });
-                          if (next.done && ex.restSec) setRest({ secs: ex.restSec });
+                          if (next.done) setRest({ secs: ex.restSec ?? REST_DEFAULT_SEC });
                         }}
-                        className="aur-touch grid place-items-center rounded-full"
+                        className="aur-touch grid shrink-0 place-items-center rounded-full"
                         style={{
                           width: 44, height: 44,
                           background: c.done ? "var(--aur-success)" : "rgba(210,217,230,0.1)",
@@ -177,6 +240,19 @@ export function Session() {
                   );
                 })}
               </div>
+
+              <button
+                type="button"
+                aria-expanded={showAdvanced}
+                onClick={() => setAdvanced((a) => ({ ...a, [ex.key]: !showAdvanced }))}
+                className="aur-touch mt-2 text-small"
+                style={{ background: "transparent", border: "none", color: "var(--aur-ink-muted)", padding: "0.25rem 0" }}
+              >
+                {showAdvanced ? "Hide advanced" : "Advanced details"}
+              </button>
+              {showAdvanced && (
+                <p className="aur-meta m-0">"Feel" = how hard the set felt, 1–10 (10 = no reps left). Optional.</p>
+              )}
             </section>
           );
         })}
@@ -188,36 +264,17 @@ export function Session() {
           onClick={() => onFinish()}
           className="aur-touch w-full rounded-full text-body font-medium"
           style={{
-            background: qualified ? "var(--aur-chrome-50)" : "rgba(210,217,230,0.14)",
+            background: qualified ? "var(--aur-chrome-50)" : "rgba(210,217,230,0.16)",
             color: qualified ? "var(--aur-night)" : "var(--aur-ink)",
             border: "none", padding: "0.875rem 1.5rem",
           }}
         >
-          {qualified ? "Finish session" : "Finish early — count it"}
+          {qualified ? "Finish session" : "Finish — count it"}
         </button>
-        <p className="m-0 text-center text-[0.6875rem]" style={{ color: "var(--aur-ink-faint)" }}>
-          Saved locally as you go. Streak & proof arrive in Stage 3.
+        <p className="aur-meta m-0 text-center">
+          Saved as you go. Blank sets are simply skipped. You can edit this later. Streak &amp; proof arrive with the proof engine.
         </p>
       </div>
     </ScreenSurface>
-  );
-}
-
-function NumInput({
-  label, value, placeholder, onChange,
-}: { label: string; value: string; placeholder: string; onChange: (v: string) => void }) {
-  return (
-    <input
-      aria-label={label}
-      value={value}
-      inputMode="decimal"
-      placeholder={placeholder}
-      onChange={(e) => onChange(e.target.value.replace(/[^\d.]/g, ""))}
-      className="aur-touch min-w-0 flex-1 rounded-lg px-2 text-center font-mono text-small"
-      style={{
-        height: 44, color: "var(--aur-ink)",
-        background: "rgba(7,12,24,0.55)", border: "1px solid rgba(210,217,230,0.14)",
-      }}
-    />
   );
 }
