@@ -4,7 +4,8 @@
  * No functional controls, inputs, journal text, or safety copy.
  */
 import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import { ScreenSurface } from "./ScreenSurface";
 import type { BackplateVariant } from "./Backplate";
 
@@ -28,7 +29,7 @@ export function PlaceholderScreen({
   hero,
   children,
 }: PlaceholderScreenProps) {
-  const reduce = useReducedMotion();
+  const reduce = useMotionDisabled();
   const stagger = (i: number) =>
     reduce
       ? {}
@@ -41,16 +42,7 @@ export function PlaceholderScreen({
   return (
     <ScreenSurface backplate={backplate} labelledBy={id}>
       <motion.header {...stagger(0)} className="pt-2">
-        <h1
-          id={id}
-          className="m-0"
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "var(--text-display-sm)",
-            fontWeight: 480,
-            letterSpacing: "-0.02em",
-          }}
-        >
+        <h1 id={id} className="aur-title">
           {title}
         </h1>
         <p className="m-0 mt-2 max-w-xs text-body" style={{ color: "var(--aur-ink-muted)" }}>
@@ -70,12 +62,7 @@ export function PlaceholderScreen({
       )}
 
       <motion.section {...stagger(hero ? 2 : 1)} className="aur-chrome-surface p-5">
-        <p
-          className="m-0 text-[0.6875rem] uppercase tracking-[0.18em]"
-          style={{ color: "var(--aur-ink-muted)" }}
-        >
-          Not built yet
-        </p>
+        <p className="aur-label m-0">Not built yet</p>
         <p className="m-0 mt-2 text-body">{stageNote}</p>
         {children}
       </motion.section>

@@ -7,6 +7,10 @@
 # Pinterest mood images + copied MotionSites prompts (style refs only).
 /01_references/
 
+# Raw generation candidates: reviewed locally, never committed.
+# Only compressed, approved exports under /03_assets/approved/ ship.
+/03_assets/candidates/
+
 # ── Secrets / environment (there should be NONE in V1) ──
 .env
 .env.*

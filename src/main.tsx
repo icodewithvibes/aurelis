@@ -13,9 +13,24 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import { App } from "./App";
 import { initDb } from "./data/db";
+import { getSettings } from "./data/repositories/settingsRepo";
+import { useUiStore, applyMotionAttribute } from "./state/ui";
 
 // Fire-and-forget: schema init must never block first paint.
-void initDb();
+// After init, hydrate the persisted motion preference and apply it.
+void initDb().then(async () => {
+  const s = await getSettings();
+  const mode = s?.reducedMotion ?? "auto";
+  useUiStore.getState().hydrateReducedMotion(mode);
+});
+applyMotionAttribute("auto"); // sensible default before hydration
+
+// Keep 'auto' resolution live if the OS preference changes.
+if (typeof window !== "undefined" && window.matchMedia) {
+  window.matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", () => {
+    applyMotionAttribute(useUiStore.getState().reducedMotion);
+  });
+}
 
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element #root not found");

@@ -13,6 +13,7 @@
  * hygiene only. V1 builds NO sync/auth/backend.
  */
 import Dexie, { type EntityTable } from "dexie";
+import { crisisResourcesFor } from "../features/forge/crisisResources";
 
 /* ---- Entity types (shape stubs; fleshed out by feature stages) ---- */
 export interface SplitRow {
@@ -145,6 +146,17 @@ export interface SettingsRow {
   reducedMotion: "auto" | "on" | "off";
   streakCountMode: "sessions"; // LOCKED
   crisisRegion: "US-MA"; // LOCKED
+  /**
+   * Crisis copy (02_strategy/02 §5), seeded from features/forge.
+   * Optional so rows written before this field still open; the module
+   * remains the fallback and the canonical source.
+   */
+  crisisResources?: {
+    region: string;
+    immediate: string;
+    distress: string;
+    physical: string;
+  };
   lastCrestLevel: number;
   updatedAt: number;
 }
@@ -206,14 +218,71 @@ class AurelisDB extends Dexie {
 
 export const db = new AurelisDB();
 
+/** Stable per-device id (sync-ready hygiene; never leaves the device). */
+export function getDeviceId(): string {
+  const KEY = "aurelis.deviceId";
+  let id = localStorage.getItem(KEY);
+  if (!id) {
+    id =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `dev-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(KEY, id);
+  }
+  return id;
+}
+
 /**
- * Open the database on boot (schema init only).
- * Never blocks rendering; failure is logged, the app remains usable
- * because Stage 1 persists nothing.
+ * Seed singleton default rows once (Stage 2). Local only; idempotent.
+ * Locked V1 values: streakCountMode='sessions', crisisRegion='US-MA'.
+ */
+export async function seedDefaults(): Promise<void> {
+  const now = Date.now();
+  await db.transaction("rw", db.settings, db.records, db.meta, async () => {
+    const settings = await db.settings.get("app");
+    if (!settings) {
+      await db.settings.put({
+        id: "app",
+        units: "lb",
+        reducedMotion: "auto",
+        streakCountMode: "sessions",
+        crisisRegion: "US-MA",
+        crisisResources: crisisResourcesFor("US-MA"),
+        lastCrestLevel: 0,
+        updatedAt: now,
+      });
+    } else if (!settings.crisisResources) {
+      // Backfill for rows written before the field existed.
+      await db.settings.update("app", {
+        crisisResources: crisisResourcesFor(settings.crisisRegion),
+        updatedAt: now,
+      });
+    }
+    if (!(await db.records.get("alltime"))) {
+      await db.records.put({
+        id: "alltime",
+        totalSessionsKept: 0,
+        totalWorkoutsCompleted: 0,
+        totalCommitmentsCompleted: 0,
+        bestStreak: 0,
+        updatedAt: now,
+      });
+    }
+    if (!(await db.meta.get("meta"))) {
+      await db.meta.put({ id: "meta", schemaVersion: SCHEMA_VERSION });
+    }
+  });
+}
+
+/**
+ * Open the database on boot and seed defaults (Stage 2).
+ * Never blocks rendering; failure is logged and the app degrades to a
+ * no-persistence state rather than crashing.
  */
 export async function initDb(): Promise<void> {
   try {
     await db.open();
+    await seedDefaults();
   } catch (err) {
     console.error("[aurelis] IndexedDB unavailable — continuing without persistence.", err);
   }

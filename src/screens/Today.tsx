@@ -1,158 +1,159 @@
 /**
- * Today — Stage 1 STATIC screen fed by the mock-data seam.
- * Meadow backplate (approved Group 2) is allowed here ONLY.
- * All figures are sample data; nothing is wired to logic yet.
+ * Today — real Stage 2/3 home. Reads the active split from Dexie and
+ * leads with ONE clear action:
+ * - no split → invitation to import
+ * - training day → today's scheduled day, primary; everything else demoted
+ * - rest day → calm honored-rest state + what comes next
+ * The time-of-day hero backplate is allowed here ONLY.
  */
-import { motion, useReducedMotion } from "framer-motion";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { useMotionDisabled } from "../hooks/useMotionDisabled";
+import { useNavigate } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { ProofSystem } from "../components/ProofSystem";
-import { getTodayView } from "../data/access";
+import { useAsync } from "../hooks/useAsync";
+import { loadHome } from "../data/access";
+import { startSession } from "../data/repositories/sessionRepo";
+import type { DayWithExercises } from "../data/repositories/splitRepo";
 
-function MockBadge() {
-  return (
-    <span
-      data-mock="true"
-      className="rounded-full px-2 py-0.5 text-[0.625rem] uppercase tracking-widest"
-      style={{
-        color: "var(--aur-ink-faint)",
-        border: "1px solid var(--aur-ink-faint)",
-      }}
-    >
-      sample data
-    </span>
-  );
-}
+const LABEL_CLASS = "aur-label m-0";
 
 export function Today() {
-  const today = getTodayView();
-  const reduce = useReducedMotion();
-
-  // Soft staggered entrance for screen content.
+  const nav = useNavigate();
+  const { data, loading } = useAsync(loadHome);
+  const reduce = useMotionDisabled();
+  const [showOthers, setShowOthers] = useState(false);
   const stagger = (i: number) =>
-    reduce
-      ? {}
-      : {
-          initial: { opacity: 0, y: 10 },
-          animate: { opacity: 1, y: 0 },
-          transition: { duration: 0.5, delay: i * 0.09, ease: [0.16, 1, 0.3, 1] as const },
-        };
+    reduce ? {} : {
+      initial: { opacity: 0, y: 10 },
+      animate: { opacity: 1, y: 0 },
+      transition: { duration: 0.5, delay: i * 0.09, ease: [0.16, 1, 0.3, 1] as const },
+    };
+
+  async function start(day: DayWithExercises) {
+    const sid = await startSession(day);
+    nav(`/session/${sid}`);
+  }
+
+  const primary = data?.todayDay ?? null;
+  const primaryState = primary ? data?.todaySessionByDay[primary.id] : undefined;
+  const primaryDone = primaryState?.status === "completed";
+  const others = data?.otherDays ?? [];
 
   return (
-    <ScreenSurface backplate="meadow" labelledBy="today-heading">
-      {/* Upper third = image text-safe zone (manifest 09 §3): heading lives here. */}
+    <ScreenSurface backplate="hero" labelledBy="today-heading">
       <motion.header {...stagger(0)} className="flex items-start justify-between gap-3 pt-2">
         <div>
-          <p className="m-0 text-small" style={{ color: "var(--aur-ink-muted)" }}>
-            {today.dateLabel}
-          </p>
+          <p className="aur-date m-0">{data?.dateLabel ?? ""}</p>
           <h1
             id="today-heading"
-            className="m-0 mt-1"
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "var(--text-display)",
-              fontWeight: 470,
-              lineHeight: 1.12,
-              letterSpacing: "-0.025em",
-              textShadow: "0 1px 20px rgba(5,9,20,0.55)",
-            }}
+            className="aur-display mt-1"
+            style={{ textShadow: "0 1px 20px rgba(5,9,20,0.55)" }}
           >
-            {today.greeting}
+            {!data?.hasSplit ? "Begin." : data.isTrainingDay ? "A training day." : "Rest, honored."}
           </h1>
         </div>
-        <ProofSystem sessionsKept={today.sessionsKept} variant="compact" />
+        {data && <ProofSystem sessionsKept={data.sessionsKept} variant="compact" />}
       </motion.header>
 
       <div className="flex-1" />
 
-      {/* Planned-day card floats as a chrome surface within the meadow. */}
-      <motion.section
-        {...stagger(1)}
-        aria-label="Planned session"
-        className="aur-chrome-surface p-5"
-      >
-        <div className="flex items-center justify-between">
-          <p
-            className="m-0 text-[0.6875rem] uppercase tracking-[0.18em]"
-            style={{ color: "var(--aur-ink-muted)" }}
-          >
-            Scheduled today
-          </p>
-          <MockBadge />
-        </div>
-        <h2
-          className="m-0 mt-1"
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "var(--text-h1)",
-            fontWeight: 500,
-          }}
-        >
-          {today.dayName}
-        </h2>
+      <motion.section {...stagger(1)} aria-label="Today" className="aur-chrome-surface p-5">
+        {loading && <p className="m-0 text-body" style={{ color: "var(--aur-ink-muted)" }}>Loading…</p>}
 
-        <hr className="aur-hairline my-4" />
+        {!loading && data && !data.hasSplit && (
+          <>
+            <p className={LABEL_CLASS}>No split yet</p>
+            <h2 className="aur-heading mt-1">Import your program</h2>
+            <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
+              Paste a split in AURELIS Split Format to know exactly what to train.
+            </p>
+            <button type="button" onClick={() => nav("/import")} className="aur-touch mt-4 w-full rounded-full text-body font-medium"
+              style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.875rem 1.5rem" }}>
+              Import a split
+            </button>
+          </>
+        )}
 
-        <ul className="m-0 flex list-none flex-col gap-3 p-0">
-          {today.exercises.map((ex) => (
-            <li key={ex.name} className="flex items-baseline justify-between gap-3">
-              <span className="text-body">{ex.name}</span>
-              <span
-                className="whitespace-nowrap font-mono text-small"
-                style={{ color: "var(--aur-ink-muted)" }}
-              >
-                {ex.sets}×{ex.reps}
-                {ex.rpe ? ` · ${ex.rpe}` : ""}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {!loading && data?.hasSplit && (
+          <>
+            <div className="flex items-center justify-between gap-3">
+              <p className={LABEL_CLASS}>
+                {primary ? "Today" : "Rest day"}
+              </p>
+              <span className="aur-metric truncate text-[0.6875rem]" style={{ color: "var(--aur-ink-muted)" }}>{data.splitName}</span>
+            </div>
 
-        {/* Week completion placeholder — visual only. */}
-        <div className="mt-5" aria-label="This week (sample)">
-          <div className="flex items-center justify-between text-[0.6875rem]" style={{ color: "var(--aur-ink-muted)" }}>
-            <span>This week</span>
-            <span className="font-mono">
-              {today.weekCompletion.done} of {today.weekCompletion.planned} kept
-            </span>
-          </div>
-          <div
-            className="mt-1.5 h-1 overflow-hidden rounded-full"
-            style={{ background: "rgba(210,217,230,0.14)" }}
-          >
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${(today.weekCompletion.done / today.weekCompletion.planned) * 100}%`,
-                background: "var(--aur-silver-200)",
-              }}
-            />
-          </div>
-        </div>
+            {/* PRIMARY — the single action for today. */}
+            {primary && (
+              <>
+                <h2 className="aur-heading mt-1">{primary.name}</h2>
+                <p className="m-0 mt-1 text-small" style={{ color: "var(--aur-ink-muted)" }}>
+                  {primary.exercises.length} exercises
+                  {primaryDone ? " · kept today ✓" : ""}
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    primaryDone && primaryState
+                      ? nav(`/session/${primaryState.id}`)
+                      : void start(primary)
+                  }
+                  className="aur-touch mt-4 w-full rounded-full text-body font-medium"
+                  style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.875rem 1.5rem" }}>
+                  {primaryDone ? "Review or edit today's session" : primaryState ? `Resume ${primary.name}` : `Start ${primary.name}`}
+                </button>
+              </>
+            )}
 
-        {/* Primary CTA — intentionally inert in Stage 1 (logger is Stage 2). */}
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          className="aur-touch mt-5 w-full rounded-full text-body font-medium"
-          style={{
-            background: "var(--aur-chrome-50)",
-            color: "var(--aur-night)",
-            border: "none",
-            opacity: 0.55,
-            padding: "0.875rem 1.5rem",
-            cursor: "not-allowed",
-          }}
-        >
-          Start workout
-        </button>
-        <p
-          className="m-0 mt-2 text-center text-[0.6875rem]"
-          style={{ color: "var(--aur-ink-faint)" }}
-        >
-          Logging arrives in Stage 2.
-        </p>
+            {/* REST — calm, not a list of everything. */}
+            {!primary && (
+              <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
+                Nothing is scheduled today. Recovery is part of the work.
+              </p>
+            )}
+
+            {data.nextUp && (
+              <p className="m-0 mt-3 text-small" style={{ color: "var(--aur-ink-faint)" }}>
+                Next: {data.nextUp.day.name}, {data.nextUp.label}
+              </p>
+            )}
+
+            {/* SECONDARY — everything else, folded away. */}
+            {others.length > 0 && (
+              <>
+                <button type="button" onClick={() => setShowOthers((v) => !v)} aria-expanded={showOthers}
+                  className="aur-touch mt-3 w-full rounded-full text-small"
+                  style={{ background: "transparent", color: "var(--aur-ink-muted)", border: "1px solid rgba(210,217,230,0.14)" }}>
+                  {showOthers ? "Hide other days" : primary ? "Or train something else" : "Train anyway"}
+                </button>
+                {showOthers && (
+                  <ul className="m-0 mt-3 flex list-none flex-col gap-2 p-0">
+                    {others.map((d) => {
+                      const s = data.todaySessionByDay[d.id];
+                      return (
+                        <li key={d.id}>
+                          <button type="button" onClick={() => start(d)}
+                            className="aur-touch flex w-full items-center justify-between rounded-xl px-4 py-3 text-left"
+                            style={{ background: "rgba(210,217,230,0.06)", border: "1px solid rgba(210,217,230,0.1)", color: "var(--aur-ink)" }}>
+                            <span>
+                              <span className="block font-medium">{d.name}</span>
+                              <span className="block text-small" style={{ color: "var(--aur-ink-muted)" }}>{d.exercises.length} exercises</span>
+                            </span>
+                            <span className="aur-metric text-small" style={{ color: s?.status === "completed" ? "var(--aur-success)" : "var(--aur-ink-muted)" }}>
+                              {s?.status === "completed" ? "kept ✓" : s ? "resume" : "start"}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </>
+            )}
+          </>
+        )}
       </motion.section>
     </ScreenSurface>
   );
