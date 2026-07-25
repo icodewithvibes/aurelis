@@ -56,6 +56,18 @@ export function Proof() {
         <>
           <motion.section {...rise} className="mt-6" aria-label="Crest">
             <ProofSystem sessionsKept={data.keptCount} variant="hero" />
+            {/* What actually moves this number, phrased against the
+                user's own data rather than a generic rule. */}
+            <p
+              className="m-0 mx-auto mt-4 max-w-[19rem] text-center text-small"
+              style={{ color: "var(--aur-ink-muted)" }}
+            >
+              {data.keptCount === 0
+                ? "The crest is marked by kept days. Record one session and it begins."
+                : data.crest.nextName
+                  ? `The crest counts kept days, not workouts — several sessions in one day still count once. ${data.crest.toNext} more ${data.crest.toNext === 1 ? "day" : "days"} reaches ${data.crest.nextName}.`
+                  : "Highest crest reached. It keeps counting because the record is the point, not the tier."}
+            </p>
           </motion.section>
 
           <motion.section {...rise} className="mt-6 aur-chrome-surface p-5" aria-label="Records">
@@ -103,7 +115,9 @@ export function Proof() {
             <p className="aur-label m-0">Timeline</p>
             {data.timeline.length === 0 && (
               <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
-                Nothing recorded yet. Your first kept session marks the crest.
+                {data.totalWorkoutsCompleted === 0
+                  ? "Nothing recorded yet. Your first kept session marks the crest."
+                  : "No events on the timeline yet — they appear as you record sessions."}
               </p>
             )}
             <ul className="m-0 mt-3 flex list-none flex-col gap-3 p-0">
