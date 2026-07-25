@@ -16,6 +16,8 @@
 import { hashIndex } from "../../lib/hash";
 import { safetyScreen } from "./safety/screen";
 import { SAFETY_TEMPLATES, TEMPLATES } from "./templates";
+import { topicScreen } from "./topics/screen";
+import { TOPIC_TEMPLATES } from "./topics/templates";
 import type { ForgeInput, ForgeResponse, SafetyCategory } from "./types";
 
 /** `hash(stateKey + localDate + note) % variants.length` (§2). */
@@ -39,9 +41,14 @@ export function safetyResponse(category: SafetyCategory): ForgeResponse {
 /**
  * The deterministic template response. Callers should use `route()` —
  * this skips the safety screen and exists as the isolated seam.
+ *
+ * When the note names a recognisable topic, its family answers, because
+ * what someone wrote is more specific than the chip they tapped. With no
+ * note, or an unrecognised one, the chosen state answers.
  */
 export function generateResponse(input: ForgeInput): ForgeResponse {
-  const family = TEMPLATES[input.stateKey];
+  const topic = topicScreen(input.note);
+  const family = topic ? TOPIC_TEMPLATES[topic.topic] : TEMPLATES[input.stateKey];
   const action = family.actions[variantIndexFor(input, family.actions.length)];
   return {
     acknowledgment: family.acknowledgment,
@@ -50,10 +57,14 @@ export function generateResponse(input: ForgeInput): ForgeResponse {
     estMinutes: action.estMinutes,
     tone: family.tone,
     safety: false,
+    topic: topic?.topic,
   };
 }
 
-/** Safety first, always. This is the only entry point the UI may call. */
+/**
+ * Safety first, always. This is the only entry point the UI may call,
+ * and the topic layer is reached strictly after the screen declines.
+ */
 export function route(input: ForgeInput): ForgeResponse {
   const flag = safetyScreen(input.note);
   if (flag) return safetyResponse(flag.category);
