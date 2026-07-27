@@ -8,11 +8,13 @@ import { useEffect, useRef, useState } from "react";
 
 interface RestTimerProps {
   seconds: number;
+  /** Why this length was chosen — rest is no longer one fixed number. */
+  reason?: string;
   onDone: () => void;
   onDismiss: () => void;
 }
 
-export function RestTimer({ seconds, onDone, onDismiss }: RestTimerProps) {
+export function RestTimer({ seconds, reason, onDone, onDismiss }: RestTimerProps) {
   const [total, setTotal] = useState(seconds);
   const [remaining, setRemaining] = useState(seconds);
   const doneRef = useRef(false);
@@ -57,13 +59,12 @@ export function RestTimer({ seconds, onDone, onDismiss }: RestTimerProps) {
           style={{ transition: "stroke-dashoffset 0.25s linear" }}
         />
       </svg>
-      <div className="flex-1">
-        <p className="aur-label m-0">
-          Rest
-        </p>
+      <div className="min-w-0 flex-1">
+        <p className="aur-label m-0">Rest</p>
         <p className="aur-metric m-0 text-2xl" style={{ color: low ? "var(--aur-cobalt-300)" : "var(--aur-ink)" }}>
           {mm}:{ss}
         </p>
+        {reason && <p className="aur-meta m-0 truncate">{reason}</p>}
       </div>
       <div className="flex gap-2">
         <button

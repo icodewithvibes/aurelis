@@ -27,6 +27,7 @@
   --aur-fallback-forge: radial-gradient(120% 96% at 50% 40%, #1a3a7a 0%, #0d1c44 52%, #070f26 100%);
   --aur-glass-tint: rgba(210, 217, 230, 0.07);
   --aur-glass-rim: rgba(210, 217, 230, 0.16);
+  --aur-nav-tint: rgba(7, 12, 24, 0.72);
 }
 
 /* ------------------------------------------- 2. Luminous Meadow */
@@ -49,6 +50,7 @@
   --aur-fallback-forge: radial-gradient(120% 96% at 50% 42%, #2a5aa8 0%, #17306e 55%, #0e1d42 100%);
   --aur-glass-tint: rgba(228, 238, 255, 0.11);
   --aur-glass-rim: rgba(228, 238, 255, 0.24);
+  --aur-nav-tint: rgba(12, 23, 48, 0.7);
   --veil-hero: linear-gradient(
     180deg,
     rgba(10, 20, 48, 0.66) 0%,
@@ -76,6 +78,7 @@
   --aur-fallback-forge: radial-gradient(120% 96% at 50% 40%, #1d4489 0%, #0c1c46 52%, #050b1c 100%);
   --aur-glass-tint: rgba(214, 226, 248, 0.09);
   --aur-glass-rim: rgba(226, 236, 255, 0.28);
+  --aur-nav-tint: rgba(5, 10, 22, 0.74);
 }
 
 /* ------------------------------------------------ 4. Quiet Forge */
@@ -102,4 +105,5 @@
   );
   --aur-glass-tint: rgba(206, 224, 242, 0.1);
   --aur-glass-rim: rgba(206, 224, 242, 0.2);
+  --aur-nav-tint: rgba(9, 20, 40, 0.72);
 }

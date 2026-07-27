@@ -64,6 +64,9 @@
      a device struggles with it. */
   --aur-glass-tint: rgba(210, 217, 230, 0.07);
   --aur-glass-rim: rgba(210, 217, 230, 0.16);
+  /* The nav bar sits over live content, so its tint is deeper than a
+     card's — enough to keep 4.5:1 label contrast over any backplate. */
+  --aur-nav-tint: rgba(7, 12, 24, 0.72);
   --aur-glass-rim-strong: rgba(226, 236, 255, 0.3);
   /* Specular sweep across a pressed/active chrome surface. */
   --aur-glass-specular: linear-gradient(

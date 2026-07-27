@@ -7,6 +7,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import { SplitEditor } from "../components/SplitEditor";
+import { SorenessCheck } from "../components/SorenessCheck";
 import { useNavigate } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { useAsync } from "../hooks/useAsync";
@@ -99,6 +100,10 @@ export function Train() {
             Import a split
           </button>
         </motion.section>
+      )}
+
+      {!loading && data?.hasSplit && !editing && (
+        <SorenessCheck days={data.days} onStart={(d) => void start(d)} />
       )}
 
       {!loading && data?.hasSplit && editing && (
