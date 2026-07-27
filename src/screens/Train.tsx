@@ -59,9 +59,9 @@ export function Train() {
               {editing ? "Done" : "Edit"}
             </button>
           )}
-          <button type="button" onClick={() => nav("/import")} className="aur-press aur-touch rounded-full px-4 text-small"
+          <button type="button" onClick={() => nav("/library")} className="aur-press aur-touch rounded-full px-4 text-small"
             style={{ background: "var(--aur-glass-tint)", color: "var(--aur-ink)", border: "1px solid var(--aur-glass-rim)" }}>
-            {data?.hasSplit ? "Replace" : "Import"}
+            Library
           </button>
         </div>
       </motion.header>
@@ -94,10 +94,16 @@ export function Train() {
       {!loading && data && !data.hasSplit && (
         <motion.section {...rise} className="mt-6 aur-chrome-surface p-5">
           <p className="aur-label m-0">No split yet</p>
-          <p className="m-0 mt-2 text-body">Import a program in AURELIS Split Format to begin.</p>
-          <button type="button" onClick={() => nav("/import")} className="aur-touch mt-4 w-full rounded-full text-body font-medium"
+          <p className="m-0 mt-2 text-body">
+            Pick a ready-made program, or paste your own in AURELIS Split Format.
+          </p>
+          <button type="button" onClick={() => nav("/library")} className="aur-press aur-touch mt-4 w-full rounded-full text-body font-medium"
             style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.875rem 1.5rem" }}>
-            Import a split
+            Browse the split library
+          </button>
+          <button type="button" onClick={() => nav("/import")} className="aur-press aur-touch mt-2 w-full rounded-full text-body"
+            style={{ background: "transparent", color: "var(--aur-ink-muted)", border: "1px solid var(--aur-glass-rim)", padding: "0.875rem 1.5rem" }}>
+            Paste my own split
           </button>
         </motion.section>
       )}

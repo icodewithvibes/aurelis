@@ -102,8 +102,8 @@ body {
   position: relative;
   isolation: isolate;
   background: var(--chrome-surface-fill);
-  backdrop-filter: blur(var(--chrome-surface-blur)) saturate(1.08);
-  -webkit-backdrop-filter: blur(var(--chrome-surface-blur)) saturate(1.08);
+  backdrop-filter: blur(var(--chrome-surface-blur)) saturate(var(--chrome-surface-saturate));
+  -webkit-backdrop-filter: blur(var(--chrome-surface-blur)) saturate(var(--chrome-surface-saturate));
   border-radius: var(--radius-card);
   box-shadow: var(--chrome-rim-light), var(--chrome-inner-shadow), var(--elev-card);
   overflow: hidden;
@@ -194,6 +194,56 @@ body {
   height: 1px;
   background: var(--hairline-chrome);
   border: none;
+}
+
+/**
+ * Liquid glass (Stage 7) — richer, but never at the cost of reading.
+ *
+ * A glass surface here is four things stacked, not one blur:
+ *   1. a saturated backdrop blur, so what's behind bends rather than
+ *      disappearing;
+ *   2. a tint deep enough to hold body-text contrast over ANY backplate;
+ *   3. a specular sheen on the top edge, where light would actually catch;
+ *   4. a chrome rim, brighter on top and fading down, so the panel reads
+ *      as a solid pane with thickness rather than a flat rectangle.
+ *
+ * Cost control: backdrop-filter is the expensive part on a phone, so it
+ * is applied to PANELS only — never to small repeated chips — and it is
+ * dropped entirely when the device reports it cannot composite cheaply.
+ */
+.aur-glass {
+  position: relative;
+  background: var(--aur-glass-tint);
+  backdrop-filter: blur(var(--aur-glass-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--aur-glass-blur)) saturate(160%);
+  border: 1px solid var(--aur-glass-rim);
+  box-shadow:
+    inset 0 1px 0 0 var(--aur-glass-rim-strong),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.18),
+    0 12px 32px rgba(3, 7, 18, 0.32);
+}
+/* The sheen: a hairline of light along the top curve of the pane. */
+.aur-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.09) 0%,
+    rgba(255, 255, 255, 0.02) 22%,
+    transparent 46%
+  );
+}
+
+/* Devices that can't do backdrop-filter get a heavier opaque tint so
+   text contrast is preserved rather than degraded. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .aur-glass,
+  .aur-chrome-surface {
+    background: var(--aur-fallback-cobalt);
+  }
 }
 
 /* Press response (Stage 4).
