@@ -17,6 +17,8 @@ import { loadHome } from "../data/access";
 import { loadWeek } from "../features/planning/planningRepo";
 import { WeekStrip } from "../components/WeekStrip";
 import { startSession } from "../data/repositories/sessionRepo";
+import { bandFor, greetingFor, subtitleFor, type GreetingInput } from "../features/training/greeting";
+import { localDay } from "../lib/date";
 import type { DayWithExercises } from "../data/repositories/splitRepo";
 
 const LABEL_CLASS = "aur-label m-0";
@@ -44,6 +46,19 @@ export function Today() {
   const primaryDone = primaryState?.status === "completed";
   const others = data?.otherDays ?? [];
 
+  /* A line that reacts to the day rather than three fixed strings. */
+  const greetingInput: GreetingInput = {
+    hasSplit: data?.hasSplit ?? false,
+    isTrainingDay: data?.isTrainingDay ?? false,
+    doneToday: primaryDone,
+    streak: data?.streak ?? 0,
+    keptCount: data?.sessionsKept ?? 0,
+    localDate: localDay(),
+    band: bandFor(),
+  };
+  const greeting = data ? greetingFor(greetingInput) : "";
+  const subtitle = data ? subtitleFor(greetingInput) : null;
+
   return (
     <ScreenSurface backplate="hero" labelledBy="today-heading">
       <motion.header {...stagger(0)} className="flex items-start justify-between gap-3 pt-2">
@@ -54,8 +69,13 @@ export function Today() {
             className="aur-display mt-1"
             style={{ textShadow: "0 1px 20px rgba(5,9,20,0.55)" }}
           >
-            {!data?.hasSplit ? "Begin." : data.isTrainingDay ? "A training day." : "Rest, honored."}
+            {greeting}
           </h1>
+          {subtitle && (
+            <p className="m-0 mt-1 text-small" style={{ color: "var(--aur-ink-faint)" }}>
+              {subtitle}
+            </p>
+          )}
         </div>
         {data && <ProofSystem sessionsKept={data.sessionsKept} variant="compact" />}
       </motion.header>

@@ -292,15 +292,53 @@ export async function seedDefaults(): Promise<void> {
 }
 
 /**
- * Open the database on boot and seed defaults (Stage 2).
- * Never blocks rendering; failure is logged and the app degrades to a
- * no-persistence state rather than crashing.
+ * Persistence health (Stage 6).
+ *
+ * This used to be swallowed: if IndexedDB failed to open, the app kept
+ * running and every write silently did nothing. On a phone that looks
+ * exactly like "I ticked the set and it didn't save" — with no
+ * explanation anywhere. The status is now observable so the UI can say
+ * so plainly instead of pretending.
  */
-export async function initDb(): Promise<void> {
+export type DbStatus = "opening" | "ready" | "unavailable";
+
+let dbStatus: DbStatus = "opening";
+let dbError: unknown = null;
+const statusListeners = new Set<(s: DbStatus) => void>();
+
+export function getDbStatus(): DbStatus {
+  return dbStatus;
+}
+
+export function getDbError(): unknown {
+  return dbError;
+}
+
+export function onDbStatus(fn: (s: DbStatus) => void): () => void {
+  statusListeners.add(fn);
+  fn(dbStatus);
+  return () => statusListeners.delete(fn);
+}
+
+function setDbStatus(next: DbStatus, err: unknown = null) {
+  dbStatus = next;
+  dbError = err;
+  for (const fn of statusListeners) fn(next);
+}
+
+/**
+ * Open the database on boot and seed defaults. Never blocks rendering.
+ * A failure no longer degrades silently — it is recorded, surfaced to
+ * the UI, and re-thrown to the caller's `.catch` for logging.
+ */
+export async function initDb(): Promise<DbStatus> {
   try {
     await db.open();
     await seedDefaults();
+    setDbStatus("ready");
   } catch (err) {
-    console.error("[aurelis] IndexedDB unavailable — continuing without persistence.", err);
+    console.error("[aurelis] IndexedDB unavailable — nothing can be saved on this device.", err);
+    setDbStatus("unavailable", err);
   }
+  return dbStatus;
 }

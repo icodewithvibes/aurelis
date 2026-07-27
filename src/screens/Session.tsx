@@ -21,6 +21,8 @@ import {
 import { recordProof, replayDerivedState, type ProofResult } from "../features/proof/proofRepo";
 import { crestStateForSessions } from "../lib/crest";
 import { useUiStore } from "../state/ui";
+import { restReason, restSecondsFor } from "../features/training/rest";
+import { getDbStatus, onDbStatus, type DbStatus } from "../data/db";
 
 interface Cell {
   weight: string;
@@ -48,7 +50,7 @@ export function Session() {
   const [grid, setGrid] = useState<Grid>({});
   const [ghosts, setGhosts] = useState<Record<string, { weight?: number; reps?: number }>>({});
   const [advanced, setAdvanced] = useState<Record<string, boolean>>({});
-  const [rest, setRest] = useState<{ secs: number } | null>(null);
+  const [rest, setRest] = useState<{ secs: number; reason: string } | null>(null);
   // Preferences are live: changing units or the effort mode in Settings
   // is reflected here without a reload.
   const units = useUiStore((s) => s.units);
@@ -60,6 +62,11 @@ export function Session() {
   /** Already recorded: this visit is an edit, not a first completion. */
   const [recorded, setRecorded] = useState(false);
   const [saved, setSaved] = useState(false);
+  /** A write actually failed — never let that pass unnoticed. */
+  const [writeError, setWriteError] = useState(false);
+  const [dbStatus, setDbStatusState] = useState<DbStatus>(getDbStatus());
+
+  useEffect(() => onDbStatus(setDbStatusState), []);
 
   useEffect(() => {
     let alive = true;
@@ -123,13 +130,48 @@ export function Session() {
     [id],
   );
 
+  /**
+   * Typing is optimistic — the field must never lag a keystroke — but the
+   * write is tracked so a failure is visible rather than silent.
+   */
   const update = (exKey: string, exName: string, i: number, patch: Partial<Cell>) => {
     const k = cellKey(exKey, i);
     const next = { ...cell(k), ...patch };
     setGrid((g) => ({ ...g, [k]: next }));
-    void persist(exKey, exName, i, next);
+    persist(exKey, exName, i, next)
+      .then(() => setWriteError(false))
+      .catch((err) => {
+        console.error("[aurelis] could not save that set", err);
+        setWriteError(true);
+      });
     if (recorded) setSaved(false); // the replay is now out of date
     return next;
+  };
+
+  /**
+   * Completing a set AWAITS the write. Ticking a set is the moment the
+   * user believes the work is recorded, so the tick must not turn green
+   * on a promise that has not landed — on a phone the app can be
+   * backgrounded a moment later and a pending write would be lost.
+   */
+  const completeSet = async (ex: SessionSnapshotExercise, i: number, done: boolean) => {
+    const k = cellKey(ex.key, i);
+    const next = { ...cell(k), done };
+    setGrid((g) => ({ ...g, [k]: next }));
+    try {
+      await persist(ex.key, ex.name, i, next);
+      setWriteError(false);
+      if (done) {
+        setRest({
+          secs: restSecondsFor(ex.restSec, next.rpe, defaultRestSec),
+          reason: restReason(ex.restSec, next.rpe),
+        });
+      }
+    } catch (err) {
+      console.error("[aurelis] could not save that set", err);
+      setWriteError(true);
+      setGrid((g) => ({ ...g, [k]: { ...next, done: !done } })); // don't claim it saved
+    }
   };
 
   const qualified = useMemo(() => {
@@ -199,9 +241,30 @@ export function Session() {
         <h1 id="session-heading" className="aur-section">{snapshot?.dayName}</h1>
       </header>
 
+      {/* Persistence is the whole promise of a local-first app. If it is
+          broken, say so at the top of the screen the user is trusting. */}
+      {(dbStatus === "unavailable" || writeError) && (
+        <div
+          role="alert"
+          className="mt-3 rounded-xl p-3"
+          style={{ background: "rgba(190,60,60,0.14)", border: "1px solid var(--aur-danger)" }}
+        >
+          <p className="m-0 text-small" style={{ color: "var(--aur-ink)" }}>
+            {dbStatus === "unavailable"
+              ? "This browser is blocking local storage, so nothing can be saved. In Safari, check that Private Browsing is off and site data is allowed."
+              : "That set could not be saved. Your last change may not be stored."}
+          </p>
+        </div>
+      )}
+
       {rest && (
         <div className="sticky top-2 z-10 mt-3">
-          <RestTimer seconds={rest.secs} onDone={() => setRest(null)} onDismiss={() => setRest(null)} />
+          <RestTimer
+            seconds={rest.secs}
+            reason={rest.reason}
+            onDone={() => setRest(null)}
+            onDismiss={() => setRest(null)}
+          />
         </div>
       )}
 
@@ -295,10 +358,7 @@ export function Session() {
                         type="button"
                         aria-pressed={c.done}
                         aria-label={`Complete set ${i + 1}`}
-                        onClick={() => {
-                          const next = update(ex.key, ex.name, i, { done: !c.done });
-                          if (next.done) setRest({ secs: ex.restSec ?? defaultRestSec });
-                        }}
+                        onClick={() => void completeSet(ex, i, !c.done)}
                         className="aur-press aur-touch grid shrink-0 place-items-center rounded-full"
                         style={{
                           width: 44, height: 44,
