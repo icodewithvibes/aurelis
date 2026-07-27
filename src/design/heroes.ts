@@ -36,6 +36,9 @@ import duskFrontLqip from "./assets/backplates/hero_dusk_front_lqip.webp";
 import nightFrontWebp from "./assets/backplates/hero_night_front_1080x1910.webp";
 import nightFrontJpg from "./assets/backplates/hero_night_front_1080x1910.jpg";
 import nightFrontLqip from "./assets/backplates/hero_night_front_lqip.webp";
+import riderHorseWebp from "./assets/backplates/hero_rider_horse_1080x1910.webp";
+import riderHorseJpg from "./assets/backplates/hero_rider_horse_1080x1910.jpg";
+import riderHorseLqip from "./assets/backplates/hero_rider_horse_lqip.webp";
 
 export interface HeroScene {
   /** Stable id — used by tests and the asset manifests. */
@@ -111,12 +114,30 @@ const nightFacing = front("knight-night-facing", "night", nightFrontWebp, nightF
  * Scenes per band. A band with more than one scene rotates
  * deterministically by day; an empty band falls back to the Chrome Rider.
  */
+/**
+ * Approved Group 5 — the Chrome Rider and horse at blue hour. The
+ * primary visual anchor, and a dusk scene specifically: the light in it
+ * is twilight, not deep night, so it leads the dusk rotation rather
+ * than being stretched across two bands it doesn't match.
+ */
+const riderHorse: HeroScene = {
+  id: "chrome-rider-horse",
+  band: "dusk",
+  webp: riderHorseWebp,
+  jpg: riderHorseJpg,
+  lqip: riderHorseLqip,
+  objectPosition: "center bottom",
+};
+
 export const HERO_SCENES: Record<TimeBand, HeroScene[]> = {
   dawn: [dawnKnight, dawnFacing],
   day: [dayKnight, dayFacing],
-  dusk: [chromeRider, duskFacing],
+  dusk: [riderHorse, chromeRider, duskFacing],
   night: [nightKnight, nightFacing],
 };
+
+/** The single image that best represents AURELIS (onboarding, share). */
+export const SIGNATURE_HERO = riderHorse;
 
 export const DEFAULT_HERO = chromeRider;
 
