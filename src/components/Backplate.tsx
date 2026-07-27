@@ -113,7 +113,9 @@ export function Backplate({ variant }: BackplateProps) {
              low priority keeps it behind the app's own work, and Save-Data
              skips this component entirely. */
           loading="eager"
-          fetchPriority="low"
+          /* Lowercase on purpose: this React version does not recognise
+             the camelCase `fetchPriority` prop and drops it silently. */
+          {...{ fetchpriority: "low" }}
           decoding="async"
           onLoad={() => setLoadedSrc(src.jpg)}
           onError={() => setFailedSrc(src.jpg)}

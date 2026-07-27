@@ -21,6 +21,7 @@ const Forge = lazy(() => import("./screens/Forge").then((m) => ({ default: m.For
 const Proof = lazy(() => import("./screens/Proof").then((m) => ({ default: m.Proof })));
 const Settings = lazy(() => import("./screens/Settings").then((m) => ({ default: m.Settings })));
 const Import = lazy(() => import("./screens/Import").then((m) => ({ default: m.Import })));
+const Library = lazy(() => import("./screens/Library").then((m) => ({ default: m.Library })));
 const Session = lazy(() => import("./screens/Session").then((m) => ({ default: m.Session })));
 
 /** Calm and unstyled-free: the cobalt surface, never a spinner flash. */
@@ -61,6 +62,7 @@ export function App() {
             <Route path="/today" element={<Today />} />
             <Route path="/train" element={<Train />} />
             <Route path="/import" element={<Import />} />
+            <Route path="/library" element={<Library />} />
             <Route path="/session/:id" element={<Session />} />
             <Route path="/forge" element={<Forge />} />
             <Route path="/proof" element={<Proof />} />

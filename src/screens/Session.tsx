@@ -11,6 +11,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { RestTimer } from "../components/RestTimer";
 import { CompletionReveal } from "../components/CompletionReveal";
+import { ExercisePreview } from "../components/ExercisePreview";
 import {
   getSession,
   upsertSetLog,
@@ -308,6 +309,9 @@ export function Session() {
                   {ghost.reps != null ? ` × ${ghost.reps}` : ""} — tap to use
                 </button>
               )}
+
+              {/* "Not sure what this looks like?" — a photo on demand. */}
+              <ExercisePreview name={ex.name} />
 
               <div className="mt-3 flex flex-col gap-2">
                 {Array.from({ length: Math.max(1, ex.sets) }).map((_, i) => {
