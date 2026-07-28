@@ -100,7 +100,20 @@ body {
    optional slow specular sheen. Distinct from generic glassmorphism. */
 .aur-chrome-surface {
   position: relative;
-  isolation: isolate;
+  /*
+   * NO `isolation: isolate` here, deliberately.
+   *
+   * `backdrop-filter` samples the "backdrop root" — everything painted
+   * behind the element. `isolation: isolate` forces the element into its
+   * own isolated group, and iOS WebKit then samples THAT group, which is
+   * empty, so the blur has nothing to work with and the card renders as
+   * a flat fill. Desktop is more forgiving, which is exactly why the
+   * glass looked right in a browser and dead on the phone.
+   *
+   * Isolation isn't needed anyway: an element with `backdrop-filter`
+   * already establishes a stacking context, and `overflow: hidden`
+   * below keeps the rim and sheen pseudo-elements inside the card.
+   */
   background: var(--chrome-surface-fill);
   backdrop-filter: blur(var(--chrome-surface-blur)) saturate(var(--chrome-surface-saturate));
   -webkit-backdrop-filter: blur(var(--chrome-surface-blur)) saturate(var(--chrome-surface-saturate));
@@ -246,6 +259,18 @@ body {
   }
 }
 
+/*
+ * NOTE: no `prefers-reduced-transparency` rule here, on purpose.
+ *
+ * It looks like the right hook for iOS "Reduce Transparency", but the
+ * media feature is widely MIS-reported: several embedded and headless
+ * engines answer `reduce` when the user asked for nothing of the kind,
+ * which would silently strip the glass from people who never opted out.
+ * iOS already disables the blur itself at the system level when that
+ * setting is on, and the tinted fill underneath stays readable, so the
+ * degradation is handled without us guessing at it.
+ */
+
 /**
  * Bottom nav geometry — the iOS standalone fix.
  *
@@ -282,23 +307,32 @@ body {
    at the top, glass, and it rises rather than fading so it reads as
    coming from off-screen. Reduced motion skips the rise. */
 .aur-sheet {
-  background: var(--chrome-surface-fill);
-  backdrop-filter: blur(var(--chrome-surface-blur)) saturate(var(--chrome-surface-saturate));
-  -webkit-backdrop-filter: blur(var(--chrome-surface-blur)) saturate(var(--chrome-surface-saturate));
+  /*
+   * OPAQUE on purpose — no backdrop-filter here.
+   *
+   * The sheet sits inside a backdrop that already blurs. Nesting a
+   * second backdrop-filter makes the outer one the inner one's backdrop
+   * root, so on iOS the sheet samples an empty root and paints as
+   * nothing: you get the blurred overlay and no panel. An opaque fill
+   * is also simply more readable behind a photo.
+   */
+  background: var(--aur-sheet-fill);
   border-top: 1px solid var(--aur-glass-rim-strong);
   border-radius: var(--radius-card) var(--radius-card) 0 0;
   box-shadow: 0 -18px 48px rgba(3, 7, 18, 0.5);
-  animation: aur-sheet-in var(--dur-slow) var(--ease-standard) both;
   overscroll-behavior: contain;
+  /*
+   * Visible by default, then animated. The previous `both` fill-mode
+   * held the FROM state (opacity 0) until the animation started — and if
+   * iOS deferred it, the sheet stayed invisible for good. Visibility
+   * must never depend on an animation actually running.
+   */
+  animation: aur-sheet-in var(--dur-slow) var(--ease-standard);
 }
 @keyframes aur-sheet-in {
   from {
     transform: translate3d(0, 12%, 0);
     opacity: 0;
-  }
-  to {
-    transform: none;
-    opacity: 1;
   }
 }
 :root[data-reduced-motion="true"] .aur-sheet {
