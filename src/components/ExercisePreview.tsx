@@ -12,6 +12,7 @@
  * image degrades to the written steps.
  */
 import { useEffect, useState } from "react";
+import { Portal } from "./Portal";
 import {
   exerciseImageUrl,
   findExercise,
@@ -44,11 +45,23 @@ export function ExercisePreview({ name }: ExercisePreviewProps) {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setState({ phase: "closed" });
     document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+
+    /*
+     * Lock the DOCUMENT, not <body>.
+     *
+     * `overflow` on <body> does not reach the viewport here, because
+     * <html> already has a non-visible `overflow-x` and so wins the
+     * propagation. Setting it on <body> therefore locks nothing — it
+     * just turns <body> into its own scroll container, which is the one
+     * arrangement iOS handles worst, and it did it at exactly the
+     * moment a fixed overlay was on screen.
+     */
+    const root = document.documentElement;
+    const prev = root.style.overflow;
+    root.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      root.style.overflow = prev;
     };
   }, [open]);
 
@@ -85,12 +98,19 @@ export function ExercisePreview({ name }: ExercisePreviewProps) {
       </button>
 
       {open && (
+        <Portal>
         <div
           role="dialog"
           aria-modal="true"
           aria-label={`How to perform ${name}`}
           className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: "rgba(4,8,18,0.62)", backdropFilter: "blur(3px)" }}
+          style={{
+            background: "rgba(4,8,18,0.62)",
+            /* Inline styles bypass the CSS pipeline, so unlike index.css
+               order is irrelevant here — but iOS still needs the prefix. */
+            WebkitBackdropFilter: "blur(3px)",
+            backdropFilter: "blur(3px)",
+          }}
           onClick={() => setState({ phase: "closed" })}
         >
           <div
@@ -202,6 +222,7 @@ export function ExercisePreview({ name }: ExercisePreviewProps) {
             )}
           </div>
         </div>
+        </Portal>
       )}
     </>
   );

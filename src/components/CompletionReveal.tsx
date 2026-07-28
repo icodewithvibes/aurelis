@@ -14,6 +14,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { CrestEmblem } from "./CrestEmblem";
+import { Portal } from "./Portal";
 import { PrismaticGlint } from "./PrismaticGlint";
 import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import type { ProofResult } from "../features/proof/proofRepo";
@@ -47,12 +48,17 @@ export function CompletionReveal({ result, crestLevel, onDone }: CompletionRevea
       };
 
   return (
+    <Portal>
     <div
       role="status"
       aria-live="polite"
       onClick={onDone}
       className="fixed inset-0 z-50 grid place-items-center px-6"
-      style={{ background: "rgba(5,9,20,0.86)", backdropFilter: "blur(6px)" }}
+      style={{
+        background: "rgba(5,9,20,0.86)",
+        WebkitBackdropFilter: "blur(6px)",
+        backdropFilter: "blur(6px)",
+      }}
     >
       <motion.div {...fade} className="flex w-full max-w-xs flex-col items-center gap-4 text-center">
         <div className="relative">
@@ -117,5 +123,6 @@ export function CompletionReveal({ result, crestLevel, onDone }: CompletionRevea
         <p className="aur-meta m-0">Tap to continue</p>
       </motion.div>
     </div>
+    </Portal>
   );
 }

@@ -113,6 +113,13 @@ export function Settings() {
         <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
           Everything here stays on this device.
         </p>
+        {/* The version tell. There is no service worker, so an installed
+            PWA can sit on a stale index.html with no outward sign; this
+            is how "did the fix actually reach the phone?" gets answered
+            without guessing. */}
+        <p className="aur-meta m-0 mt-1" data-build-stamp>
+          Build {__BUILD_STAMP__}
+        </p>
       </header>
 
       <Card title="Theme" hint="Same layout and contrast throughout — only the light changes.">
