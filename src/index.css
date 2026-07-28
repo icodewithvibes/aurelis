@@ -60,7 +60,11 @@ body {
   font-size: var(--text-body);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  /* Deliberately no `overflow-x` — see the NOTE above. It was set to
+     `hidden` here at one point, directly contradicting that note, and
+     <body> duly became the scroll container: computed `hidden auto`,
+     confirmed on the live site. Horizontal clipping is html/#root's
+     job, and `clip` does it without creating a scroller. */
 }
 
 /* Visible keyboard focus everywhere (a11y). */
@@ -70,12 +74,28 @@ body {
   border-radius: 4px;
 }
 
+/*
+ * ORDER IS LOAD-BEARING: `-webkit-backdrop-filter` FIRST, the standard
+ * property LAST — here and in every other glass rule below.
+ *
+ * Tailwind v4 pipes this file through Lightning CSS at a hard-coded
+ * Safari 16.4 floor. Unprefixed `backdrop-filter` only shipped in
+ * Safari 18, so Lightning folds the two declarations into one property
+ * that "needs a prefix" and emits the prefixed form alone. Written in
+ * this order the pair survives; written standard-first the standard
+ * property is silently dropped from the production bundle and Firefox
+ * loses the glass entirely. Chrome accepts `-webkit-` as an alias, so
+ * nothing in a Chrome preview will ever warn you. It cost a session
+ * once already. Verify with:
+ *   npm run build && grep -o '[-a-z]*backdrop-filter:' dist/assets/*.css | sort | uniq -c
+ * The two counts must match.
+ */
 /* Forged-glass panel — original AURELIS surface (see 05 §3). */
 .aur-glass {
   position: relative;
   background: var(--aur-glass-bg);
-  backdrop-filter: blur(var(--aur-glass-blur));
   -webkit-backdrop-filter: blur(var(--aur-glass-blur));
+  backdrop-filter: blur(var(--aur-glass-blur));
   box-shadow: var(--aur-glass-inset), var(--elev-card);
   border-radius: var(--radius-card);
   overflow: hidden;
@@ -115,8 +135,8 @@ body {
    * below keeps the rim and sheen pseudo-elements inside the card.
    */
   background: var(--chrome-surface-fill);
-  backdrop-filter: blur(var(--chrome-surface-blur)) saturate(var(--chrome-surface-saturate));
   -webkit-backdrop-filter: blur(var(--chrome-surface-blur)) saturate(var(--chrome-surface-saturate));
+  backdrop-filter: blur(var(--chrome-surface-blur)) saturate(var(--chrome-surface-saturate));
   border-radius: var(--radius-card);
   box-shadow: var(--chrome-rim-light), var(--chrome-inner-shadow), var(--elev-card);
   overflow: hidden;
@@ -227,8 +247,8 @@ body {
 .aur-glass {
   position: relative;
   background: var(--aur-glass-tint);
-  backdrop-filter: blur(var(--aur-glass-blur)) saturate(160%);
   -webkit-backdrop-filter: blur(var(--aur-glass-blur)) saturate(160%);
+  backdrop-filter: blur(var(--aur-glass-blur)) saturate(160%);
   border: 1px solid var(--aur-glass-rim);
   box-shadow:
     inset 0 1px 0 0 var(--aur-glass-rim-strong),

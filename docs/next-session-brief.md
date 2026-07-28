@@ -15,48 +15,43 @@ Rewritten 2026-07-28. Read this first, then `02_strategy/00_INDEX.md`. Supersede
 
 ---
 
-## 1. WHERE I STOPPED, MID-INVESTIGATION
+## 1. RESOLVED — the dropped `backdrop-filter`
 
-I was confirming that **the production CSS minifier is dropping the unprefixed `backdrop-filter` property.**
+Symptom was right, cause was not. It is **not** the JS minifier and **not** `build.cssTarget`.
 
-Measured in `dist/assets/*.css` and on the live site:
+`@tailwindcss/vite` runs **Lightning CSS** over the stylesheet with targets hard-coded in `@tailwindcss/node` — `safari 16.4, ios_saf 16.4, chrome 111, firefox 128` — and there is no way to configure them. Unprefixed `backdrop-filter` only reached Safari in **18**, so at a 16.4 floor Lightning treats the two declarations as one property that needs a prefix and emits the prefixed form alone.
 
-```
-unprefixed `backdrop-filter:`   →  2 occurrences
-prefixed `-webkit-backdrop-filter:` →  5 occurrences
-```
+The counts were also misread. Of the 7 occurrences in `dist`, 2 are Tailwind's own `.backdrop-filter` utility and 2 are the `@supports` *condition* — not declarations. All three of OUR glass rules had only `-webkit-`.
 
-Source declares BOTH on every glass rule, so the build is stripping the standard property from most rules. Confirmed live: `getComputedStyle(card).backdropFilter === "none"` while `-webkit-backdrop-filter` survives.
+Chrome accepts `-webkit-backdrop-filter` as an alias, so Chrome was never affected. **Firefox was the only casualty**, which is why this survived every review.
 
-**Why it matters:** iOS honours `-webkit-`, so the phone still gets blur — but modern Chrome/Android need the unprefixed form, so those lose the glass **in production only** (dev server is fine, which is why it looked correct in the preview).
-
-**Next step:** `vite.config.ts` has NO `build.cssTarget` set, so it inherits `build.target`. Set an explicit modern `cssTarget` (e.g. `['chrome90','safari15','firefox90','edge90']`), rebuild, and re-count both forms in `dist/assets/*.css`. They should be equal. Also try declaring `-webkit-` FIRST and the standard property LAST, which is the conventional order and harder for a minifier to justify dropping.
+**Fix: declaration ORDER.** `-webkit-` first, standard last — that is the order Tailwind's own utility uses, and both survive. Now 5 and 5. Setting `build.cssTarget` changed nothing (measured); it is kept as hygiene only, with a comment saying so. `src/design/glassPrefixOrder.test.ts` fails the build if the order is ever reversed.
 
 ---
 
-## 2. STILL BROKEN — the thing Yuriel actually cares about
+## 2. RESOLVED — "See the movement" on iPhone
 
-**"See the movement" does not show the photo on his iPhone.** It opens a blurred overlay with no panel/image.
+Not cross-origin. Not the image at all. **The sheet was rendering off-screen.**
 
-I shipped three fixes for this in PR #19 (all verified working on desktop, all deployed):
-1. Removed the sheet's own `backdrop-filter` — it was nested inside a backdrop that also blurs, so on iOS the sheet sampled an empty backdrop root and painted as nothing. Sheets are now opaque (`--aur-sheet-fill`).
-2. Removed `animation-fill-mode: both`, which held the FROM state (`opacity: 0`) until the animation started; if iOS deferred it the sheet stayed invisible forever. Base state is now visible.
-3. Gave the `<img>` intrinsic `width`/`height` instead of relying on `aspect-ratio`; `max-height` uses `vh`.
+`position: fixed` is only fixed to the viewport while no ancestor creates a containing block for it. Every screen animates its cards in with framer-motion (`initial: { y: 10 }`), and a live `transform` on the `.aur-chrome-surface` ancestor makes that card the containing block. `inset: 0` then means "fill that card".
 
-**He reports it still fails.** Before debugging further, RULE OUT STALE CACHE — an installed iOS PWA caches aggressively, and he may not have received `62d123d`. Ask him to delete the home-screen app, open the URL in Safari, hard-reload, then re-add. Have him check `#/settings` for anything that changed recently as a version tell.
+Measured on the live site: the dialog resolved to **416×1452 at (432,235)** instead of the 1280×720 viewport, with the sheet at **top: 1160px on a 720px-tall screen**. The full-bleed backdrop still painted over most of the screen — hence "a blurred overlay with no panel". Nothing had failed to load.
 
-If it genuinely still fails on the current build, remaining suspects, in order:
-- **The photo is cross-origin** (`raw.githubusercontent.com`). iOS in standalone PWA can behave differently from Safari tabs. Test by temporarily pointing at a same-origin image; if that renders, it is a network/CORS issue, not layout. Consider proxying or bundling a handful of images.
-- `position: fixed` dialog inside the body-as-scroll-container (see §3) — iOS is unreliable here. Try rendering the sheet through a portal to `document.body`.
-- `100dvh`/`vh` inside the fixed overlay on older iOS.
+It passed desktop review because framer-motion settles to `transform: none` once the entrance animation finishes, so a card touched a second after load behaves normally. iOS defers those animations when a standalone PWA is restored from a snapshot or throttled in Low Power Mode, and the transform never clears.
+
+**Fix:** `src/components/Portal.tsx` — overlays render into `<body>`, where no ancestor can capture them. Applied to `ExercisePreview` and `CompletionReveal`. Verified: dialog now measures the full viewport and the sheet sits on screen at 375px wide.
+
+**Do not render a `position: fixed` overlay inline again.** Use `<Portal>`.
 
 ---
 
-## 3. Known structural wart (not yet fixed, deliberately)
+## 3. RESOLVED — body was the scroll container
 
-`html { overflow-x: clip }` propagates and makes **`<body>` the scroll container instead of the document** (computed `overflow: hidden auto`). Vertical scrolling works and horizontal is correctly locked at 390, so it is not user-visible — but body-as-scroller plus `position: fixed` is exactly the combination iOS handles worst, and it may be contributing to §2.
+The cause named here previously (`html { overflow-x: clip }`) was wrong. `clip` does not create a scroll container — that is the whole reason it was chosen.
 
-I left it alone rather than refactor untested on his device. If §2 resists everything else, this is the next thing to unpick: contain the decorative bleed (the crest halo is the actual overflow source) at component level instead of on `html`.
+The actual cause was **`overflow-x: hidden` on `body`**, sitting eight lines below a comment in the same rule that explicitly said not to do it. `overflow-x: hidden` forces `overflow-y` to compute to `auto`, so body became the scroller (`hidden auto`, confirmed live).
+
+Removed. Body now computes `visible`. The scroll lock in `ExercisePreview` was also locking `<body>` — which locked nothing, because `<html>` already has a non-visible `overflow-x` and wins propagation, and it re-created the body scroller at exactly the moment an overlay was on screen. It now locks `documentElement`.
 
 ---
 
@@ -69,8 +64,24 @@ I left it alone rather than refactor untested on his device. If §2 resists ever
 
 ---
 
+## 4b. Asset generation — read before spending anything
+
+Higgsfield **Plus** does include 365-day unlimited on Seedream 5.0 Lite, Flux.2 Pro (1K), Seedream 4.5, Nano Banana, Kling O1 Image and GPT Image — **in the Higgsfield web app.**
+
+That entitlement does **not** reach this MCP connector. Measured, not assumed:
+- `models_explore` returns `unlim: { available: false, remaining: null }`, and **no** model in the catalog carries `supports_unlim`.
+- `balance` returns `{ credits, subscription_plan_type: "plus" }` with **no** `free_trial` block.
+- A `get_cost: true` preflight on `nano_banana` and `seedream_v5_lite` — both on the "unlimited" list — returns **1 credit each**.
+
+`use_unlim` is tied to the free-trial allowance, not to Plus. Generating here spends credits. Preflight with `get_cost: true` before any batch.
+
+---
+
 ## 5. Hard-won gotchas
 
+- **A Chrome preview cannot prove CSS prefixing.** Chrome takes `-webkit-` aliases, so a rule that ships prefix-only looks perfect there and is dead in Firefox. Check `dist/assets/*.css`, not the screen.
+- **framer-motion entrance transforms create containing blocks.** Any `position: fixed` child of an animated card is positioned against the CARD. Use `<Portal>` for overlays, always.
+- **`overflow-x: hidden` on `<body>` makes body the scroller** (it forces `overflow-y: auto`). Use `clip` on `html`/`#root` instead. Locking scroll means locking `documentElement`, not `body`.
 - **`tsc -b` silently skips work from a stale `.tsbuildinfo`.** A local "typecheck clean" can be a lie. Always `npx tsc -b --force --noEmit`.
 - **PowerShell:** `<` and `>` inside a here-string break `git commit -m` — write the message to a file and use `git commit -F`. Same for `gh pr create`: use `--body-file`.
 - `gh` is at `"C:\Program Files\GitHub CLI\gh.exe"` (not on PATH).

@@ -15,6 +15,7 @@ import { addDays, daysBetween, localDay, nowMs, parseLocalDay, weekOf } from "..
 import { dayIndexForDate } from "../../lib/schedule";
 import { crestStateForSessions } from "../../lib/crest";
 import type { CrestLevel } from "../../components/ThresholdArch";
+import { buildTimeline, type TimelineDay } from "./timeline";
 import {
   computeBestStreak,
   computeStreak,
@@ -125,6 +126,26 @@ export async function loadProof(today = localDay()): Promise<ProofState> {
       .slice(0, 50),
     prs: prs.filter((p) => !p.deletedAt),
   };
+}
+
+/**
+ * The day-grouped timeline, with each day's full record attached.
+ *
+ * Read as one batch rather than lazily per row: this is IndexedDB on
+ * the same device, the whole log is small, and fetching a day's detail
+ * only when it is opened would put a spinner inside a tap that should
+ * feel instant.
+ */
+export async function loadTimeline(limit = 60): Promise<TimelineDay[]> {
+  const [events, sessions, setLogs, forgeEntries, activities, prs] = await Promise.all([
+    db.proofEvents.toArray(),
+    db.sessions.toArray(),
+    db.setLogs.toArray(),
+    db.forgeEntries.toArray(),
+    db.activities.toArray(),
+    db.prs.toArray(),
+  ]);
+  return buildTimeline({ events, sessions, setLogs, forgeEntries, activities, prs }, limit);
 }
 
 /**

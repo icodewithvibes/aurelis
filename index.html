@@ -19,6 +19,98 @@
     <title>AURELIS</title>
   </head>
   <body>
+    <!--
+      Boot splash.
+
+      Deliberately inline — markup and CSS both. A loading screen that
+      arrives with the JS bundle is not a loading screen; it is one more
+      thing that pops in. This paints on the first byte of HTML, before
+      a single module is parsed, and there is nothing here to fetch: the
+      mark is the approved Threshold Arch drawn as inline SVG, on the
+      same --aur-night the app itself opens on, so the handover is a
+      crossfade rather than a cut.
+
+      main.tsx dismisses it once fonts, imagery and the database are
+      genuinely ready. If that never happens it dismisses itself anyway
+      (see BOOT_HARD_CAP_MS) — a splash must never be able to trap you.
+    -->
+    <div id="boot-splash" role="status" aria-label="Loading AURELIS">
+      <div class="boot-mark">
+        <svg viewBox="0 0 64 64" width="76" height="76" fill="none" stroke-linecap="round" aria-hidden="true">
+          <path d="M32 16 V50" stroke="#5C6B85" stroke-width="1.5" opacity="0.45" />
+          <g stroke="#E8EDF7" stroke-width="2">
+            <path d="M18 50 C18 28 24 15 32 12 C40 15 46 28 46 50" />
+            <path d="M18 50 H46" />
+          </g>
+        </svg>
+      </div>
+      <p class="boot-word">AURELIS</p>
+      <div class="boot-rail"><span></span></div>
+    </div>
+
+    <style>
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.9rem;
+        background: #070c18;
+        /* A very soft cobalt lift, so it reads as the app's own night
+           rather than a black screen. */
+        background-image: radial-gradient(120% 70% at 50% 38%, rgba(42, 76, 148, 0.28), transparent 70%);
+        opacity: 1;
+        transition: opacity 380ms ease;
+      }
+      #boot-splash[data-leaving="true"] {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .boot-mark {
+        filter: drop-shadow(0 0 18px rgba(150, 180, 255, 0.28));
+        animation: boot-breathe 2.6s ease-in-out infinite;
+      }
+      .boot-word {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-size: 0.8125rem;
+        letter-spacing: 0.42em;
+        text-indent: 0.42em;
+        color: #aab6cc;
+      }
+      .boot-rail {
+        width: 104px;
+        height: 2px;
+        border-radius: 2px;
+        overflow: hidden;
+        background: rgba(210, 217, 230, 0.14);
+      }
+      .boot-rail span {
+        display: block;
+        width: 40%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, transparent, #e8edf7, transparent);
+        animation: boot-sweep 1.25s ease-in-out infinite;
+      }
+      @keyframes boot-breathe {
+        0%, 100% { opacity: 0.82; transform: scale(1); }
+        50%      { opacity: 1;    transform: scale(1.035); }
+      }
+      @keyframes boot-sweep {
+        0%   { transform: translateX(-120%); }
+        100% { transform: translateX(320%); }
+      }
+      /* Reduced motion gets the same screen, held still. */
+      @media (prefers-reduced-motion: reduce) {
+        .boot-mark, .boot-rail span { animation: none; }
+        .boot-rail span { width: 100%; background: rgba(232, 237, 247, 0.5); }
+      }
+    </style>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

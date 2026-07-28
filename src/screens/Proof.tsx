@@ -10,19 +10,11 @@ import { ScreenSurface } from "../components/ScreenSurface";
 import { ProofSystem } from "../components/ProofSystem";
 import { useAsync } from "../hooks/useAsync";
 import { useMotionDisabled } from "../hooks/useMotionDisabled";
-import { loadProof } from "../features/proof/proofRepo";
+import { loadProof, loadTimeline } from "../features/proof/proofRepo";
+import { Timeline } from "../components/Timeline";
 import { loadExerciseHistory } from "../features/history/historyRepo";
 import { Sparkline } from "../components/Sparkline";
 import { useUiStore } from "../state/ui";
-import type { ProofEventRow } from "../data/db";
-
-const EVENT_LABEL: Record<ProofEventRow["type"], string> = {
-  workout: "Session kept",
-  forge: "Forge",
-  pr: "New best",
-  recovery: "Recovery honored",
-  crest_levelup: "Crest advanced",
-};
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -36,6 +28,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 export function Proof() {
   const { data, loading } = useAsync(loadProof);
   const { data: history } = useAsync(loadExerciseHistory);
+  const { data: timeline } = useAsync(loadTimeline);
   const units = useUiStore((s) => s.units);
   const reduce = useMotionDisabled();
   const rise = reduce ? {} : {
@@ -156,30 +149,20 @@ export function Proof() {
           )}
 
           <motion.section {...rise} className="mt-4 aur-chrome-surface p-5" aria-label="Timeline">
-            <p className="aur-label m-0">Timeline</p>
-            {data.timeline.length === 0 && (
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="aur-label m-0">Timeline</p>
+              {timeline && timeline.length > 0 && (
+                <span className="aur-meta">Press a day to open it</span>
+              )}
+            </div>
+            {(!timeline || timeline.length === 0) && (
               <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
                 {data.totalWorkoutsCompleted === 0
                   ? "Nothing recorded yet. Your first kept session marks the crest."
                   : "No events on the timeline yet — they appear as you record sessions."}
               </p>
             )}
-            <ul className="m-0 mt-3 flex list-none flex-col gap-3 p-0">
-              {data.timeline.map((e) => (
-                <li key={e.id} className="flex items-baseline justify-between gap-3">
-                  <span className="min-w-0">
-                    <span className="block font-medium">{e.title}</span>
-                    <span className="aur-meta">
-                      {EVENT_LABEL[e.type]}
-                      {e.summary ? ` · ${e.summary}` : ""}
-                    </span>
-                  </span>
-                  <span className="aur-metric shrink-0 text-small" style={{ color: "var(--aur-ink-faint)" }}>
-                    {e.dateLocal.slice(5)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            {timeline && timeline.length > 0 && <Timeline days={timeline} units={units} />}
           </motion.section>
         </>
       )}
