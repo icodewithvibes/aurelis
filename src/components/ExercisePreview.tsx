@@ -97,8 +97,10 @@ export function ExercisePreview({ name }: ExercisePreviewProps) {
             className="aur-sheet w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
             style={{
-              maxHeight: "86dvh",
+              /* vh first so an engine without dvh still gets a cap. */
+              maxHeight: "86vh",
               overflowY: "auto",
+              WebkitOverflowScrolling: "touch",
               paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
             }}
           >
@@ -145,11 +147,16 @@ export function ExercisePreview({ name }: ExercisePreviewProps) {
                   <img
                     src={exerciseImageUrl(state.info.i)}
                     alt={`Demonstration of ${state.info.n}`}
+                    /* Intrinsic size reserves the box before the photo
+                       arrives, so nothing jumps and the layout does not
+                       depend on aspect-ratio support. */
+                    width={800}
+                    height={600}
                     decoding="async"
                     onError={() => setState({ ...state, imageFailed: true })}
                     className="mt-1 block w-full"
                     style={{
-                      aspectRatio: "4 / 3",
+                      height: "auto",
                       objectFit: "cover",
                       background: "var(--aur-glass-tint)",
                     }}
