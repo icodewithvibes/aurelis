@@ -67,9 +67,14 @@ export function BottomNav() {
         WebkitBackdropFilter: "blur(var(--aur-glass-blur)) saturate(150%)",
         borderTop: "1px solid var(--aur-glass-rim)",
         boxShadow: "0 -1px 0 0 rgba(255,255,255,0.05) inset, 0 -12px 32px rgba(3,7,18,0.45)",
-        /* Keeps the bar's own surface below the home indicator while the
-           background still reaches the physical edge. */
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        /*
+         * iOS reserves ~34pt at the bottom, but the home indicator itself
+         * is a ~5pt pill centred in it. Padding the FULL inset left a
+         * visible dead band under the labels and pushed the bar up off
+         * the edge. Reclaiming 12px still clears the indicator with room
+         * to spare while sitting the row where a native tab bar sits.
+         */
+        paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) - 12px), 0px)",
       }}
     >
       <ul className="mx-auto flex max-w-md list-none items-stretch justify-around p-0 m-0">
@@ -77,11 +82,13 @@ export function BottomNav() {
           <li key={d.to} className="flex-1">
             <NavLink
               to={d.to}
-              className="aur-press aur-touch flex flex-col items-center justify-center gap-1 no-underline"
+              className="aur-press aur-touch relative flex flex-col items-center justify-center gap-0.5 no-underline"
               style={({ isActive }) => ({
-                minHeight: 52,
-                paddingTop: 8,
-                paddingBottom: 8,
+                /* 46px keeps the target above the 44px floor while
+                   removing the dead height that pushed the row up. */
+                minHeight: 46,
+                paddingTop: 6,
+                paddingBottom: 4,
                 color: isActive ? "var(--aur-chrome-50)" : "var(--aur-ink-muted)",
                 transition: "color var(--dur-fast) var(--ease-standard)",
               })}
@@ -89,21 +96,24 @@ export function BottomNav() {
               {({ isActive }) => (
                 <>
                   <NavGlyph icon={d.icon} active={isActive} />
-                  <span className="text-[0.625rem] tracking-wide">{d.label}</span>
-                  <span aria-hidden="true" className="relative block h-0.5 w-6">
-                    {isActive && (
-                      <motion.span
-                        layoutId="aur-nav-underline"
-                        className="absolute inset-0 rounded-full"
-                        style={{ background: "var(--aur-silver-200)" }}
-                        transition={
-                          reduce
-                            ? { duration: 0 }
-                            : { type: "spring", stiffness: 420, damping: 34 }
-                        }
-                      />
-                    )}
-                  </span>
+                  <span className="text-[0.625rem] leading-none tracking-wide">{d.label}</span>
+                  {/* Absolutely positioned so the indicator costs no height. */}
+                  {isActive && (
+                    <motion.span
+                      aria-hidden="true"
+                      layoutId="aur-nav-underline"
+                      className="absolute rounded-full"
+                      style={{
+                        bottom: 0,
+                        height: 2,
+                        width: 24,
+                        background: "var(--aur-silver-200)",
+                      }}
+                      transition={
+                        reduce ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34 }
+                      }
+                    />
+                  )}
                 </>
               )}
             </NavLink>

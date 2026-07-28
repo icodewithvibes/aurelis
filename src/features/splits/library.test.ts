@@ -7,7 +7,12 @@ import {
   templateExerciseNames,
 } from "./library";
 import { parseASF, outcomeOf } from "../asf/parse";
-import { loadExerciseIndex, matchExercise } from "../exercises/exerciseDb";
+import {
+  hasReference,
+  loadExerciseIndex,
+  matchExercise,
+  TEXT_ONLY_EXERCISES,
+} from "../exercises/exerciseDb";
 
 describe("library shape", () => {
   it("has unique ids and covers every category", () => {
@@ -61,19 +66,29 @@ describe("every template is valid ASF", () => {
   });
 });
 
-describe("every exercise resolves to a reference image", () => {
-  it("matches the bundled exercise index", async () => {
+describe("every exercise either has a photo or is deliberately text-only", () => {
+  it("leaves nothing accidentally unmatched", async () => {
     const index = await loadExerciseIndex();
     const unmatched: string[] = [];
 
     for (const s of SPLIT_LIBRARY) {
       for (const name of templateExerciseNames(s)) {
+        // Running and riding are declared text-only on purpose; anything
+        // else failing to match would be an accident, not a decision.
+        if (!hasReference(name)) continue;
         if (!matchExercise(name, index)) unmatched.push(`${s.id}: ${name}`);
       }
     }
 
-    // The whole point of building the library on canonical names is that
-    // "Not sure what this looks like?" always has something to show.
     expect(unmatched, `unmatched: ${unmatched.join(", ")}`).toEqual([]);
+  });
+
+  it("only declares cardio as text-only", async () => {
+    const index = await loadExerciseIndex();
+    for (const name of TEXT_ONLY_EXERCISES) {
+      // If the dataset ever gains one of these, drop it from the list
+      // rather than hiding a photo we could have shown.
+      expect(matchExercise(name, index), `${name} now has a reference`).toBeNull();
+    }
   });
 });

@@ -83,6 +83,7 @@ export async function clearLocalData(): Promise<void> {
       db.prs,
       db.proofEvents,
       db.dayMarks,
+      db.activities,
       db.notes,
       db.records,
     ],
@@ -97,6 +98,7 @@ export async function clearLocalData(): Promise<void> {
         db.prs.clear(),
         db.proofEvents.clear(),
         db.dayMarks.clear(),
+        db.activities.clear(),
         db.notes.clear(),
       ]);
       await db.records.put({

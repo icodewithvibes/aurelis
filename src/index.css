@@ -246,6 +246,33 @@ body {
   }
 }
 
+/* Bottom sheet — a panel that belongs to the bottom edge. Rounded only
+   at the top, glass, and it rises rather than fading so it reads as
+   coming from off-screen. Reduced motion skips the rise. */
+.aur-sheet {
+  background: var(--chrome-surface-fill);
+  backdrop-filter: blur(var(--chrome-surface-blur)) saturate(var(--chrome-surface-saturate));
+  -webkit-backdrop-filter: blur(var(--chrome-surface-blur)) saturate(var(--chrome-surface-saturate));
+  border-top: 1px solid var(--aur-glass-rim-strong);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  box-shadow: 0 -18px 48px rgba(3, 7, 18, 0.5);
+  animation: aur-sheet-in var(--dur-slow) var(--ease-standard) both;
+  overscroll-behavior: contain;
+}
+@keyframes aur-sheet-in {
+  from {
+    transform: translate3d(0, 12%, 0);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+:root[data-reduced-motion="true"] .aur-sheet {
+  animation: none;
+}
+
 /* Press response (Stage 4).
    Touch devices have no hover, and most phones give no haptic to a web
    app, so a press has to be felt visually: the surface dips slightly and

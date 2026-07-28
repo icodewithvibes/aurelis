@@ -41,6 +41,31 @@ export function exerciseImageUrl(path: string): string {
   return `${CDN}${path.replace(/^exercises\//, "")}`;
 }
 
+/**
+ * Movements that intentionally have NO reference photo.
+ *
+ * The dataset has machines — an elliptical, a stationary rower — but no
+ * entry for "go outside and run easy for 30 minutes". Rather than
+ * substitute a machine nobody asked for, or show a lookup failure for a
+ * movement everyone already knows, these are declared text-only and the
+ * "See the movement" button is simply not offered.
+ */
+export const TEXT_ONLY_EXERCISES = new Set([
+  "easy run",
+  "steady run",
+  "long run",
+  "running intervals",
+  "walk run intervals",
+  "easy ride",
+  "steady ride",
+  "long ride",
+  "bike intervals",
+]);
+
+export function hasReference(name: string): boolean {
+  return !TEXT_ONLY_EXERCISES.has(normalizeName(name));
+}
+
 /** Lowercase, punctuation stripped, whitespace collapsed. */
 export function normalizeName(name: string): string {
   return name
