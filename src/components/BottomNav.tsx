@@ -57,7 +57,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40"
+      className="aur-navbar fixed inset-x-0 bottom-0 z-40"
       style={{
         /* Layered glass: a translucent tint over a saturated blur, with a
            chrome hairline catching light along the top edge. */
@@ -67,14 +67,8 @@ export function BottomNav() {
         WebkitBackdropFilter: "blur(var(--aur-glass-blur)) saturate(150%)",
         borderTop: "1px solid var(--aur-glass-rim)",
         boxShadow: "0 -1px 0 0 rgba(255,255,255,0.05) inset, 0 -12px 32px rgba(3,7,18,0.45)",
-        /*
-         * iOS reserves ~34pt at the bottom, but the home indicator itself
-         * is a ~5pt pill centred in it. Padding the FULL inset left a
-         * visible dead band under the labels and pushed the bar up off
-         * the edge. Reclaiming 12px still clears the indicator with room
-         * to spare while sitting the row where a native tab bar sits.
-         */
-        paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) - 12px), 0px)",
+        /* Bottom geometry (margin + padding bleed) lives in .aur-navbar,
+           because it has to be one coherent calculation. */
       }}
     >
       <ul className="mx-auto flex max-w-md list-none items-stretch justify-around p-0 m-0">

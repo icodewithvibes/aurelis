@@ -49,11 +49,11 @@ html,
 
 body {
   margin: 0;
-  /* Decorative bleed — crest halos, bloom, the drifting backplate — is
-     meant to extend past its box. `clip` stops that from creating a
-     horizontal scrollbar at 390px WITHOUT making body a scroll
-     container, which `hidden` would do (breaking sticky positioning). */
-  overflow-x: clip;
+  /* NOTE: no overflow here on purpose. Setting overflow-x on <body>
+     computes overflow-y to `auto`, which quietly turns BODY into the
+     scroll container instead of the document — that costs iOS its
+     momentum scrolling. The horizontal clip lives on html/#root below,
+     which contains the decorative bleed just as well. */
   background: var(--aur-night);
   color: var(--aur-ink);
   font-family: var(--font-ui);
@@ -244,6 +244,38 @@ body {
   .aur-chrome-surface {
     background: var(--aur-fallback-cobalt);
   }
+}
+
+/**
+ * Bottom nav geometry — the iOS standalone fix.
+ *
+ * On iPhone in standalone mode a `position: fixed; bottom: 0` element is
+ * not reliably laid out against the PHYSICAL bottom of the screen:
+ * WebKit has a long-standing bug where viewport-sized fixed containers
+ * leave a gap underneath, and the page background shows through it as a
+ * darker band below the bar. Apple only fixed it in Safari 26.1 beta, so
+ * every earlier iOS still shows it.
+ *
+ * Padding arithmetic cannot close that gap, because the gap is OUTSIDE
+ * the element. So the bar's own box is extended past the bottom edge
+ * instead: a negative bottom margin pushes the box --aur-nav-bleed lower,
+ * and the same amount is added back as padding so the row of icons does
+ * not move. The surface that covers the gap is therefore the real nav —
+ * same tint, same blur, same gradient — rather than a flat patch that
+ * would read as a slightly different shade.
+ *
+ * `--aur-nav-inset` is the visible space kept under the row. iOS reserves
+ * 34pt for the home indicator, but the indicator itself is a ~5pt pill
+ * sitting ~8pt off the bottom, so ~22pt clears it comfortably while
+ * sitting the row lower than a naive full-inset reservation would.
+ */
+:root {
+  --aur-nav-bleed: 160px;
+  --aur-nav-inset: max(calc(env(safe-area-inset-bottom, 0px) - 12px), 0px);
+}
+.aur-navbar {
+  margin-bottom: calc(var(--aur-nav-bleed) * -1);
+  padding-bottom: calc(var(--aur-nav-inset) + var(--aur-nav-bleed));
 }
 
 /* Bottom sheet — a panel that belongs to the bottom edge. Rounded only
