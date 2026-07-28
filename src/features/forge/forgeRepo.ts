@@ -91,6 +91,24 @@ export async function setDailyCommitment(id: string, on: boolean): Promise<void>
   await db.forgeEntries.update(id, { isDailyCommitment: on, updatedAt: nowMs() });
 }
 
+/**
+ * The journal: everything written down, newest first. This is the app's
+ * memory — a Forge note is only worth writing if you can read it back.
+ * Safety entries are included; a hard day is part of the record too.
+ */
+export async function recentForgeEntries(limit = 30): Promise<ForgeEntryRow[]> {
+  return (await db.forgeEntries.toArray())
+    .filter((e) => !e.deletedAt)
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, limit);
+}
+
+/** Remove a single journal entry (soft, like everything else). */
+export async function deleteForgeEntry(id: string): Promise<void> {
+  const now = nowMs();
+  await db.forgeEntries.update(id, { deletedAt: now, updatedAt: now });
+}
+
 export async function forgeEntriesFor(date = localDay()): Promise<ForgeEntryRow[]> {
   return (await db.forgeEntries.where("dateLocal").equals(date).toArray())
     .filter((e) => !e.deletedAt)

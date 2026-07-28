@@ -16,6 +16,7 @@ import { useAsync } from "../hooks/useAsync";
 import { loadHome } from "../data/access";
 import { loadWeek } from "../features/planning/planningRepo";
 import { WeekStrip } from "../components/WeekStrip";
+import { LogActivity } from "../components/LogActivity";
 import { startSession } from "../data/repositories/sessionRepo";
 import { bandFor, greetingFor, subtitleFor, type GreetingInput } from "../features/training/greeting";
 import { localDay } from "../lib/date";
@@ -142,6 +143,9 @@ export function Today() {
                 Next: {data.nextUp.day.name}, {data.nextUp.label}
               </p>
             )}
+
+            {/* Work done outside the split — a run on top of the session. */}
+            <LogActivity />
 
             {/* The week ahead — one glance, no calendar grid. */}
             {week && week.ahead.length > 0 && (

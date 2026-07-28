@@ -132,6 +132,30 @@ export interface DayMarkRow {
   updatedAt: number;
   deletedAt: number | null;
 }
+/**
+ * Anything trained outside a split session — a run, a ride, a swim.
+ * Kept separate from `sessions` on purpose: a session is a prescribed
+ * day from your split, while this is work you simply did, and merging
+ * the two would distort what "kept the plan" means.
+ */
+export interface ActivityRow {
+  id: string;
+  dateLocal: string;
+  kind: "run" | "ride" | "swim" | "walk" | "row" | "other";
+  /** Minutes. */
+  minutes?: number;
+  /** Distance in the user's chosen unit. */
+  distance?: number;
+  distanceUnit?: "mi" | "km";
+  /** How hard it felt, 1-10, optional as everywhere else. */
+  effort?: number;
+  note?: string;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+  deviceId: string;
+}
+
 export interface NoteRow {
   id: string;
   title?: string;
@@ -190,7 +214,12 @@ export interface MetaRow {
   schemaVersion: number;
 }
 
-export const SCHEMA_VERSION = 1;
+/**
+ * v2 adds the `activities` store (runs and other work outside a split).
+ * Dexie only needs a version bump when the STORES or INDEXES change;
+ * adding plain fields to existing rows does not require one.
+ */
+export const SCHEMA_VERSION = 2;
 
 class AurelisDB extends Dexie {
   splits!: EntityTable<SplitRow, "id">;
@@ -202,6 +231,7 @@ class AurelisDB extends Dexie {
   prs!: EntityTable<PrRow, "id">;
   proofEvents!: EntityTable<ProofEventRow, "id">;
   dayMarks!: EntityTable<DayMarkRow, "id">;
+  activities!: EntityTable<ActivityRow, "id">;
   notes!: EntityTable<NoteRow, "id">;
   settings!: EntityTable<SettingsRow, "id">;
   records!: EntityTable<RecordsRow, "id">;
@@ -221,14 +251,16 @@ class AurelisDB extends Dexie {
         prs: "&id, exerciseName, dateLocal",
         proofEvents: "&id, dateLocal, type, createdAt",
         dayMarks: "&id, &dateLocal",
+        activities: "&id, dateLocal, kind, updatedAt",
         notes: "&id, updatedAt",
         settings: "&id",
         records: "&id",
         meta: "&id",
       })
-      // No-op migration shell: future versions chain .upgrade() here.
-      .upgrade(() => {
-        /* v1 baseline — nothing to migrate */
+      // v1 -> v2 adds `activities`. Dexie creates the new store itself;
+      // no existing row needs rewriting, so there is nothing to migrate.
+      .upgrade(async (tx) => {
+        await tx.table("meta").put({ id: "meta", schemaVersion: SCHEMA_VERSION });
       });
   }
 }

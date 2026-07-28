@@ -22,6 +22,7 @@ export const BACKUP_TABLES = [
   "prs",
   "proofEvents",
   "dayMarks",
+  "activities",
   "notes",
   "records",
   "settings",

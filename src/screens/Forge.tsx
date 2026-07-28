@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { RestTimer } from "../components/RestTimer";
+import { ForgeJournal } from "../components/ForgeJournal";
 import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import {
   completeForgeEntry,
@@ -33,6 +34,7 @@ export function Forge() {
   const reduce = useMotionDisabled();
   const [phase, setPhase] = useState<Phase>("choose");
   const [stateKey, setStateKey] = useState<ForgeStateKey | null>(null);
+  const [showStates, setShowStates] = useState(false);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [entryId, setEntryId] = useState<string | null>(null);
@@ -56,11 +58,16 @@ export function Forge() {
     transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const },
   };
 
+  /** Either a written note or a tapped state is enough to answer. */
+  const canSubmit = note.trim().length > 0 || stateKey !== null;
+
   async function findStep() {
-    if (!stateKey || busy) return;
+    if (!canSubmit || busy) return;
     setBusy(true);
     try {
-      const { entry, response: r } = await openForgeEntry(stateKey, note, commit);
+      // With no tag, the topic layer reads the note; "need_reset" is the
+      // neutral fallback that adds nothing the note didn't say.
+      const { entry, response: r } = await openForgeEntry(stateKey ?? "need_reset", note, commit);
       setEntryId(entry.id);
       setResponse(r);
       setPhase("response");
@@ -90,6 +97,7 @@ export function Forge() {
   function reset() {
     setPhase("choose");
     setStateKey(null);
+    setShowStates(false);
     setNote("");
     setEntryId(null);
     setResponse(null);
@@ -114,59 +122,82 @@ export function Forge() {
 
       {/* ---------------------------------------------------- choose */}
       {phase === "choose" && (
-        <motion.section {...rise} className="mt-6 aur-chrome-surface p-5" aria-label="What's in the way">
-          <p className="aur-label m-0">What's in the way</p>
-          <ul className="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">
-            {FORGE_STATES.map((s) => {
-              const active = stateKey === s.key;
-              return (
-                <li key={s.key}>
-                  <button
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setStateKey(s.key)}
-                    className="aur-touch rounded-full px-4 text-small"
-                    style={{
-                      background: active ? "var(--aur-chrome-50)" : "rgba(210,217,230,0.08)",
-                      color: active ? "var(--aur-night)" : "var(--aur-ink)",
-                      border: "1px solid rgba(210,217,230,0.14)",
-                    }}
-                  >
-                    {s.label}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-
-          <label htmlFor="forge-note" className="aur-label mt-5 block">
-            Anything you want to set down (optional)
+        <motion.section {...rise} className="mt-6 aur-chrome-surface p-5" aria-label="Set it down">
+          {/* The note is the point of this screen, so it leads. The
+              state chips are a shortcut for when you don't feel like
+              writing — not a gate you must pass through first. */}
+          <label htmlFor="forge-note" className="aur-label block">
+            What&apos;s on your mind
           </label>
           <textarea
             id="forge-note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            rows={3}
+            rows={5}
+            placeholder="Write it plainly. Nothing here is judged, and nothing leaves this device."
             className="mt-2 w-full rounded-xl p-3 text-body"
             style={{
               color: "var(--aur-ink)",
               background: "rgba(7,12,24,0.55)",
-              border: "1px solid rgba(210,217,230,0.14)",
+              border: "1px solid var(--aur-glass-rim)",
               resize: "vertical",
+              minHeight: 132,
             }}
           />
-          <p className="aur-meta m-0 mt-2">
-            Stays on this device. Nothing is sent anywhere.
-          </p>
+
+          <button
+            type="button"
+            aria-expanded={showStates}
+            onClick={() => setShowStates((v) => !v)}
+            className="aur-touch mt-3 text-small"
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "var(--aur-ink-muted)",
+              padding: "0.25rem 0",
+            }}
+          >
+            {stateKey
+              ? `Tagged: ${FORGE_STATES.find((s) => s.key === stateKey)?.label}`
+              : showStates
+                ? "Hide the shortcuts"
+                : "Or pick what's in the way"}
+          </button>
+
+          {showStates && (
+            <ul className="m-0 mt-2 flex list-none flex-wrap gap-1.5 p-0">
+              {FORGE_STATES.map((s) => {
+                const active = stateKey === s.key;
+                return (
+                  <li key={s.key}>
+                    <button
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setStateKey(active ? null : s.key)}
+                      className="aur-press aur-touch rounded-full px-3 text-[0.75rem]"
+                      style={{
+                        background: active ? "var(--aur-chrome-50)" : "var(--aur-glass-tint)",
+                        color: active ? "var(--aur-night)" : "var(--aur-ink-muted)",
+                        border: "1px solid var(--aur-glass-rim)",
+                        minHeight: 36,
+                      }}
+                    >
+                      {s.label}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
 
           <button
             type="button"
             onClick={() => void findStep()}
-            disabled={!stateKey || busy}
-            className="aur-touch mt-4 w-full rounded-full text-body font-medium"
+            disabled={!canSubmit || busy}
+            className="aur-press aur-touch mt-4 w-full rounded-full text-body font-medium"
             style={{
-              background: stateKey ? "var(--aur-chrome-50)" : "rgba(210,217,230,0.16)",
-              color: stateKey ? "var(--aur-night)" : "var(--aur-ink-muted)",
+              background: canSubmit ? "var(--aur-chrome-50)" : "rgba(210,217,230,0.16)",
+              color: canSubmit ? "var(--aur-night)" : "var(--aur-ink-muted)",
               border: "none",
               padding: "0.875rem 1.5rem",
               opacity: busy ? 0.6 : 1,
@@ -174,8 +205,14 @@ export function Forge() {
           >
             {busy ? "…" : "Find the next step"}
           </button>
+
+          <p className="aur-meta m-0 mt-3">
+            Kept on this device and readable later. Nothing is sent anywhere.
+          </p>
         </motion.section>
       )}
+
+      {phase === "choose" && <ForgeJournal />}
 
       {/* -------------------------------------------------- response */}
       {phase === "response" && response && (
