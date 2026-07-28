@@ -1,70 +1,89 @@
 # AURELIS — NEXT SESSION BRIEF (resume here)
 
-Rewritten 2026-07-25 (session 2, second half). Read this first, then `02_strategy/00_INDEX.md`. Supersedes the previous brief.
+Rewritten 2026-07-28. Read this first, then `02_strategy/00_INDEX.md`. Supersedes the previous brief.
 
 ---
 
-## 0. Where things stand
+## 0. State
 
-**Repo:** `icodewithvibes/aurelis` (PRIVATE, Pages disabled, owner-only). `gh` is at `"C:\Program Files\GitHub CLI\gh.exe"` — **not on PATH**.
+- **Live:** https://icodewithvibes.github.io/aurelis/ — deploys automatically on every push to `main`.
+- **Repo:** `icodewithvibes/aurelis`, now **PUBLIC** (Yuriel's decision, so Pages works on the free plan).
+- **`main` = `62d123d`.** 351 tests, typecheck/lint/build all clean.
+- **Credits:** ~374. GPT Image 2 ≈7/image, max 8 concurrent jobs.
 
-**PowerShell gotchas:** `<` and `>` in a here-string break `git commit -m` — write the message to a file and use `git commit -F`. Multi-part `-q` jq strings mangle too.
-
-**Merge state — one trap:**
-- PR **#7** (Stage 1) and **#8** (Stage 2) are **MERGED**, but #8 landed in `frontend-v1/stage-1-app-shell`, **not `main`** — GitHub only retargets a stacked PR when its base branch is deleted, and it wasn't. `main` still contains Stage 1 only.
-- PR **#9** is still **OPEN**, based on `frontend-v1/stage-2-core-workflows`.
-- **To finish:** merge #9 into `frontend-v1/stage-2-core-workflows`, then open ONE PR from `frontend-v1/stage-2-core-workflows` → `main` (it carries Stage 1+2+3), then retarget this branch.
-- Working branch `frontend-v1/stage-3-proof-forge-and-visual-assets`, tip `7db3df6`.
-
-**Toolchain:** Node 24, Vite 6 + React 18 + TS strict + Tailwind v4 + Framer Motion + Zustand + Dexie + Vitest. **179 tests pass**, typecheck and lint clean.
-
-**Dev server:** Vite ignores the harness-assigned port and picks its own — read `preview_logs` for the real URL. Hash routing: set `location.hash`, don't navigate to `/#/path`. Note each localhost **port is its own origin, so each has its own IndexedDB** — data from one port won't appear on another.
-
-**Credits:** ~**381** (147 spent on 21 GPT Image 2 renders; no renders since).
+**Build status: healthy.** Yuriel received one "build failed" email — that was the FIRST deploy run (`30176426757`), which failed because `@types/node` was never declared. Fixed in PR #13. **All six runs since have succeeded.** Do not go hunting for a broken build; confirm with `gh run list` before believing otherwise.
 
 ---
 
-## 1. STAGE 3 IS COMPLETE
+## 1. WHERE I STOPPED, MID-INVESTIGATION
 
-All four items in `docs/stage-3-product-and-ux-plan.md` §5 are built, plus editing.
+I was confirming that **the production CSS minifier is dropping the unprefixed `backdrop-filter` property.**
 
-**1. Proof engine + surface + completion reveal**
-- `features/proof/engine.ts` — pure folds: `resolveDayStatus`, `computeStreak`, `computeBestStreak`, `weekCompletion`, `countKeptDays`, Epley `est1RM`, PR detection. Nothing derived is stored as truth.
-- `recordProof()` persists session status, PRs, events, records and crest level **before** the reveal plays.
-- `CompletionReveal` — 550 ms edge-light trace, prismatic glint, 900 ms flourish on a tier crossing, skippable, reduced-motion safe.
-- Proof screen: tier, exact count, current/best run, week completion, all-time totals, timeline.
+Measured in `dist/assets/*.css` and on the live site:
 
-**2. Beginner logger UX** — was already delivered (prefilled reps, weight-first, RPE behind "Advanced details", ghost defaults, units, rest timer).
+```
+unprefixed `backdrop-filter:`   →  2 occurrences
+prefixed `-webkit-backdrop-filter:` →  5 occurrences
+```
 
-**3. Typography** — no component declares a font family inline. New `.aur-heading`; `.aur-label` and `.aur-metric` replace the ad-hoc patterns. Verified: Fraunces 36/470 display, Fraunces 18.4/440 date-context, Inter 11 labels, IBM Plex Mono metrics, Inter 16 body.
+Source declares BOTH on every glass rule, so the build is stripping the standard property from most rules. Confirmed live: `getComputedStyle(card).backdropFilter === "none"` while `-webkit-backdrop-filter` survives.
 
-**4. Forge engine + safety** (`features/forge/`, per `02_strategy/02` exactly)
-- `route() → safetyScreen() → generateResponse()`. `generateResponse` is the only AI-swappable unit; the safety screen can't be bypassed.
-- Seven states × three variants, `hash(stateKey + localDate + note) % 3`. No randomness anywhere.
-- Voice rules are **enforced by tests**: the 12/24/16 word budget and a forbidden-lexicon check.
-- Safety: four categories, curated lexicon, word-boundary matching, and **deliberately narrow negation** — only short symptom words ("not suicidal", "no pain") can be cancelled; multi-word phrases that carry their own negation ("i dont want to be here anymore") are never cancellable. A flagged note gets no task, no time box, gentle tone, and can never become a commitment. US/MA copy (988 / 911 / a trusted person), seeded into settings. The UI states plainly it is not a diagnosis.
-- Daily commitments feed the streak: kept counts as a kept day, open doesn't, skipped never becomes an unmet obligation.
+**Why it matters:** iOS honours `-webkit-`, so the phone still gets blur — but modern Chrome/Android need the unprefixed form, so those lose the glass **in production only** (dev server is fine, which is why it looked correct in the preview).
 
-**Plus: editable sessions with deterministic replay.** `replayDerivedState()` rebuilds the PR table and its events from the log in order, then the records row, so a fat-fingered 225 that was really 125 cannot leave a personal best behind. Today's primary action on a kept day opens the recorded session for review/edit.
+**Next step:** `vite.config.ts` has NO `build.cssTarget` set, so it inherits `build.target`. Set an explicit modern `cssTarget` (e.g. `['chrome90','safari15','firefox90','edge90']`), rebuild, and re-count both forms in `dist/assets/*.css`. They should be equal. Also try declaring `-webkit-` FIRST and the standard property LAST, which is the conventional order and harder for a minifier to justify dropping.
 
 ---
 
-## 2. NOT built — pick up here
+## 2. STILL BROKEN — the thing Yuriel actually cares about
 
-1. **Split editing** — reorder days, rename, edit exercises after import. Currently import-only. The last unbuilt item from the old split-logic list.
-2. **Notes** — still explicitly out of scope in the plan; confirm before building.
-3. **Stage 4 backlog** (highest value first): exercise history & progress chart, PR timeline surface, plate calculator, warm-up suggestions, supersets/circuits, per-exercise + session notes, JSON export/import backup, weekly review, body-weight log, rest-timer presets + haptics, quick-add exercise mid-session, wire the Settings units toggle (still read-only).
-4. **Worth a look:** the Proof timeline shows the last 50 events with no paging, and `collectDayFacts` walks every day since the first activity on each load — both are fine now and would want attention with a year of data.
+**"See the movement" does not show the photo on his iPhone.** It opens a blurred overlay with no panel/image.
+
+I shipped three fixes for this in PR #19 (all verified working on desktop, all deployed):
+1. Removed the sheet's own `backdrop-filter` — it was nested inside a backdrop that also blurs, so on iOS the sheet sampled an empty backdrop root and painted as nothing. Sheets are now opaque (`--aur-sheet-fill`).
+2. Removed `animation-fill-mode: both`, which held the FROM state (`opacity: 0`) until the animation started; if iOS deferred it the sheet stayed invisible forever. Base state is now visible.
+3. Gave the `<img>` intrinsic `width`/`height` instead of relying on `aspect-ratio`; `max-height` uses `vh`.
+
+**He reports it still fails.** Before debugging further, RULE OUT STALE CACHE — an installed iOS PWA caches aggressively, and he may not have received `62d123d`. Ask him to delete the home-screen app, open the URL in Safari, hard-reload, then re-add. Have him check `#/settings` for anything that changed recently as a version tell.
+
+If it genuinely still fails on the current build, remaining suspects, in order:
+- **The photo is cross-origin** (`raw.githubusercontent.com`). iOS in standalone PWA can behave differently from Safari tabs. Test by temporarily pointing at a same-origin image; if that renders, it is a network/CORS issue, not layout. Consider proxying or bundling a handful of images.
+- `position: fixed` dialog inside the body-as-scroll-container (see §3) — iOS is unreliable here. Try rendering the sheet through a portal to `document.body`.
+- `100dvh`/`vh` inside the fixed overlay on older iOS.
 
 ---
 
-## 3. Standing rules (unchanged)
+## 3. Known structural wart (not yet fixed, deliberately)
 
-- Local-only. No backend, accounts, analytics, sync, or deploy. PWA install works; no service worker yet.
-- Images always optional: solid CSS fallback, Save-Data skips rasters, LQIP blur-up, reduced-motion static.
-- 44 px targets, no 390 px overflow, one-handed iPhone.
-- **`01_references/` and `03_assets/candidates/` are git-ignored — never commit, never redistribute.** Only compressed approved exports ship.
-- Asset policy: **`gpt_image_2` at 2k/high** (~7 credits). Max **8 concurrent jobs**; 2–8 min each. Review candidates with Yuriel **before** compressing or committing.
-- Prompt recipe: name the exact qualities to borrow, give an explicit compositional zone plan, name specific materials, list strict exclusions (always `no watermark, no reversed text`). For emblems add "flat centred, orthographic, generous margin, must read at 48 px".
-- Berserk is an **abstract register only** — never a character, armour design, panel composition, or the name/logo.
-- **Safety copy is binding.** Any change to `features/forge/safety/` or the crisis copy should be reviewed against `02_strategy/02` §4–5, never loosened casually, and the negation rule in `lexicon.ts` must stay narrow.
+`html { overflow-x: clip }` propagates and makes **`<body>` the scroll container instead of the document** (computed `overflow: hidden auto`). Vertical scrolling works and horizontal is correctly locked at 390, so it is not user-visible — but body-as-scroller plus `position: fixed` is exactly the combination iOS handles worst, and it may be contributing to §2.
+
+I left it alone rather than refactor untested on his device. If §2 resists everything else, this is the next thing to unpick: contain the decorative bleed (the crest halo is the actual overflow source) at component level instead of on `html`.
+
+---
+
+## 4. What shipped recently (so you do not redo it)
+
+- **The save bug** — `initDb` swallowed IndexedDB open failures and the app ran with no persistence, silently. Status is now observable and surfaced; completing a set awaits the write; `navigator.storage.persist()` on boot.
+- **iOS nav gap** — a fixed `bottom: 0` bar does not reach the physical bottom in iOS standalone (WebKit bug, fixed only in Safari 26.1 beta). Solved by extending the bar's own box 160px past the edge via negative margin + matching padding (`--aur-nav-bleed`, `--aur-nav-inset` in `index.css`). Do not "fix" this with padding again.
+- **Glass on iPhone** — `isolation: isolate` on `.aur-chrome-surface` made iOS sample an empty backdrop root. Removed. **Never reintroduce `isolation` on an element that also has `backdrop-filter`.**
+- Split library (11 programs), exercise reference photos from **free-exercise-db (Unlicense/public domain)**, Forge journal (memory), activity logging (runs/rides, own `activities` table so it never inflates kept-days), soreness routing, per-lift history, JSON backup, code-split bundle, four themes.
+
+---
+
+## 5. Hard-won gotchas
+
+- **`tsc -b` silently skips work from a stale `.tsbuildinfo`.** A local "typecheck clean" can be a lie. Always `npx tsc -b --force --noEmit`.
+- **PowerShell:** `<` and `>` inside a here-string break `git commit -m` — write the message to a file and use `git commit -F`. Same for `gh pr create`: use `--body-file`.
+- `gh` is at `"C:\Program Files\GitHub CLI\gh.exe"` (not on PATH).
+- **Do not trust `prefers-reduced-transparency`.** This test browser reports `reduce` with nothing configured; honouring it stripped the glass for everyone. Removed on purpose — do not add it back.
+- The Browser pane does not composite frames, so `loading="lazy"` images never load and CSS transitions appear frozen. Set `img.loading='eager'` when verifying, and do not mistake either for a bug.
+- Each localhost port is its own origin with its own IndexedDB.
+
+---
+
+## 6. Standing rules
+
+- Local-only: no backend, accounts, analytics, sync, or AI API. PWA install only.
+- Images optional: solid CSS fallback, Save-Data honoured, LQIP, reduced-motion static.
+- 44px targets, no 390px overflow.
+- `01_references/` and `03_assets/candidates/` are git-ignored — never commit, never publish.
+- **Forge safety code is binding.** `features/forge/safety/lexicon.ts` keeps negation narrow: only short symptom words ("not suicidal", "no pain") may be cancelled; multi-word phrases like "i dont want to be here anymore" must never be cancellable. The topic layer sits strictly BELOW safety and must never widen crisis matching. Review changes against `02_strategy/02` §4–5.
