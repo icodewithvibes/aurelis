@@ -3,11 +3,13 @@
  * bottom nav, with the global grain overlay. HashRouter keeps SPA
  * routes portable (and Pages-safe for a future, out-of-scope deploy).
  */
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { BottomNav } from "./components/BottomNav";
 import { GrainOverlay } from "./components/GrainOverlay";
+import { Tutorial } from "./components/Tutorial";
 import { Today } from "./screens/Today";
+import { firstRunDecision, markTutorialSeen } from "./features/onboarding/tutorialRepo";
 
 /**
  * Today is bundled with the shell because it is the landing route and
@@ -37,7 +39,40 @@ function RouteFallback() {
   );
 }
 
+/**
+ * Decides once per launch whether this is somebody's first time.
+ *
+ * An existing user who predates the tutorial is marked seen SILENTLY —
+ * meeting a "here's how to log a set" walkthrough after months of
+ * sessions would be insulting. See features/onboarding/tutorial.ts.
+ */
+function useFirstRun(): [boolean, () => void] {
+  const [showing, setShowing] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void firstRunDecision().then(async (decision) => {
+      if (!alive) return;
+      if (decision === "show") setShowing(true);
+      else if (decision === "mark-seen-silently") await markTutorialSeen();
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return [
+    showing,
+    () => {
+      setShowing(false);
+      void markTutorialSeen();
+    },
+  ];
+}
+
 export function App() {
+  const [showTutorial, dismissTutorial] = useFirstRun();
+
   return (
     <HashRouter>
       <a
@@ -75,6 +110,7 @@ export function App() {
       </main>
       <BottomNav />
       <GrainOverlay />
+      {showTutorial && <Tutorial onClose={dismissTutorial} />}
     </HashRouter>
   );
 }
