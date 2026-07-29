@@ -9,7 +9,7 @@ import { useState } from "react";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { SegmentedControl } from "../components/SegmentedControl";
 import { SCHEMA_VERSION, type ImageMode, type RpeMode, type ThemeName } from "../data/db";
-import { clearLocalData, REST_PRESETS } from "../data/repositories/settingsRepo";
+import { clearLocalData, REST_PRESETS, STALE_PRESETS } from "../data/repositories/settingsRepo";
 import { exportBackup, restoreBackupFromText } from "../features/backup/backupRepo";
 import { backupFilename, summarizeBackup } from "../features/backup/backup";
 import { useUiStore, type ReducedMotionSetting } from "../state/ui";
@@ -59,6 +59,34 @@ function Card({ title, hint, children }: { title: string; hint?: string; childre
           {hint}
         </p>
       )}
+      {children}
+    </section>
+  );
+}
+
+/**
+ * A group heading.
+ *
+ * Settings had grown into one long column of unrelated cards — theme
+ * sitting next to weight units sitting next to a backup button — so
+ * finding anything meant reading all of it. Four groups, in the order
+ * someone actually reaches for them: how it looks, how it logs, where
+ * the data lives, and what this build is.
+ *
+ * `<h2>` rather than a styled paragraph so the screen has a real
+ * outline for assistive tech instead of a flat list of regions.
+ */
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  const id = `settings-group-${title.toLowerCase().replace(/\s+/g, "-")}`;
+  return (
+    <section aria-labelledby={id} className="mt-7 first:mt-6">
+      <h2
+        id={id}
+        className="aur-label m-0 px-1"
+        style={{ color: "var(--aur-ink)", letterSpacing: "0.16em" }}
+      >
+        {title}
+      </h2>
       {children}
     </section>
   );
@@ -122,6 +150,7 @@ export function Settings() {
         </p>
       </header>
 
+      <Group title="Appearance">
       <Card title="Theme" hint="Same layout and contrast throughout — only the light changes.">
         <SegmentedControl
           label="Theme"
@@ -152,7 +181,9 @@ export function Settings() {
           onChange={prefs.setImageMode}
         />
       </Card>
+      </Group>
 
+      <Group title="Training">
       <Card title="Weight units" hint="Used in the logger, your records and every suggestion.">
         <SegmentedControl
           label="Weight units"
@@ -202,21 +233,41 @@ export function Settings() {
         />
       </Card>
 
-      <Card title="Install on iPhone" hint="AURELIS runs as a home-screen app, offline and account-free.">
-        <ol
-          className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0 text-small"
-          style={{ color: "var(--aur-ink-muted)" }}
-        >
-          <li>1. Open this page in Safari.</li>
-          <li>2. Tap the Share button.</li>
-          <li>3. Choose “Add to Home Screen”.</li>
-        </ol>
+      <Card
+        title="Unfinished sessions"
+        hint="If a session goes quiet this long it closes itself as a half session. The sets you did are kept and stay in your history — it just isn't counted as a kept day."
+      >
+        <div role="radiogroup" aria-label="Close unfinished sessions after" className="mt-3 flex flex-wrap gap-2">
+          {STALE_PRESETS.map((h) => {
+            const active = prefs.staleAfterHours === h;
+            return (
+              <button
+                key={h}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => prefs.setStaleAfterHours(h)}
+                className="aur-press aur-touch rounded-full px-4 text-small"
+                style={{
+                  background: active ? "var(--aur-chrome-50)" : "var(--aur-glass-tint)",
+                  color: active ? "var(--aur-night)" : "var(--aur-ink)",
+                  border: active ? "1px solid transparent" : "1px solid var(--aur-glass-rim)",
+                }}
+              >
+                {h === 0 ? "Never" : `${h}h`}
+              </button>
+            );
+          })}
+        </div>
         <p className="aur-meta m-0 mt-2">
-          It opens full-screen with its own icon. Your data stays in this browser's local storage —
-          installing does not upload anything.
+          {prefs.staleAfterHours === 0
+            ? "Sessions stay open until you finish them yourself."
+            : "A session with nothing logged in it is discarded instead, not recorded."}
         </p>
       </Card>
+      </Group>
 
+      <Group title="Your data">
       <Card
         title="Backup"
         hint="Nothing is uploaded, so a lost browser profile is a lost history. Export a file you keep."
@@ -254,21 +305,7 @@ export function Settings() {
         )}
       </Card>
 
-      <Card title="Accessibility">
-        <div className="mt-2">
-          <div className="aur-hairline" />
-          <Row label="Touch targets" value="44px minimum" />
-          <div className="aur-hairline" />
-          <Row label="Motion" value={prefs.reducedMotion === "on" ? "Held still" : prefs.reducedMotion === "off" ? "Full" : "Follows device"} />
-          <div className="aur-hairline" />
-          <Row label="Imagery" value={prefs.imageMode === "save-data" ? "Off" : prefs.imageMode === "always" ? "Always on" : "Automatic"} />
-          <div className="aur-hairline" />
-          <Row label="Decorative images" value="Hidden from screen readers" />
-          <div className="aur-hairline" />
-        </div>
-      </Card>
-
-      <Card title="Your data">
+      <Card title="What is stored">
         <div className="mt-2">
           <div className="aur-hairline" />
           <Row label="Storage" value="This device only" />
@@ -337,6 +374,52 @@ export function Settings() {
           </p>
         )}
       </Card>
+      </Group>
+
+      <Group title="About">
+      <Card title="Install on iPhone" hint="AURELIS runs as a home-screen app, offline and account-free.">
+        <ol
+          className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0 text-small"
+          style={{ color: "var(--aur-ink-muted)" }}
+        >
+          <li>1. Open this page in Safari.</li>
+          <li>2. Tap the Share button.</li>
+          <li>3. Choose “Add to Home Screen”.</li>
+        </ol>
+        <p className="aur-meta m-0 mt-2">
+          It opens full-screen with its own icon. Your data stays in this browser's local storage —
+          installing does not upload anything.
+        </p>
+      </Card>
+
+      <Card title="Accessibility">
+        <div className="mt-2">
+          <div className="aur-hairline" />
+          <Row label="Touch targets" value="44px minimum" />
+          <div className="aur-hairline" />
+          <Row label="Motion" value={prefs.reducedMotion === "on" ? "Held still" : prefs.reducedMotion === "off" ? "Full" : "Follows device"} />
+          <div className="aur-hairline" />
+          <Row label="Imagery" value={prefs.imageMode === "save-data" ? "Off" : prefs.imageMode === "always" ? "Always on" : "Automatic"} />
+          <div className="aur-hairline" />
+          <Row label="Decorative images" value="Hidden from screen readers" />
+          <div className="aur-hairline" />
+        </div>
+      </Card>
+
+      <Card title="This build">
+        <div className="mt-2">
+          <div className="aur-hairline" />
+          <Row label="Local database" value={`v${SCHEMA_VERSION}`} />
+          <div className="aur-hairline" />
+        </div>
+        {/* The build stamp itself stays in the header, where it can be
+            read without scrolling — that is the whole point of it. */}
+        <p className="aur-meta m-0 mt-2">
+          There is no service worker, so an installed app can sit on an older build without
+          saying so. If something looks wrong, check the build line at the top first.
+        </p>
+      </Card>
+      </Group>
     </ScreenSurface>
   );
 }

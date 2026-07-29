@@ -83,6 +83,10 @@ export function findStaleSessions(
   const close: StaleSession[] = [];
   const discard: SessionRow[] = [];
 
+  // 0 or less means the user turned auto-closing off. Nothing is
+  // touched — an open session stays open until they finish it.
+  if (staleAfterMs <= 0) return { close, discard };
+
   for (const session of sessions) {
     if (session.deletedAt || session.status !== "active") continue;
 

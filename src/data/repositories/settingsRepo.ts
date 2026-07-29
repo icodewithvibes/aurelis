@@ -18,6 +18,12 @@ export interface Preferences {
   imageMode: ImageMode;
   rpeMode: RpeMode;
   defaultRestSec: number;
+  /**
+   * Hours a session may sit idle before it closes itself as a half
+   * session. 0 means never — the session stays open until you finish
+   * it, which suits someone who genuinely trains across a whole day.
+   */
+  staleAfterHours: number;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -27,10 +33,14 @@ export const DEFAULT_PREFERENCES: Preferences = {
   imageMode: "auto",
   rpeMode: "simple",
   defaultRestSec: 90,
+  staleAfterHours: 2,
 };
 
 /** Rest presets offered in Settings, in seconds. */
 export const REST_PRESETS = [45, 60, 90, 120, 180] as const;
+
+/** Idle timeouts offered in Settings, in hours. 0 = never close. */
+export const STALE_PRESETS = [1, 2, 3, 0] as const;
 
 export async function getSettings(): Promise<SettingsRow | undefined> {
   return db.settings.get("app");
@@ -45,6 +55,7 @@ export function resolvePreferences(row?: SettingsRow): Preferences {
     imageMode: row?.imageMode ?? DEFAULT_PREFERENCES.imageMode,
     rpeMode: row?.rpeMode ?? DEFAULT_PREFERENCES.rpeMode,
     defaultRestSec: row?.defaultRestSec ?? DEFAULT_PREFERENCES.defaultRestSec,
+    staleAfterHours: row?.staleAfterHours ?? DEFAULT_PREFERENCES.staleAfterHours,
   };
 }
 
@@ -63,6 +74,9 @@ export const setImageMode = (imageMode: ImageMode) => patch({ imageMode });
 export const setRpeMode = (rpeMode: RpeMode) => patch({ rpeMode });
 export const setDefaultRestSec = (defaultRestSec: number) =>
   patch({ defaultRestSec: Math.max(15, Math.min(600, Math.round(defaultRestSec))) });
+/** 0 disables auto-closing entirely; anything else is clamped to 1–24h. */
+export const setStaleAfterHours = (hours: number) =>
+  patch({ staleAfterHours: hours <= 0 ? 0 : Math.max(1, Math.min(24, Math.round(hours))) });
 
 /**
  * Erase every local record: splits, sessions, logs, Forge entries,

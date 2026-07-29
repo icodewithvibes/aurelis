@@ -19,6 +19,7 @@ import type { ImageMode, RpeMode, ThemeName } from "../data/db";
 import {
   DEFAULT_PREFERENCES,
   setDefaultRestSec as persistRest,
+  setStaleAfterHours as persistStaleAfterHours,
   setImageMode as persistImageMode,
   setReducedMotion as persistReducedMotion,
   setRpeMode as persistRpeMode,
@@ -55,6 +56,7 @@ interface UiState extends Preferences {
   setUnits: (units: "lb" | "kg") => void;
   setRpeMode: (mode: RpeMode) => void;
   setDefaultRestSec: (seconds: number) => void;
+  setStaleAfterHours: (hours: number) => void;
   motionDisabled: () => boolean;
 }
 
@@ -99,6 +101,11 @@ export const useUiStore = create<UiState>()((set, get) => ({
   setDefaultRestSec: (defaultRestSec) => {
     set({ defaultRestSec });
     void persistRest(defaultRestSec);
+  },
+
+  setStaleAfterHours: (staleAfterHours) => {
+    set({ staleAfterHours });
+    void persistStaleAfterHours(staleAfterHours);
   },
 
   motionDisabled: () => resolveMotionDisabled(get().reducedMotion),

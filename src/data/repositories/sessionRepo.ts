@@ -11,6 +11,7 @@ import type { DayWithExercises } from "./splitRepo";
 import { newId } from "../../lib/id";
 import { localDay, nowMs } from "../../lib/date";
 import { refreshRecords } from "../../features/proof/proofRepo";
+import { loadPreferences } from "./settingsRepo";
 import {
   findStaleSessions,
   halfSessionSummary,
@@ -157,7 +158,12 @@ export async function finishSession(id: string, qualified: boolean): Promise<voi
  * Returns what was closed so the UI can offer to record why.
  */
 export async function closeStaleSessions(now = nowMs()): Promise<StaleSession[]> {
-  const [sessions, logs] = await Promise.all([db.sessions.toArray(), db.setLogs.toArray()]);
+  const [sessions, logs, prefs] = await Promise.all([
+    db.sessions.toArray(),
+    db.setLogs.toArray(),
+    loadPreferences(),
+  ]);
+  const staleAfterMs = prefs.staleAfterHours * 60 * 60 * 1000;
 
   const bySession = new Map<string, SetLogRow[]>();
   for (const l of logs) {
@@ -166,7 +172,7 @@ export async function closeStaleSessions(now = nowMs()): Promise<StaleSession[]>
     bySession.set(l.sessionId, list);
   }
 
-  const { close, discard } = findStaleSessions(sessions, bySession, now);
+  const { close, discard } = findStaleSessions(sessions, bySession, now, staleAfterMs);
 
   for (const s of discard) {
     // Started, nothing logged. Not evidence of anything; drop it rather

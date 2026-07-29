@@ -193,6 +193,8 @@ export interface SettingsRow {
   imageMode?: ImageMode;
   rpeMode?: RpeMode;
   defaultRestSec?: number;
+  /** Hours idle before a session self-closes as a half session; 0 = never. */
+  staleAfterHours?: number;
   /**
    * Crisis copy (02_strategy/02 §5), seeded from features/forge.
    * Optional so rows written before this field still open; the module
