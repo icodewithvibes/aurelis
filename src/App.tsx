@@ -3,13 +3,14 @@
  * bottom nav, with the global grain overlay. HashRouter keeps SPA
  * routes portable (and Pages-safe for a future, out-of-scope deploy).
  */
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { BottomNav } from "./components/BottomNav";
 import { GrainOverlay } from "./components/GrainOverlay";
 import { Tutorial } from "./components/Tutorial";
 import { Today } from "./screens/Today";
 import { firstRunDecision, markTutorialSeen } from "./features/onboarding/tutorialRepo";
+import { useUiStore } from "./state/ui";
 
 /**
  * Today is bundled with the shell because it is the landing route and
@@ -45,33 +46,31 @@ function RouteFallback() {
  * An existing user who predates the tutorial is marked seen SILENTLY —
  * meeting a "here's how to log a set" walkthrough after months of
  * sessions would be insulting. See features/onboarding/tutorial.ts.
+ *
+ * This ONLY handles the automatic case. Opening the tutorial on request
+ * goes straight to the store, because re-deriving "is this a new user"
+ * would answer no for anyone with history and silently discard the ask.
  */
-function useFirstRun(): [boolean, () => void] {
-  const [showing, setShowing] = useState(false);
+function useFirstRun(): void {
+  const openTutorial = useUiStore((s) => s.openTutorial);
 
   useEffect(() => {
     let alive = true;
     void firstRunDecision().then(async (decision) => {
       if (!alive) return;
-      if (decision === "show") setShowing(true);
+      if (decision === "show") openTutorial();
       else if (decision === "mark-seen-silently") await markTutorialSeen();
     });
     return () => {
       alive = false;
     };
-  }, []);
-
-  return [
-    showing,
-    () => {
-      setShowing(false);
-      void markTutorialSeen();
-    },
-  ];
+  }, [openTutorial]);
 }
 
 export function App() {
-  const [showTutorial, dismissTutorial] = useFirstRun();
+  useFirstRun();
+  const tutorialOpen = useUiStore((s) => s.tutorialOpen);
+  const closeTutorial = useUiStore((s) => s.closeTutorial);
 
   return (
     <HashRouter>
@@ -110,7 +109,14 @@ export function App() {
       </main>
       <BottomNav />
       <GrainOverlay />
-      {showTutorial && <Tutorial onClose={dismissTutorial} />}
+      {tutorialOpen && (
+        <Tutorial
+          onClose={() => {
+            closeTutorial();
+            void markTutorialSeen();
+          }}
+        />
+      )}
     </HashRouter>
   );
 }
