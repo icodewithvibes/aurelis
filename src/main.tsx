@@ -22,6 +22,7 @@ import { initDb } from "./data/db";
 import { DEFAULT_PREFERENCES, loadPreferences } from "./data/repositories/settingsRepo";
 import { useUiStore, applyMotionAttribute, applyThemeAttribute } from "./state/ui";
 import { requestPersistentStorage } from "./lib/storage";
+import { closeStaleSessions } from "./data/repositories/sessionRepo";
 import {
   BOOT_HARD_CAP_MS,
   dismissBootSplash,
@@ -73,6 +74,9 @@ async function boot() {
       // hydrate() applies the theme and motion attributes and mirrors
       // the image mode into lib/media, which preload then honours.
       useUiStore.getState().hydrate(await loadPreferences());
+      // A session left open two hours ago is not still happening. Close
+      // it as a half session before any screen can render it as live.
+      await closeStaleSessions();
     }
     await preloadCriticalAssets();
   } catch (err) {

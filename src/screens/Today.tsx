@@ -17,7 +17,8 @@ import { loadHome } from "../data/access";
 import { loadWeek } from "../features/planning/planningRepo";
 import { WeekStrip } from "../components/WeekStrip";
 import { LogActivity } from "../components/LogActivity";
-import { startSession } from "../data/repositories/sessionRepo";
+import { startSession, pendingHalfSessions } from "../data/repositories/sessionRepo";
+import { HalfSessionNote } from "../components/HalfSessionNote";
 import { bandFor, greetingFor, subtitleFor, type GreetingInput } from "../features/training/greeting";
 import { localDay } from "../lib/date";
 import type { DayWithExercises } from "../data/repositories/splitRepo";
@@ -60,6 +61,12 @@ export function Today() {
   const greeting = data ? greetingFor(greetingInput) : "";
   const subtitle = data ? subtitleFor(greetingInput) : null;
 
+  // Asked once, never nagged: dismissing only has to last this mount,
+  // because answering or declining removes it from the query anyway.
+  const { data: halfSessions } = useAsync(pendingHalfSessions);
+  const [dismissedHalf, setDismissedHalf] = useState<string[]>([]);
+  const halfSession = halfSessions?.find((s) => !dismissedHalf.includes(s.id)) ?? null;
+
   return (
     <ScreenSurface backplate="hero" labelledBy="today-heading">
       <motion.header {...stagger(0)} className="flex items-start justify-between gap-3 pt-2">
@@ -82,6 +89,13 @@ export function Today() {
       </motion.header>
 
       <div className="flex-1" />
+
+      {halfSession && (
+        <HalfSessionNote
+          session={halfSession}
+          onDone={() => setDismissedHalf((ids) => [...ids, halfSession.id])}
+        />
+      )}
 
       <motion.section {...stagger(1)} aria-label="Today" className="aur-chrome-surface p-5">
         {loading && <p className="m-0 text-body" style={{ color: "var(--aur-ink-muted)" }}>Loading…</p>}

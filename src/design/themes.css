@@ -20,8 +20,10 @@
   --aur-night: #070c18;
   --aur-cobalt-900: #0b1430;
   --aur-ink: #eef2f8;
-  --aur-ink-muted: #a8b4c8;
-  --aur-ink-faint: #7d8aa0;
+  /* Kept in step with the base token — the chrome surface is half as
+     opaque now and this text sits over the hero. */
+  --aur-ink-muted: #bac4d8;
+  --aur-ink-faint: #8b98af;
 
   --aur-fallback-cobalt: linear-gradient(180deg, var(--aur-night) 0%, #0d1a3c 55%, #0a1330 100%);
   --aur-fallback-forge: radial-gradient(120% 96% at 50% 40%, #1a3a7a 0%, #0d1c44 52%, #070f26 100%);

@@ -43,7 +43,12 @@ describe("library shape", () => {
     for (const s of SPLIT_LIBRARY) {
       expect(s.rationale).not.toMatch(/must train each muscle twice/i);
       expect(s.rationale).not.toMatch(/only way to (grow|build)/i);
-      expect(`${s.summary} ${s.rationale}`).not.toMatch(/guarantee|shred|melt|hack/i);
+      // Whole words only. Unbounded, "hack" also fires inside
+      // "Hackenschmidt" — a lifter's name, and the origin of a lift in
+      // the library. The guard is about marketing language, not spelling.
+      expect(`${s.summary} ${s.rationale}`).not.toMatch(
+        /\b(guarantee\w*|shred\w*|melt\w*|hacks?)\b/i,
+      );
     }
   });
 });

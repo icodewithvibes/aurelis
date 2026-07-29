@@ -68,7 +68,14 @@ function TimelineRow({ day, units, last }: { day: TimelineDay; units: string; la
               style={{
                 width: 7,
                 height: 7,
-                background: day.kept ? "var(--aur-chrome-50)" : "transparent",
+                /* Filled = kept. Half-filled = a half session: real work
+                   on the record, but not a day the crest counts. Hollow
+                   = something happened that was never a kept day. */
+                background: day.kept
+                  ? "var(--aur-chrome-50)"
+                  : day.halfSession
+                    ? "linear-gradient(90deg, var(--aur-chrome-50) 50%, transparent 50%)"
+                    : "transparent",
                 border: day.kept ? "none" : "1px solid var(--aur-glass-rim-strong)",
               }}
             />

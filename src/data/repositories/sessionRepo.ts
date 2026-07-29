@@ -10,6 +10,14 @@ import type { SessionRow, SetLogRow } from "../db";
 import type { DayWithExercises } from "./splitRepo";
 import { newId } from "../../lib/id";
 import { localDay, nowMs } from "../../lib/date";
+import { refreshRecords } from "../../features/proof/proofRepo";
+import {
+  findStaleSessions,
+  halfSessionSummary,
+  stallReasonLabel,
+  type StallReason,
+  type StaleSession,
+} from "../../features/training/staleSession";
 
 export interface SessionSnapshotExercise {
   key: string;
@@ -135,6 +143,103 @@ export async function finishSession(id: string, qualified: boolean): Promise<voi
     completedAt: now,
     updatedAt: now,
   });
+}
+
+/**
+ * Close any session that was left open and has gone quiet.
+ *
+ * Runs once on boot. There is no background worker in a local-first
+ * app, so "two hours have passed" can only be noticed the next time the
+ * app is opened — which is exactly when it matters, because that is
+ * when the user would otherwise be shown a stale session still
+ * pretending to be in progress.
+ *
+ * Returns what was closed so the UI can offer to record why.
+ */
+export async function closeStaleSessions(now = nowMs()): Promise<StaleSession[]> {
+  const [sessions, logs] = await Promise.all([db.sessions.toArray(), db.setLogs.toArray()]);
+
+  const bySession = new Map<string, SetLogRow[]>();
+  for (const l of logs) {
+    const list = bySession.get(l.sessionId) ?? [];
+    list.push(l);
+    bySession.set(l.sessionId, list);
+  }
+
+  const { close, discard } = findStaleSessions(sessions, bySession, now);
+
+  for (const s of discard) {
+    // Started, nothing logged. Not evidence of anything; drop it rather
+    // than put an empty row on the timeline.
+    await db.sessions.update(s.id, { status: "discarded", deletedAt: now, updatedAt: now });
+  }
+
+  for (const { session, doneSets } of close) {
+    await db.sessions.update(session.id, {
+      status: "partial",
+      qualified: false,
+      completedAt: now,
+      updatedAt: now,
+    });
+    await db.proofEvents.put({
+      id: newId(),
+      dateLocal: session.dateLocal,
+      type: "half",
+      refId: session.id,
+      title: sessionDayName(session),
+      summary: halfSessionSummary(doneSets),
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    });
+  }
+
+  // Records are a fold over the log, so recompute rather than adjust.
+  if (close.length > 0 || discard.length > 0) await refreshRecords();
+  return close;
+}
+
+/**
+ * Recent half sessions that have not been given a reason yet.
+ *
+ * Scoped to the last two days on purpose: being asked why you stopped a
+ * workout last month is an interrogation, not a record. If it is not
+ * answered soon it is dropped, and the half session stands on its own.
+ */
+export async function pendingHalfSessions(now = nowMs()): Promise<SessionRow[]> {
+  const cutoff = now - 2 * 24 * 60 * 60 * 1000;
+  return (await db.sessions.toArray()).filter(
+    (s) =>
+      !s.deletedAt &&
+      s.status === "partial" &&
+      (s.completedAt ?? 0) >= cutoff &&
+      !(s.notes ?? "").includes("Stopped early"),
+  );
+}
+
+/** The reason a half session ended, recorded only if the user offers one. */
+export async function setStallReason(sessionId: string, reason: StallReason): Promise<void> {
+  const now = nowMs();
+  const session = await db.sessions.get(sessionId);
+  if (!session) return;
+  const label = stallReasonLabel(reason);
+  await db.sessions.update(sessionId, {
+    notes: [session.notes, `Stopped early — ${label.toLowerCase()}.`].filter(Boolean).join("\n"),
+    updatedAt: now,
+  });
+  const event = (await db.proofEvents.toArray()).find(
+    (e) => e.refId === sessionId && e.type === "half" && !e.deletedAt,
+  );
+  if (event) {
+    await db.proofEvents.update(event.id, {
+      summary: `${event.summary} · ${label.toLowerCase()}`,
+      updatedAt: now,
+    });
+  }
+}
+
+function sessionDayName(session: SessionRow): string {
+  return (session.splitDaySnapshot as { dayName?: string } | null)?.dayName ?? "Session";
 }
 
 export async function discardSession(id: string): Promise<void> {

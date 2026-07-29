@@ -49,6 +49,8 @@ export interface TimelineDetail {
 }
 export interface TimelineDay {
   dateLocal: string;
+  /** Closed automatically after going quiet — real work, not a kept day. */
+  halfSession: boolean;
   /** Compressed to one line when collapsed. */
   headline: string;
   /** Short facts shown beside the headline. */
@@ -195,17 +197,22 @@ export function buildTimeline(sources: TimelineSources, limit = 60): TimelineDay
     const levelUp = dayEvents.find((e) => e.type === "crest_levelup");
     const workout = dayEvents.find((e) => e.type === "workout");
     const recovery = dayEvents.find((e) => e.type === "recovery");
+    const half = dayEvents.find((e) => e.type === "half");
 
     const setCount = exercises.reduce((n, e) => n + e.sets.length, 0);
 
     let headline: string;
     if (workout) headline = workout.title;
+    else if (half) headline = half.title;
     else if (dayActivities.length > 0) headline = activityLabel(dayActivities[0]);
     else if (recovery) headline = "Recovery honored";
     else if (dayForge.some((f) => f.status === "done")) headline = "Commitment kept";
     else headline = dayEvents[0]?.title ?? "Recorded";
 
     const chips: string[] = [];
+    // Said first and plainly. A half session is not a failure and is not
+    // hidden — but it must never read as a kept day either.
+    if (half && !workout) chips.push("half session");
     if (setCount > 0) chips.push(`${setCount} ${setCount === 1 ? "set" : "sets"}`);
     if (exercises.length > 0) {
       chips.push(`${exercises.length} ${exercises.length === 1 ? "lift" : "lifts"}`);
@@ -226,6 +233,7 @@ export function buildTimeline(sources: TimelineSources, limit = 60): TimelineDay
 
     return {
       dateLocal: date,
+      halfSession: !!half && !workout,
       headline,
       chips,
       crestLevel: levelUp ? crestLevelForName(levelUp.title) : null,
