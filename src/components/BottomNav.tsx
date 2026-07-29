@@ -24,15 +24,53 @@ import settingsIcon from "../design/assets/icons/settings_128.webp";
 
 const DESTINATIONS = [
   { to: "/today", label: "Today", icon: todayIcon },
+  { to: "/plan", label: "Plan", icon: null },
   { to: "/train", label: "Train", icon: trainIcon },
   { to: "/forge", label: "Forge", icon: forgeIcon },
   { to: "/proof", label: "Proof", icon: proofIcon },
   { to: "/settings", label: "Settings", icon: settingsIcon },
 ] as const;
 
+/**
+ * Plan has no raster icon, on purpose.
+ *
+ * The approved set is thin light strokes on transparent, which an
+ * inline SVG matches exactly — and drawn rather than fetched it stays
+ * crisp at any size, costs no bytes, and takes its colour from the
+ * theme instead of being baked at export time. Stroke weight and the
+ * 24px box are matched to the rasters beside it.
+ */
+function PlanGlyph() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="block">
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M3.5 9.5H20.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M8 3.5V6.5M16 3.5V6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      {/* The one marked day — this is a plan, not a calendar. */}
+      <circle cx="12" cy="14.75" r="1.9" fill="currentColor" />
+    </svg>
+  );
+}
+
 /* Isolated glyphs: no blend mode needed, so they stay clean on any
    surface. Decorative — the text label carries the accessible name. */
-function NavGlyph({ icon, active }: { icon: string; active: boolean }) {
+function NavGlyph({ icon, active }: { icon: string | null; active: boolean }) {
+  const style = {
+    opacity: active ? 1 : 0.55,
+    transform: active ? "translate3d(0,-1px,0)" : "none",
+    filter: active ? "drop-shadow(0 0 6px rgba(210,225,255,0.45))" : "none",
+    transition:
+      "opacity var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard), filter var(--dur-fast) var(--ease-standard)",
+  } as const;
+
+  if (icon === null) {
+    return (
+      <span aria-hidden="true" className="block" style={style}>
+        <PlanGlyph />
+      </span>
+    );
+  }
+
   return (
     <img
       src={icon}

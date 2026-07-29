@@ -20,6 +20,7 @@ import {
   DEFAULT_PREFERENCES,
   setDefaultRestSec as persistRest,
   setStaleAfterHours as persistStaleAfterHours,
+  setWakeMinutes as persistWakeMinutes,
   setImageMode as persistImageMode,
   setReducedMotion as persistReducedMotion,
   setRpeMode as persistRpeMode,
@@ -57,6 +58,7 @@ interface UiState extends Preferences {
   setRpeMode: (mode: RpeMode) => void;
   setDefaultRestSec: (seconds: number) => void;
   setStaleAfterHours: (hours: number) => void;
+  setWakeMinutes: (minutes: number) => void;
   motionDisabled: () => boolean;
 }
 
@@ -106,6 +108,11 @@ export const useUiStore = create<UiState>()((set, get) => ({
   setStaleAfterHours: (staleAfterHours) => {
     set({ staleAfterHours });
     void persistStaleAfterHours(staleAfterHours);
+  },
+
+  setWakeMinutes: (wakeMinutes) => {
+    set({ wakeMinutes });
+    void persistWakeMinutes(wakeMinutes);
   },
 
   motionDisabled: () => resolveMotionDisabled(get().reducedMotion),

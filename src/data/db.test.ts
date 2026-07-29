@@ -19,6 +19,8 @@ describe("Dexie schema shell (Stage 1)", () => {
       "dayMarks",
       // v2: work done outside the split (runs, rides).
       "activities",
+      // v3: the planner.
+      "planItems",
       "notes",
       "settings",
       "records",
