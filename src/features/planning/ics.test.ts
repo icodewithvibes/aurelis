@@ -33,11 +33,21 @@ describe("buildCalendar", () => {
     expect(ics).not.toContain("TZID");
   });
 
-  it("gives a timed event an alarm — the reason the export exists", () => {
+  it("gives a timed event TWO alarms — the reason the export exists", () => {
+    // A lead alarm alone can be dropped silently on import, so a
+    // zero-offset one rides along as the backstop.
     const ics = buildCalendar([item({ dateLocal: TODAY, title: "Train", atMinutes: at(19) })], TODAY, 14, NOW);
-    expect(ics).toContain("BEGIN:VALARM");
-    expect(ics).toContain("TRIGGER:-PT10M");
+    expect((ics.match(/BEGIN:VALARM/g) ?? []).length).toBe(2);
+    expect(ics).toContain("TRIGGER;RELATED=START:-PT10M");
+    expect(ics).toContain("TRIGGER;RELATED=START:PT0S");
     expect(ics).toContain("ACTION:DISPLAY");
+  });
+
+  it("marks events confirmed and busy so they are not filed as tentative", () => {
+    const ics = buildCalendar([item({ dateLocal: TODAY, title: "Train", atMinutes: at(19) })], TODAY, 14, NOW);
+    expect(ics).toContain("STATUS:CONFIRMED");
+    expect(ics).toContain("TRANSP:OPAQUE");
+    expect(ics).toContain("SEQUENCE:0");
   });
 
   it("makes an untimed item an all-day event, not a fake morning slot", () => {

@@ -37,11 +37,32 @@ import type { PlanItemRow } from "../data/db";
 
 const DAYS_AHEAD = 7;
 
+/**
+ * A colour per kind, so a day can be read at a glance without labels.
+ * Drawn from the existing palette — training takes the chrome the app
+ * already uses for "this is the work", the rest stay quieter.
+ */
+const KIND_ACCENT: Record<PlanKind, string> = {
+  training: "var(--aur-chrome-50)",
+  forge: "var(--aur-cobalt-300)",
+  life: "var(--aur-steel-400)",
+  recovery: "var(--aur-meadow-500)",
+};
+
 function dayLabel(date: string, today: string): string {
   if (date === today) return "Today";
   if (date === addDays(today, 1)) return "Tomorrow";
   const d = new Date(`${date}T00:00:00`);
   return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+}
+
+/** { weekday: "Wed", day: "29" } for the day rail. */
+function dayParts(date: string): { weekday: string; day: string } {
+  const d = new Date(`${date}T00:00:00`);
+  return {
+    weekday: d.toLocaleDateString(undefined, { weekday: "short" }),
+    day: String(d.getDate()),
+  };
 }
 
 export function Plan() {
@@ -95,40 +116,70 @@ export function Plan() {
       {!loading && data && (
         <>
           {/* ---- NEXT UP: the one question this screen answers ---- */}
-          <motion.section {...rise} className="mt-6 aur-chrome-surface p-5" aria-label="Next up">
-            <p className="aur-label m-0">Next up</p>
-            {data.next ? (
-              <>
-                <h2 className="aur-heading mt-1">{data.next.item.title}</h2>
-                <p className="m-0 mt-1 text-body" style={{ color: "var(--aur-ink-muted)" }}>
-                  {itemTimeLabel(data.next.item)} · {whenLabel(data.next)}
-                  {data.next.item.estMinutes ? ` · ~${data.next.item.estMinutes}m` : ""}
-                </p>
-                <div className="mt-4 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void act(() => setPlanStatus(data.next!.item.id, "done"))}
-                    className="aur-press aur-touch flex-1 rounded-full text-body font-medium"
-                    style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.8rem 1rem" }}
-                  >
-                    Done
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void act(() => movePlanItem(data.next!.item.id, addDays(today, 1)))}
-                    className="aur-press aur-touch rounded-full text-body"
-                    style={{ background: "var(--aur-glass-tint)", color: "var(--aur-ink)", border: "1px solid var(--aur-glass-rim)", padding: "0.8rem 1.1rem" }}
-                  >
-                    Tomorrow
-                  </button>
-                </div>
-              </>
-            ) : (
-              <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
-                Nothing planned for today. Add something below, or leave it — an empty day
-                you chose is not the same as one you lost.
-              </p>
+          <motion.section {...rise} className="relative mt-6 aur-chrome-surface overflow-hidden p-5" aria-label="Next up">
+            {data.next && (
+              /* A quiet wash of the item's own colour, so the hero card
+                 reads as belonging to what is actually next. */
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 top-0 h-28"
+                style={{
+                  background: `radial-gradient(120% 100% at 12% 0%, ${KIND_ACCENT[data.next.item.kind]}22 0%, transparent 70%)`,
+                }}
+              />
             )}
+            <div className="relative">
+              <p className="aur-label m-0">Next up</p>
+              {data.next ? (
+                <>
+                  <div className="mt-2 flex items-baseline gap-2.5">
+                    <span
+                      aria-hidden="true"
+                      className="block shrink-0 rounded-full"
+                      style={{ width: 8, height: 8, background: KIND_ACCENT[data.next.item.kind] }}
+                    />
+                    <h2 className="aur-heading m-0 min-w-0 truncate">{data.next.item.title}</h2>
+                  </div>
+
+                  <div className="mt-3 flex items-baseline gap-3">
+                    <span className="aur-metric" style={{ fontSize: "var(--text-h2)", color: "var(--aur-chrome-50)" }}>
+                      {itemTimeLabel(data.next.item)}
+                    </span>
+                    <span className="text-body" style={{ color: "var(--aur-ink-muted)" }}>
+                      {whenLabel(data.next)}
+                    </span>
+                  </div>
+                  <p className="aur-meta m-0 mt-1">
+                    {planKindLabel(data.next.item.kind)}
+                    {data.next.item.estMinutes ? ` · about ${data.next.item.estMinutes} minutes` : ""}
+                  </p>
+
+                  <div className="mt-4 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void act(() => setPlanStatus(data.next!.item.id, "done"))}
+                      className="aur-press aur-touch flex-1 rounded-full text-body font-medium"
+                      style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.85rem 1rem" }}
+                    >
+                      Done
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void act(() => movePlanItem(data.next!.item.id, addDays(today, 1)))}
+                      className="aur-press aur-touch rounded-full text-body"
+                      style={{ background: "var(--aur-glass-tint)", color: "var(--aur-ink)", border: "1px solid var(--aur-glass-rim)", padding: "0.85rem 1.1rem" }}
+                    >
+                      Tomorrow
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
+                  Nothing planned for today. Add something below, or leave it — an empty day
+                  you chose is not the same as one you lost.
+                </p>
+              )}
+            </div>
           </motion.section>
 
           {/* ---- CARRIED: offered back, never scolded ---- */}
@@ -186,26 +237,59 @@ export function Plan() {
           {/* ---- THE DAYS ---- */}
           <motion.section {...rise} className="mt-4 aur-chrome-surface p-5" aria-label="The days ahead">
             <p className="aur-label m-0">The days ahead</p>
-            <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Choose a day">
+            {/* A rail of days rather than pills of text: weekday over
+                date, with a dot for anything planned, so a week reads
+                as a shape instead of a sentence. */}
+            <div
+              className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1"
+              role="tablist"
+              aria-label="Choose a day"
+              style={{ scrollbarWidth: "none" }}
+            >
               {data.days.map((d) => {
                 const active = d.dateLocal === openDay;
                 const load = dayLoad(data.all, d.dateLocal);
+                const { weekday, day } = dayParts(d.dateLocal);
                 return (
                   <button
                     key={d.dateLocal}
                     type="button"
                     role="tab"
                     aria-selected={active}
+                    aria-label={`${dayLabel(d.dateLocal, today)}, ${load.open} planned`}
                     onClick={() => setOpenDay(d.dateLocal)}
-                    className="aur-press aur-touch shrink-0 rounded-full px-3 text-small"
+                    className="aur-press aur-touch flex shrink-0 flex-col items-center justify-center gap-0.5"
                     style={{
+                      minWidth: 52,
+                      borderRadius: 14,
+                      paddingTop: 8,
+                      paddingBottom: 7,
                       background: active ? "var(--aur-chrome-50)" : "var(--aur-glass-tint)",
                       color: active ? "var(--aur-night)" : "var(--aur-ink)",
-                      border: active ? "1px solid transparent" : "1px solid var(--aur-glass-rim)",
+                      border: `1px solid ${active ? "transparent" : "var(--aur-glass-rim)"}`,
+                      transition: "background var(--dur-fast) var(--ease-standard)",
                     }}
                   >
-                    {d.dateLocal === today ? "Today" : dayLabel(d.dateLocal, today).slice(0, 3)}
-                    {load.open > 0 ? ` · ${load.open}` : ""}
+                    <span
+                      className="text-[0.625rem] uppercase leading-none tracking-wider"
+                      style={{ opacity: active ? 0.7 : 0.65 }}
+                    >
+                      {d.dateLocal === today ? "Today" : weekday}
+                    </span>
+                    <span className="aur-metric leading-none" style={{ fontSize: "0.9375rem" }}>{day}</span>
+                    <span
+                      aria-hidden="true"
+                      className="mt-0.5 block rounded-full"
+                      style={{
+                        width: load.open > 0 ? 14 : 4,
+                        height: 3,
+                        background: load.open > 0
+                          ? (active ? "var(--aur-night)" : "var(--aur-chrome-50)")
+                          : "transparent",
+                        opacity: active ? 0.55 : 0.85,
+                        transition: "width var(--dur-fast) var(--ease-standard)",
+                      }}
+                    />
                   </button>
                 );
               })}
@@ -313,9 +397,32 @@ export function Plan() {
             >
               {exported ? "Sent ✓ — open it to add" : `Send ${calendarEventCount(data.all, today)} items to Calendar`}
             </button>
+            {exported && (
+              <div className="mt-3 rounded-[10px] p-3" style={{ background: "var(--aur-glass-tint)" }}>
+                <p className="aur-label m-0">Two things iOS needs from you</p>
+                <ol
+                  className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0 text-small"
+                  style={{ color: "var(--aur-ink-muted)" }}
+                >
+                  <li>
+                    1. In the popup, tap <strong style={{ color: "var(--aur-ink)" }}>Add All</strong> and
+                    pick a calendar. Closing the popup without adding leaves nothing behind — this is
+                    the usual reason no alert arrives.
+                  </li>
+                  <li>
+                    2. Settings → Notifications → Calendar must be on, and that calendar must not be
+                    hidden. Alerts come from Calendar, not from AURELIS, so its settings win.
+                  </li>
+                </ol>
+                <p className="aur-meta m-0 mt-2">
+                  Only future items can alert you. Anything whose time has already passed imports as
+                  a record, silently.
+                </p>
+              </div>
+            )}
             <p className="aur-meta m-0 mt-2">
-              Opens a calendar file. Adding it gives you real alerts 10 minutes before each
-              item, and the Calendar lock-screen widget will show what is next. It is a
+              Opens a calendar file. Once added you get an alert 10 minutes before each item and
+              again as it starts, and the Calendar lock-screen widget shows what is next. It is a
               snapshot — change the plan and send it again.
             </p>
 
@@ -429,7 +536,17 @@ function DayPanel({
               ? trainingVerdict(item.atMinutes + (item.estMinutes ?? 0), rhythmTrainingCheck)
               : null;
           return (
-            <li key={item.id} className="flex items-start justify-between gap-3">
+            <li
+              key={item.id}
+              className="flex items-start justify-between gap-3 rounded-[10px] py-1.5 pl-2.5 pr-1"
+              style={{
+                /* The kind's colour as a spine down the left edge —
+                   present enough to scan, quiet enough to ignore. */
+                borderLeft: `2px solid ${done ? "var(--aur-glass-rim)" : KIND_ACCENT[item.kind]}`,
+                opacity: done ? 0.62 : 1,
+                transition: "opacity var(--dur-fast) var(--ease-standard)",
+              }}
+            >
               <span className="min-w-0">
                 <span
                   className="block truncate text-small font-medium"

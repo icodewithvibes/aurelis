@@ -126,14 +126,33 @@ function eventFor(item: PlanItemRow, now: number): string[] {
   if (item.note) lines.push(`DESCRIPTION:${escapeText(item.note)}`);
   lines.push(`CATEGORIES:${escapeText(item.kind.toUpperCase())}`);
 
+  /*
+   * Calendar clients are noticeably more willing to treat an event as
+   * real — and to honour its alarm — when it says so explicitly. These
+   * three are cheap and standard, and their absence is a known cause of
+   * imported events being filed as tentative and silent.
+   */
+  lines.push("SEQUENCE:0");
+  lines.push("STATUS:CONFIRMED");
+  lines.push("TRANSP:OPAQUE");
+
   // The alarm is the point of the whole export — this is what makes the
   // phone speak up with the app closed.
   if (item.atMinutes !== ALL_DAY) {
-    lines.push("BEGIN:VALARM");
-    lines.push("ACTION:DISPLAY");
-    lines.push(`DESCRIPTION:${escapeText(item.title)}`);
-    lines.push(`TRIGGER:-PT${ALARM_LEAD_MIN}M`);
-    lines.push("END:VALARM");
+    /*
+     * TWO alarms, deliberately. Some clients quietly drop a negative
+     * relative TRIGGER on import while keeping a zero one, so a lead
+     * alarm alone can vanish without any error. `RELATED=START` is the
+     * default, but stating it removes the other common reason a trigger
+     * gets ignored.
+     */
+    for (const trigger of [`-PT${ALARM_LEAD_MIN}M`, "PT0S"]) {
+      lines.push("BEGIN:VALARM");
+      lines.push("ACTION:DISPLAY");
+      lines.push(`DESCRIPTION:${escapeText(item.title)}`);
+      lines.push(`TRIGGER;RELATED=START:${trigger}`);
+      lines.push("END:VALARM");
+    }
   }
 
   lines.push("END:VEVENT");

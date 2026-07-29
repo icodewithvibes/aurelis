@@ -13,6 +13,7 @@ import { clearLocalData, REST_PRESETS, STALE_PRESETS } from "../data/repositorie
 import { exportBackup, restoreBackupFromText } from "../features/backup/backupRepo";
 import { backupFilename, summarizeBackup } from "../features/backup/backup";
 import { useUiStore, type ReducedMotionSetting } from "../state/ui";
+import { replayTutorial } from "../features/onboarding/tutorialRepo";
 
 const THEMES: { value: ThemeName; label: string; hint: string }[] = [
   { value: "ceremonial-chrome", label: "Ceremonial Chrome", hint: "Deep cobalt, silver rims" },
@@ -390,6 +391,25 @@ export function Settings() {
           It opens full-screen with its own icon. Your data stays in this browser's local storage —
           installing does not upload anything.
         </p>
+      </Card>
+
+      <Card
+        title="Getting started"
+        hint="The first-run walkthrough. It only ever appears by itself for a genuinely new install — replay it here any time."
+      >
+        <button
+          type="button"
+          onClick={() => void replayTutorial().then(() => window.location.reload())}
+          className="aur-press aur-touch mt-3 w-full rounded-full text-body"
+          style={{
+            background: "var(--aur-glass-tint)",
+            color: "var(--aur-ink)",
+            border: "1px solid var(--aur-glass-rim)",
+            padding: "0.8rem 1.5rem",
+          }}
+        >
+          Replay the tutorial
+        </button>
       </Card>
 
       <Card title="Accessibility">

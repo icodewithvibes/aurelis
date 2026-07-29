@@ -221,6 +221,8 @@ export interface SettingsRow {
   defaultRestSec?: number;
   /** Minute-of-day the user wants to be up; drives the rhythm readout. */
   wakeMinutes?: number;
+  /** Set once the first-run tutorial has been seen or skipped. */
+  tutorialSeenAt?: number;
   /** Hours idle before a session self-closes as a half session; 0 = never. */
   staleAfterHours?: number;
   /**
