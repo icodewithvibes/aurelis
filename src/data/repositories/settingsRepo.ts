@@ -24,6 +24,8 @@ export interface Preferences {
    * it, which suits someone who genuinely trains across a whole day.
    */
   staleAfterHours: number;
+  /** Minute-of-day the user wants to be up; null until they set it. */
+  wakeMinutes: number | null;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -34,6 +36,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   rpeMode: "simple",
   defaultRestSec: 90,
   staleAfterHours: 2,
+  wakeMinutes: null,
 };
 
 /** Rest presets offered in Settings, in seconds. */
@@ -56,6 +59,7 @@ export function resolvePreferences(row?: SettingsRow): Preferences {
     rpeMode: row?.rpeMode ?? DEFAULT_PREFERENCES.rpeMode,
     defaultRestSec: row?.defaultRestSec ?? DEFAULT_PREFERENCES.defaultRestSec,
     staleAfterHours: row?.staleAfterHours ?? DEFAULT_PREFERENCES.staleAfterHours,
+    wakeMinutes: row?.wakeMinutes ?? DEFAULT_PREFERENCES.wakeMinutes,
   };
 }
 
@@ -74,6 +78,9 @@ export const setImageMode = (imageMode: ImageMode) => patch({ imageMode });
 export const setRpeMode = (rpeMode: RpeMode) => patch({ rpeMode });
 export const setDefaultRestSec = (defaultRestSec: number) =>
   patch({ defaultRestSec: Math.max(15, Math.min(600, Math.round(defaultRestSec))) });
+/** Clamped to a real minute-of-day; anything else is ignored. */
+export const setWakeMinutes = (wakeMinutes: number) =>
+  patch({ wakeMinutes: Math.max(0, Math.min(1439, Math.round(wakeMinutes))) });
 /** 0 disables auto-closing entirely; anything else is clamped to 1–24h. */
 export const setStaleAfterHours = (hours: number) =>
   patch({ staleAfterHours: hours <= 0 ? 0 : Math.max(1, Math.min(24, Math.round(hours))) });

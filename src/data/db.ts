@@ -162,6 +162,32 @@ export interface ActivityRow {
   deviceId: string;
 }
 
+/**
+ * A planned intention. See features/planning/plan.ts for the rules —
+ * chiefly that an unfinished item is carried, never deleted and never
+ * scolded.
+ */
+export interface PlanItemRow {
+  id: string;
+  /** The day it is planned FOR. */
+  dateLocal: string;
+  title: string;
+  /** Minute-of-day, or null for "sometime today". */
+  atMinutes: number | null;
+  /** Rough length, used for load and clash detection. */
+  estMinutes?: number;
+  kind: "training" | "forge" | "life" | "recovery";
+  status: "open" | "done" | "dropped";
+  note?: string;
+  /** Set when carried forward, so the trail back is never lost. */
+  movedFrom?: string;
+  completedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+  deviceId: string;
+}
+
 export interface NoteRow {
   id: string;
   title?: string;
@@ -193,6 +219,8 @@ export interface SettingsRow {
   imageMode?: ImageMode;
   rpeMode?: RpeMode;
   defaultRestSec?: number;
+  /** Minute-of-day the user wants to be up; drives the rhythm readout. */
+  wakeMinutes?: number;
   /** Hours idle before a session self-closes as a half session; 0 = never. */
   staleAfterHours?: number;
   /**
@@ -224,10 +252,11 @@ export interface MetaRow {
 
 /**
  * v2 adds the `activities` store (runs and other work outside a split).
+ * v3 adds `planItems` (the planner).
  * Dexie only needs a version bump when the STORES or INDEXES change;
  * adding plain fields to existing rows does not require one.
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 class AurelisDB extends Dexie {
   splits!: EntityTable<SplitRow, "id">;
@@ -240,6 +269,7 @@ class AurelisDB extends Dexie {
   proofEvents!: EntityTable<ProofEventRow, "id">;
   dayMarks!: EntityTable<DayMarkRow, "id">;
   activities!: EntityTable<ActivityRow, "id">;
+  planItems!: EntityTable<PlanItemRow, "id">;
   notes!: EntityTable<NoteRow, "id">;
   settings!: EntityTable<SettingsRow, "id">;
   records!: EntityTable<RecordsRow, "id">;
@@ -260,13 +290,15 @@ class AurelisDB extends Dexie {
         proofEvents: "&id, dateLocal, type, createdAt",
         dayMarks: "&id, &dateLocal",
         activities: "&id, dateLocal, kind, updatedAt",
+        planItems: "&id, dateLocal, status, updatedAt",
         notes: "&id, updatedAt",
         settings: "&id",
         records: "&id",
         meta: "&id",
       })
-      // v1 -> v2 adds `activities`. Dexie creates the new store itself;
-      // no existing row needs rewriting, so there is nothing to migrate.
+      // v1 -> v2 adds `activities`, v2 -> v3 adds `planItems`. Dexie
+      // creates new stores itself and no existing row needs rewriting,
+      // so there is nothing to migrate beyond stamping the version.
       .upgrade(async (tx) => {
         await tx.table("meta").put({ id: "meta", schemaVersion: SCHEMA_VERSION });
       });
