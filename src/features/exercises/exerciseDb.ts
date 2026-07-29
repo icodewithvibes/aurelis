@@ -14,6 +14,8 @@
  *   a public static file — and a failure degrades to text.
  */
 
+import { artUrlFor } from "./exerciseArt";
+
 export interface ExerciseInfo {
   /** Normalised lookup key. */
   k: string;
@@ -37,8 +39,20 @@ export interface ExerciseInfo {
 
 const CDN = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
 
+/**
+ * Prefer the bundled AURELIS art, fall back to the source photo.
+ *
+ * The art is same-origin and works offline; the CDN is the safety net
+ * for movements whose art has not been made yet, and for the ~820
+ * entries in the index that no shipped split uses. See exerciseArt.ts.
+ */
 export function exerciseImageUrl(path: string): string {
-  return `${CDN}${path.replace(/^exercises\//, "")}`;
+  return artUrlFor(path) ?? `${CDN}${path.replace(/^exercises\//, "")}`;
+}
+
+/** True when this movement is showing bundled art rather than the CDN. */
+export function hasBundledArt(path: string): boolean {
+  return artUrlFor(path) !== null;
 }
 
 /**

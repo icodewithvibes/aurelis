@@ -23,7 +23,10 @@
 
   /* ---- Ink / text ---- */
   --aur-ink: #eaeff9;
-  --aur-ink-muted: #96a2bc;
+  /* Brightened with the chrome-surface fill (see the note there): the
+     glass is half as opaque now, and secondary text has to stay over
+     4.5:1 against the hero showing through it. */
+  --aur-ink-muted: #bac4d8;
   --aur-ink-faint: #5e6a82;
 
   /* ---- Meadow accents ---- */
@@ -144,17 +147,35 @@
   );
 
   /* ---- Chrome surface (dark translucent object floating in the world) ---- */
+  /*
+   * TUNED AGAINST MEASURED CONTRAST, not by eye — the hero art is the
+   * point of the Today screen and a 0.66–0.84 fill was covering it.
+   *
+   * Sampled the composited backdrop behind the Today card on the live
+   * site over hero_day (the brightest scene, so the worst case): it
+   * averages rgb(82,128,147). Against that, with the veil folded in:
+   *
+   *            fill          --aur-ink    --aur-ink-muted
+   *   was      .66/.78/.84     11.55           5.19
+   *   now      .34/.42/.48      7.28           4.79
+   *
+   * Both still clear WCAG AA (4.5:1) at roughly HALF the opacity. Over
+   * the night heroes it is 14.7 / 9.7, with room to spare. Holding the
+   * muted figure over 4.5 is what forced --aur-ink-muted brighter; the
+   * two changes are a pair, so do not lower one without rechecking the
+   * other. Re-measure before going more transparent than this.
+   */
   --chrome-surface-fill: linear-gradient(
     177deg,
-    rgba(26, 38, 70, 0.66) 0%,
-    rgba(13, 21, 46, 0.78) 48%,
-    rgba(9, 15, 34, 0.84) 100%
+    rgba(26, 38, 70, 0.34) 0%,
+    rgba(13, 21, 46, 0.42) 48%,
+    rgba(9, 15, 34, 0.48) 100%
   );
-  /* Stage 7: deeper blur + saturation so the panel bends what's behind
-     it instead of just dimming it. The fill above stays opaque enough
-     that body text keeps its contrast over any backplate. */
-  --chrome-surface-blur: 20px;
-  --chrome-surface-saturate: 165%;
+  /* More blur, not more tint, is what keeps text readable now: the
+     scene behind resolves into soft colour and light rather than
+     competing detail, while still clearly being the scene. */
+  --chrome-surface-blur: 26px;
+  --chrome-surface-saturate: 180%;
   /* Brighter at the top where light lands, with a faint cool return
      along the bottom edge so the pane reads as having thickness. */
   --chrome-rim: linear-gradient(
@@ -164,7 +185,9 @@
     rgba(214, 224, 240, 0) 55%,
     rgba(150, 175, 220, 0.16) 100%
   );
-  --chrome-inner-shadow: inset 0 -26px 44px rgba(5, 9, 20, 0.55);
+  /* Softened along with the fill — at 0.55 this was quietly reopaquing
+     the bottom third of every card the fill had just opened up. */
+  --chrome-inner-shadow: inset 0 -26px 44px rgba(5, 9, 20, 0.34);
   --chrome-rim-light: inset 0 1px 0 rgba(232, 240, 255, 0.34);
   --chrome-sheen: linear-gradient(
     100deg,

@@ -405,6 +405,93 @@ DAY: Walk-Run B
 DAY: Long Walk-Run
 - Walk-Run Intervals | 5 | 3-6 | Rest 150s`,
   },
+
+  /* --------------------------------------------- THE OLD GUARD */
+  /*
+   * Named lifts, from the people they are named after. These are not
+   * novelty — every one earned its name by building something, and
+   * several are simply better tools than the machine that replaced
+   * them. Kept honest: where a claim is a research finding it is stated
+   * as one, and where it is history it is stated as history.
+   */
+  {
+    id: "old-guard-4",
+    name: "The Old Guard 4×",
+    category: "lift",
+    daysPerWeek: 4,
+    level: "intermediate",
+    summary: "Four days built on lifts the greats named — and still worth doing.",
+    rationale:
+      "Every movement here is either named after the lifter who built it or is the version research now favours. Hackenschmidt's squat, Zercher's, Gironda's sissy squat and neck press, JM Blakley's press, Louie Simmons' reverse hyper. Two are here for evidence rather than history: the seated leg curl and the overhead triceps extension both train their muscle in a lengthened position, and both beat the version most people default to. Run it like any other program — the names are a reason to try them, not a reason to skip the basics they sit on.",
+    targets: ["Quads", "Hamstrings", "Chest", "Back", "Triceps", "Posterior chain"],
+    asf: `SPLIT: The Old Guard 4x
+SCHEDULE: Mon, Tue, Thu, Fri
+NOTE: Seated leg curl over lying is a research call, not nostalgia — training the hamstrings at long muscle length grew them more over 12 weeks (Maeo et al., 2021). Same logic for the overhead triceps extension (Maeo et al., 2022).
+
+DAY: Legs — Hackenschmidt
+- Barbell Hack Squat | 4 | 6-10 | Rest 180s
+- Zercher Squats | 3 | 6-10 | Rest 180s
+- Seated Leg Curl | 4 | 8-12 | Rest 90s
+- Weighted Sissy Squat | 3 | 10-15 | Rest 90s
+- Standing Calf Raises | 4 | 8-12 | Rest 90s
+
+DAY: Push — Gironda
+- Barbell Guillotine Bench Press | 4 | 6-10 | Rest 150s
+- Standing Barbell Press Behind Neck | 3 | 6-10 | Rest 150s
+- JM Press | 3 | 8-12 | Rest 90s
+- Cable Rope Overhead Triceps Extension | 3 | 10-15 | Rest 75s
+- Side Lateral Raise | 3 | 12-20 | Rest 60s
+
+DAY: Posterior — Simmons
+- Barbell Deadlift | 3 | 3-6 | Rest 210s
+- Reverse Hyperextension | 3 | 12-20 | Rest 90s
+- Natural Glute Ham Raise | 3 | 6-12 | Rest 120s
+- Good Morning | 3 | 8-12 | Rest 120s
+- Farmer's Walk | 3 | 1 | Rest 120s
+
+DAY: Pull — Reeves
+- Pullups | 4 | 5-10 | Rest 150s
+- Bent Over Barbell Row | 4 | 6-10 | Rest 150s
+- Straight-Arm Dumbbell Pullover | 3 | 10-15 | Rest 90s
+- Barbell Shrug Behind The Back | 3 | 8-12 | Rest 90s
+- Incline Dumbbell Curl | 3 | 8-12 | Rest 75s`,
+  },
+
+  /* ------------------------------------------ LENGTHENED POSITION */
+  {
+    id: "lengthened-3",
+    name: "Long Position 3×",
+    category: "lift",
+    daysPerWeek: 3,
+    level: "intermediate",
+    summary: "Every accessory picked for the version that trains the muscle stretched.",
+    rationale:
+      "Where two exercises train the same muscle, the one that loads it in a lengthened position tends to grow it more. Two direct 12-week comparisons make the point: the seated leg curl beat the lying version for the hamstrings that cross both joints, and the overhead cable extension beat the pushdown for the triceps by roughly 40%. The compounds here are ordinary on purpose — this is about which accessory you pick after them, not about replacing the basics.",
+    targets: ["Hamstrings", "Triceps", "Biceps", "Chest", "Quads"],
+    asf: `SPLIT: Long Position 3x
+SCHEDULE: Mon, Wed, Fri
+NOTE: Sources — Maeo et al. 2021 (seated vs prone leg curl, MRI, 12 weeks) and Maeo et al. 2022, Eur J Sport Sci (overhead vs neutral elbow extension, 12 weeks). Both trained the same person's two limbs against each other, which is why they are worth listening to.
+
+DAY: Lower — long
+- Barbell Squat | 4 | 5-8 | Rest 180s
+- Romanian Deadlift | 3 | 8-12 | Rest 150s
+- Seated Leg Curl | 4 | 8-12 | Rest 90s
+- Weighted Sissy Squat | 3 | 10-15 | Rest 90s
+- Seated Calf Raise | 4 | 10-15 | Rest 75s
+
+DAY: Push — long
+- Barbell Incline Bench Press Medium-Grip | 4 | 6-10 | Rest 150s
+- Dumbbell Flyes | 3 | 10-15 | Rest 90s
+- Cable Rope Overhead Triceps Extension | 4 | 10-15 | Rest 75s
+- Side Lateral Raise | 3 | 12-20 | Rest 60s
+
+DAY: Pull — long
+- Chin-Up | 4 | 5-10 | Rest 150s
+- Seated Cable Rows | 3 | 8-12 | Rest 120s
+- Straight-Arm Dumbbell Pullover | 3 | 10-15 | Rest 90s
+- Incline Dumbbell Curl | 4 | 8-12 | Rest 75s
+- Face Pull | 3 | 12-20 | Rest 60s`,
+  },
 ];
 
 export function splitsByCategory(category: SplitCategory): SplitTemplate[] {

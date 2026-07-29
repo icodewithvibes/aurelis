@@ -115,7 +115,13 @@ export interface PrRow {
 export interface ProofEventRow {
   id: string;
   dateLocal: string;
-  type: "workout" | "forge" | "pr" | "recovery" | "crest_levelup";
+  /**
+   * `half` is a session that was started and worked in, then went quiet
+   * long enough to be closed automatically. It is on the record and its
+   * sets count for history, but it is NOT a kept day and never marks
+   * the crest — see features/training/staleSession.ts.
+   */
+  type: "workout" | "forge" | "pr" | "recovery" | "crest_levelup" | "half";
   refId?: string;
   title: string;
   summary?: string;
@@ -187,6 +193,8 @@ export interface SettingsRow {
   imageMode?: ImageMode;
   rpeMode?: RpeMode;
   defaultRestSec?: number;
+  /** Hours idle before a session self-closes as a half session; 0 = never. */
+  staleAfterHours?: number;
   /**
    * Crisis copy (02_strategy/02 §5), seeded from features/forge.
    * Optional so rows written before this field still open; the module
