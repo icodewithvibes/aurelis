@@ -13,7 +13,6 @@ import { clearLocalData, REST_PRESETS, STALE_PRESETS } from "../data/repositorie
 import { exportBackup, restoreBackupFromText } from "../features/backup/backupRepo";
 import { backupFilename, summarizeBackup } from "../features/backup/backup";
 import { useUiStore, type ReducedMotionSetting } from "../state/ui";
-import { replayTutorial } from "../features/onboarding/tutorialRepo";
 
 const THEMES: { value: ThemeName; label: string; hint: string }[] = [
   { value: "ceremonial-chrome", label: "Ceremonial Chrome", hint: "Deep cobalt, silver rims" },
@@ -397,9 +396,13 @@ export function Settings() {
         title="Getting started"
         hint="The first-run walkthrough. It only ever appears by itself for a genuinely new install — replay it here any time."
       >
+        {/* Opens it directly. The previous version cleared the "seen"
+            flag and reloaded, which could never work for anyone with
+            history: boot re-derived "is this a new user", answered no,
+            and silently re-marked it. A request is not a derivation. */}
         <button
           type="button"
-          onClick={() => void replayTutorial().then(() => window.location.reload())}
+          onClick={prefs.openTutorial}
           className="aur-press aur-touch mt-3 w-full rounded-full text-body"
           style={{
             background: "var(--aur-glass-tint)",

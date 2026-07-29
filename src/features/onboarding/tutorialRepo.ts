@@ -32,7 +32,17 @@ export async function markTutorialSeen(): Promise<void> {
   await db.settings.update("app", { tutorialSeenAt: nowMs(), updatedAt: nowMs() });
 }
 
-/** Settings offers this so "never again" is a default, not a cage. */
-export async function replayTutorial(): Promise<void> {
-  await db.settings.update("app", { tutorialSeenAt: undefined, updatedAt: nowMs() });
-}
+/*
+ * There is deliberately no `replayTutorial` here.
+ *
+ * The first version cleared `tutorialSeenAt` and reloaded, expecting
+ * boot to notice. It could not work for anyone who had used the app:
+ * `decideFirstRun` would find no flag but plenty of history, conclude
+ * "existing user", re-mark it seen and show nothing — so the button
+ * just reloaded the page. It also leaned on Dexie deleting a property
+ * by assigning `undefined`, which `update()` does not do.
+ *
+ * Replay is now a UI action (`useUiStore.openTutorial`) that opens the
+ * overlay directly. A request from the user is not something to
+ * re-derive from the shape of their data.
+ */

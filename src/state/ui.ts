@@ -49,6 +49,19 @@ export function applyThemeAttribute(theme: ThemeName): void {
 }
 
 interface UiState extends Preferences {
+  /**
+   * Whether the walkthrough is on screen.
+   *
+   * Session state, not a preference — it is never persisted. Boot opens
+   * it for a genuinely new install; Settings opens it on request. Both
+   * go through the same switch, which is the point: asking to see the
+   * tutorial must NOT be re-derived from "does this look like a new
+   * user", because for anyone with history the answer is no and the
+   * request would be thrown away.
+   */
+  tutorialOpen: boolean;
+  openTutorial: () => void;
+  closeTutorial: () => void;
   /** Hydrate from persisted settings on boot (no persist write). */
   hydrate: (prefs: Preferences) => void;
   setReducedMotion: (mode: ReducedMotionSetting) => void;
@@ -64,6 +77,10 @@ interface UiState extends Preferences {
 
 export const useUiStore = create<UiState>()((set, get) => ({
   ...DEFAULT_PREFERENCES,
+
+  tutorialOpen: false,
+  openTutorial: () => set({ tutorialOpen: true }),
+  closeTutorial: () => set({ tutorialOpen: false }),
 
   hydrate: (prefs) => {
     set(prefs);
