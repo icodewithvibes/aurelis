@@ -4,7 +4,8 @@
  * routes portable (and Pages-safe for a future, out-of-scope deploy).
  */
 import { lazy, Suspense, useEffect } from "react";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { rememberRoute } from "./lib/resume";
 import { BottomNav } from "./components/BottomNav";
 import { GrainOverlay } from "./components/GrainOverlay";
 import { Tutorial } from "./components/Tutorial";
@@ -67,6 +68,19 @@ function useFirstRun(): void {
   }, [openTutorial]);
 }
 
+/**
+ * Remembers the current route so a phone that locks mid-session comes
+ * back to that session rather than to Today. Lives inside the router so
+ * it can see navigation; the restore itself already happened in main.
+ */
+function RouteMemory() {
+  const location = useLocation();
+  useEffect(() => {
+    rememberRoute(`#${location.pathname}${location.search}`);
+  }, [location.pathname, location.search]);
+  return null;
+}
+
 export function App() {
   useFirstRun();
   const tutorialOpen = useUiStore((s) => s.tutorialOpen);
@@ -90,6 +104,7 @@ export function App() {
       >
         Skip to content
       </a>
+      <RouteMemory />
       <main id="main" className="min-h-dvh">
         <Suspense fallback={<RouteFallback />}>
           <Routes>

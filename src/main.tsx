@@ -23,6 +23,7 @@ import { DEFAULT_PREFERENCES, loadPreferences } from "./data/repositories/settin
 import { useUiStore, applyMotionAttribute, applyThemeAttribute } from "./state/ui";
 import { requestPersistentStorage } from "./lib/storage";
 import { closeStaleSessions } from "./data/repositories/sessionRepo";
+import { takeResumeRoute } from "./lib/resume";
 import {
   BOOT_HARD_CAP_MS,
   dismissBootSplash,
@@ -31,6 +32,18 @@ import {
 } from "./lib/boot";
 
 const startedAt = Date.now();
+
+/*
+ * Restore the route BEFORE React mounts.
+ *
+ * Set synchronously so HashRouter reads the right location on its first
+ * render. Doing it after mount would paint Today and then jump, which
+ * is more jarring than not restoring at all.
+ */
+const resumeTo = takeResumeRoute();
+if (resumeTo && location.hash !== resumeTo) {
+  history.replaceState(null, "", resumeTo);
+}
 
 // Sensible defaults immediately, so even a failed boot is never unstyled.
 applyMotionAttribute(DEFAULT_PREFERENCES.reducedMotion);

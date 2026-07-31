@@ -199,6 +199,44 @@ export async function findExercise(name: string): Promise<ExerciseInfo | null> {
   return matchExercise(name, await loadExerciseIndex());
 }
 
+/**
+ * Trim a description back to its last COMPLETE sentence.
+ *
+ * The bundled index was built with a hard 240-character cap, so 646 of
+ * the 868 descriptions end mid-sentence in an ellipsis — "…as you rest
+ * the triceps on the pads provided. This will be…". That is not a CSS
+ * clamp that a wider box would fix; the rest of the words are simply
+ * not in the data.
+ *
+ * Rather than ship a sentence that stops dead, this cuts back to the
+ * last full stop so what remains reads as finished. These entries are
+ * setup instructions and the useful part is the opening sentences, so
+ * dropping a dangling fragment costs nothing and gains an ending.
+ *
+ * A description with no sentence break at all is returned with the
+ * ellipsis stripped — still short, but no longer pretending there is
+ * more to come.
+ */
+export function cleanDescription(description: string): string {
+  const text = description.trim();
+  const truncated = /(\.\.\.|…)$/.test(text);
+  if (!truncated) return text;
+
+  const withoutEllipsis = text.replace(/(\.\.\.|…)$/, "").trim();
+  const lastStop = Math.max(
+    withoutEllipsis.lastIndexOf(". "),
+    withoutEllipsis.lastIndexOf("! "),
+    withoutEllipsis.lastIndexOf("? "),
+  );
+
+  if (lastStop === -1) {
+    // No sentence break to fall back to; leave it as a fragment but do
+    // not imply continuation that is not coming.
+    return withoutEllipsis.replace(/[,;:]$/, "");
+  }
+  return withoutEllipsis.slice(0, lastStop + 1);
+}
+
 /** Title-cased muscle list for display. */
 export function musclesLabel(info: ExerciseInfo): string {
   const all = [...info.p, ...info.s.slice(0, 2)];
