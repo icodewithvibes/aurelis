@@ -5,8 +5,10 @@ import {
   matchExercise,
   musclesLabel,
   normalizeName,
+  cleanDescription,
   type ExerciseInfo,
 } from "./exerciseDb";
+import exerciseIndex from "./exerciseIndex.json";
 
 const ex = (n: string, over: Partial<ExerciseInfo> = {}): ExerciseInfo => ({
   k: normalizeName(n),
@@ -112,5 +114,45 @@ describe("musclesLabel", () => {
     expect(musclesLabel(ex("X", { p: ["chest"], s: ["triceps", "shoulders"] }))).toBe(
       "Chest · Triceps · Shoulders",
     );
+  });
+});
+
+describe("cleanDescription", () => {
+  it("cuts a truncated description back to its last complete sentence", () => {
+    // The bundled index caps descriptions at 240 chars, so most end
+    // mid-sentence in an ellipsis. Better to stop cleanly than to trail
+    // off into words that are not in the data.
+    const cut =
+      "Select a light resistance and sit down on the ab machine. Your arms should be bent at 90 degrees as you rest the triceps on the pads provided. This will be…";
+    expect(cleanDescription(cut)).toBe(
+      "Select a light resistance and sit down on the ab machine. Your arms should be bent at 90 degrees as you rest the triceps on the pads provided.",
+    );
+  });
+
+  it("handles the three-dot form as well as the ellipsis character", () => {
+    expect(cleanDescription("One. Two...")).toBe("One.");
+  });
+
+  it("leaves a complete description untouched", () => {
+    const whole = "Lie on your back with one leg extended. This is the starting position.";
+    expect(cleanDescription(whole)).toBe(whole);
+  });
+
+  it("does not imply continuation when there is no sentence to fall back on", () => {
+    expect(cleanDescription("Grab the bar and…")).toBe("Grab the bar and");
+  });
+
+  it("never leaves a trailing ellipsis", () => {
+    for (const d of ["A. B…", "A. B...", "Only this…"]) {
+      expect(cleanDescription(d)).not.toMatch(/(\.\.\.|…)$/);
+    }
+  });
+
+  it("cleans the real bundled data", () => {
+    const truncated = (exerciseIndex as ExerciseInfo[]).filter((e) => /(\.\.\.|…)$/.test(e.d ?? ""));
+    expect(truncated.length).toBeGreaterThan(100); // the problem is real
+    for (const e of truncated.slice(0, 200)) {
+      expect(cleanDescription(e.d)).not.toMatch(/(\.\.\.|…)$/);
+    }
   });
 });

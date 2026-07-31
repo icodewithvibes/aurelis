@@ -12,7 +12,7 @@ import {
   describeActivity,
   logActivity,
   paceFor,
-  recentActivities,
+  activitiesOn,
 } from "../features/activity/activityRepo";
 import { useUiStore } from "../state/ui";
 
@@ -30,9 +30,20 @@ export function LogActivity() {
   const [saving, setSaving] = useState(false);
   const [recent, setRecent] = useState<ActivityRow[]>([]);
 
+  /*
+   * TODAY'S activities only.
+   *
+   * This used to load the five most recent across ALL time, with no
+   * date shown — so a run logged days ago sat under "Today" forever and
+   * read as if it had just happened. Completing a session did not clear
+   * it either, because nothing about the list was scoped to the day.
+   *
+   * The full history is not lost: every activity still appears on its
+   * own day in the Proof timeline, which is where a record belongs.
+   */
   useEffect(() => {
     let alive = true;
-    void recentActivities(5).then((a) => alive && setRecent(a));
+    void activitiesOn().then((a) => alive && setRecent(a));
     return () => {
       alive = false;
     };
@@ -55,7 +66,7 @@ export function LogActivity() {
       setMinutes("");
       setNote("");
       setOpen(false);
-      setRecent(await recentActivities(5));
+      setRecent(await activitiesOn());
     } finally {
       setSaving(false);
     }
@@ -63,7 +74,7 @@ export function LogActivity() {
 
   async function remove(id: string) {
     await deleteActivity(id);
-    setRecent(await recentActivities(5));
+    setRecent(await activitiesOn());
   }
 
   const field = {

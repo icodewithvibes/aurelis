@@ -12,10 +12,12 @@ import { ScreenSurface } from "../components/ScreenSurface";
 import { RestTimer } from "../components/RestTimer";
 import { CompletionReveal } from "../components/CompletionReveal";
 import { ExercisePreview } from "../components/ExercisePreview";
+import { SetCheck } from "../components/SetCheck";
+import { ExerciseDone, Collapsible } from "../components/ExerciseDone";
 import {
   getSession,
   upsertSetLog,
-  lastSetForExercise,
+  liftDaysFor,
   type SessionSnapshot,
   type SessionSnapshotExercise,
 } from "../data/repositories/sessionRepo";
@@ -23,6 +25,7 @@ import { recordProof, replayDerivedState, type ProofResult } from "../features/p
 import { crestStateForSessions } from "../lib/crest";
 import { useUiStore } from "../state/ui";
 import { restReason, restSecondsFor } from "../features/training/rest";
+import { suggestNext, suggestionLabel, VERDICT_LABEL, type LiftDay } from "../features/training/progression";
 import { getDbStatus, onDbStatus, type DbStatus } from "../data/db";
 
 interface Cell {
@@ -49,7 +52,12 @@ export function Session() {
   const nav = useNavigate();
   const [snapshot, setSnapshot] = useState<SessionSnapshot | null>(null);
   const [grid, setGrid] = useState<Grid>({});
-  const [ghosts, setGhosts] = useState<Record<string, { weight?: number; reps?: number }>>({});
+  /* The raw history per lift. The suggestion itself is derived at
+     render, so switching units in Settings re-rounds it immediately
+     instead of waiting for the session to be reopened. */
+  const [liftDays, setLiftDays] = useState<Record<string, LiftDay[]>>({});
+  /** Exercises the user has re-opened after finishing them. */
+  const [reopened, setReopened] = useState<Record<string, boolean>>({});
   const [advanced, setAdvanced] = useState<Record<string, boolean>>({});
   const [rest, setRest] = useState<{ secs: number; reason: string } | null>(null);
   // Preferences are live: changing units or the effort mode in Settings
@@ -93,18 +101,19 @@ export function Session() {
           done: l.done,
         };
       }
-      // Ghost defaults (last time) per exercise.
-      const gh: Record<string, { weight?: number; reps?: number }> = {};
+      /* What to put on the bar next, per exercise. Read from the whole
+         history of the lift rather than just last time, so a stall is
+         visible and the suggestion can say why. */
+      const gh: Record<string, LiftDay[]> = {};
       await Promise.all(
         s.snapshot.exercises.map(async (ex) => {
-          const last = await lastSetForExercise(ex.name);
-          if (last) gh[ex.key] = last;
+          gh[ex.key] = await liftDaysFor(ex.name);
         }),
       );
       if (!alive) return;
       setSnapshot(s.snapshot);
       setGrid(g);
-      setGhosts(gh);
+      setLiftDays(gh);
       setRecorded(s.session.status === "completed" || s.session.status === "partial");
       setReady(true);
     })();
@@ -275,39 +284,104 @@ export function Session() {
           // a plain-language disclosure, hidden leaves it out entirely.
           const disclosed = advanced[ex.key] ?? false;
           const showEffort = rpeMode === "advanced" || (rpeMode === "simple" && disclosed);
-          const ghost = ghosts[ex.key];
+          const suggestion = suggestNext(
+            liftDays[ex.key] ?? [],
+            {
+              sets: Math.max(1, ex.sets),
+              repMin: ex.repMin ?? 8,
+              repMax: ex.repMax ?? ex.repMin ?? 12,
+            },
+            units,
+          );
+          /* Every set marked = this lift is finished, so the block of
+             inputs folds away to one line. Re-openable, because a
+             mistyped rep has to stay fixable. */
+          const setCount = Math.max(1, ex.sets);
+          const cells = Array.from({ length: setCount }, (_, i) => cell(cellKey(ex.key, i)));
+          const exerciseDone = cells.every((c) => c.done);
+          const isOpen = !exerciseDone || (reopened[ex.key] ?? false);
+          const doneSummary = (() => {
+            const logged = cells.filter((c) => c.done && c.weight);
+            if (logged.length === 0) return `${setCount} ${setCount === 1 ? "set" : "sets"} done`;
+            const w = logged[0].weight;
+            const sameWeight = logged.every((c) => c.weight === w);
+            const reps = logged.map((c) => c.reps || "?").join(", ");
+            return sameWeight
+              ? `${logged.length} × ${w} ${units} · ${reps}`
+              : logged.map((c) => `${c.weight}×${c.reps || "?"}`).join(" · ");
+          })();
+
           return (
             <section key={ex.key} className="aur-chrome-surface p-4" aria-label={ex.name}>
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 className="aur-section">{ex.name}</h2>
-                <span className="aur-metric text-small" style={{ color: "var(--aur-ink-muted)" }}>
-                  {ex.sets} × {repRangeHint(ex)}
-                </span>
-              </div>
-              {/* A suggestion, never a prescription — it is last time's
-                  number, and tapping it fills the empty sets so the common
-                  case is one tap instead of four. */}
-              {ghost && (ghost.weight != null) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    for (let i = 0; i < Math.max(1, ex.sets); i++) {
-                      if (!cell(cellKey(ex.key, i)).weight) {
-                        update(ex.key, ex.name, i, { weight: String(ghost.weight) });
+              {exerciseDone ? (
+                <ExerciseDone
+                  name={ex.name}
+                  summary={doneSummary}
+                  open={isOpen}
+                  onToggle={() => setReopened((r) => ({ ...r, [ex.key]: !isOpen }))}
+                />
+              ) : (
+                <div className="flex items-baseline justify-between gap-2">
+                  <h2 className="aur-section">{ex.name}</h2>
+                  <span className="aur-metric text-small" style={{ color: "var(--aur-ink-muted)" }}>
+                    {ex.sets} × {repRangeHint(ex)}
+                  </span>
+                </div>
+              )}
+              <Collapsible open={isOpen}>
+              {/*
+                A suggestion, never a prescription.
+
+                Read from the whole history of this lift, not just last
+                time, so it can tell "you earned the jump" apart from
+                "you have been stuck here for three weeks". Tapping it
+                fills every empty set, so the common case is one tap
+                instead of four — but it only ever fills BLANKS, because
+                overwriting a number you typed would be the app editing
+                your record.
+
+                The reason is always shown. A suggestion you cannot
+                argue with is just an instruction.
+              */}
+              {suggestion.weight != null && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      for (let i = 0; i < Math.max(1, ex.sets); i++) {
+                        const c = cell(cellKey(ex.key, i));
+                        if (!c.weight) {
+                          update(ex.key, ex.name, i, {
+                            weight: String(suggestion.weight),
+                            reps: c.reps || String(suggestion.repsLow),
+                          });
+                        }
                       }
-                    }
-                  }}
-                  className="aur-press mt-1 rounded-full px-3 py-1 text-left"
-                  style={{
-                    background: "var(--aur-glass-tint)",
-                    border: "1px solid var(--aur-glass-rim)",
-                    color: "var(--aur-ink-muted)",
-                    fontSize: "0.6875rem",
-                  }}
-                >
-                  Suggested from last time: {ghost.weight} {units}
-                  {ghost.reps != null ? ` × ${ghost.reps}` : ""} — tap to use
-                </button>
+                    }}
+                    className="aur-press aur-touch flex w-full items-center justify-between gap-3 rounded-[10px] px-3 text-left"
+                    style={{
+                      background: "var(--aur-glass-tint)",
+                      border: "1px solid var(--aur-glass-rim)",
+                      color: "var(--aur-ink)",
+                      paddingTop: "0.5rem",
+                      paddingBottom: "0.5rem",
+                    }}
+                  >
+                    <span className="min-w-0">
+                      <span className="aur-label m-0 block" style={{ color: "var(--aur-chrome-50)" }}>
+                        {VERDICT_LABEL[suggestion.verdict]}
+                      </span>
+                      <span className="aur-metric block text-body">
+                        {suggestionLabel(suggestion, units)}
+                      </span>
+                    </span>
+                    <span className="aur-meta shrink-0">tap to fill</span>
+                  </button>
+                  <p className="aur-meta m-0 mt-1">{suggestion.reason}</p>
+                </div>
+              )}
+              {suggestion.weight == null && (
+                <p className="aur-meta m-0 mt-2">{suggestion.reason}</p>
               )}
 
               {/* "Not sure what this looks like?" — a photo on demand. */}
@@ -326,7 +400,7 @@ export function Session() {
                           id={`${k}-w`}
                           value={c.weight}
                           inputMode="decimal"
-                          placeholder={ghost?.weight != null ? String(ghost.weight) : units}
+                          placeholder={suggestion.weight != null ? String(suggestion.weight) : units}
                           onChange={(e) => update(ex.key, ex.name, i, { weight: e.target.value.replace(/[^\d.]/g, "") })}
                           className="aur-touch w-full rounded-lg px-2 text-center aur-metric"
                           style={{ height: 44, color: "var(--aur-ink)", background: "rgba(7,12,24,0.55)", border: "1px solid rgba(210,217,230,0.14)" }}
@@ -358,21 +432,11 @@ export function Session() {
                           style={{ height: 44, color: "var(--aur-ink)", background: "rgba(7,12,24,0.45)", border: "1px solid rgba(210,217,230,0.1)" }}
                         />
                       )}
-                      <button
-                        type="button"
-                        aria-pressed={c.done}
-                        aria-label={`Complete set ${i + 1}`}
-                        onClick={() => void completeSet(ex, i, !c.done)}
-                        className="aur-press aur-touch grid shrink-0 place-items-center rounded-full"
-                        style={{
-                          width: 44, height: 44,
-                          background: c.done ? "var(--aur-success)" : "rgba(210,217,230,0.1)",
-                          color: c.done ? "var(--aur-night)" : "var(--aur-ink-muted)",
-                          border: "none",
-                        }}
-                      >
-                        ✓
-                      </button>
+                      <SetCheck
+                        done={c.done}
+                        label={`Complete set ${i + 1}`}
+                        onToggle={() => void completeSet(ex, i, !c.done)}
+                      />
                     </div>
                   );
                 })}
@@ -402,6 +466,7 @@ export function Session() {
                   RPE 1–10 (10 = no reps in reserve). Optional.
                 </p>
               )}
+              </Collapsible>
             </section>
           );
         })}

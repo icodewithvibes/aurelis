@@ -18,6 +18,7 @@ import {
   findExercise,
   hasReference,
   musclesLabel,
+  cleanDescription,
   type ExerciseInfo,
 } from "../features/exercises/exerciseDb";
 
@@ -194,7 +195,7 @@ export function ExercisePreview({ name }: ExercisePreviewProps) {
 
                   {state.info.d && (
                     <p className="m-0 mt-3 text-body" style={{ color: "var(--aur-ink-muted)" }}>
-                      {state.info.d}
+                      {cleanDescription(state.info.d)}
                     </p>
                   )}
 

@@ -12,6 +12,7 @@ import { newId } from "../../lib/id";
 import { localDay, nowMs } from "../../lib/date";
 import { refreshRecords } from "../../features/proof/proofRepo";
 import { loadPreferences } from "./settingsRepo";
+import type { CompletedSet, LiftDay } from "../../features/training/progression";
 import {
   findStaleSessions,
   halfSessionSummary,
@@ -251,6 +252,39 @@ function sessionDayName(session: SessionRow): string {
 export async function discardSession(id: string): Promise<void> {
   const now = nowMs();
   await db.sessions.update(id, { status: "discarded", deletedAt: now, updatedAt: now });
+}
+
+/**
+ * Every day this lift was trained, ascending, with only the sets that
+ * were actually COMPLETED — the evidence the progression engine reads.
+ *
+ * Sessions still in progress are included: work you did an hour ago is
+ * as real as work you did last week, and waiting for a session to be
+ * formally finished before it can inform the next one would make the
+ * suggestion stale exactly when it matters.
+ */
+export async function liftDaysFor(exerciseName: string): Promise<LiftDay[]> {
+  const [sessions, logs] = await Promise.all([db.sessions.toArray(), db.setLogs.toArray()]);
+
+  const liveSessions = new Map(
+    sessions.filter((s) => !s.deletedAt && s.status !== "discarded").map((s) => [s.id, s]),
+  );
+
+  const byDate = new Map<string, CompletedSet[]>();
+  for (const l of logs) {
+    if (l.deletedAt || !l.done) continue;
+    if (l.exerciseName !== exerciseName) continue;
+    if (l.weight == null || l.reps == null) continue; // nothing to progress from
+    const session = liveSessions.get(l.sessionId);
+    if (!session) continue;
+    const list = byDate.get(session.dateLocal) ?? [];
+    list.push({ weight: l.weight, reps: l.reps });
+    byDate.set(session.dateLocal, list);
+  }
+
+  return [...byDate.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([dateLocal, sets]) => ({ dateLocal, sets }));
 }
 
 /** Most recent completed weight/reps for an exercise name (ghost defaults). */

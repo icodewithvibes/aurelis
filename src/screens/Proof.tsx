@@ -115,35 +115,53 @@ export function Proof() {
               <p className="aur-label m-0">Per-lift progress</p>
               <ul className="m-0 mt-3 flex list-none flex-col gap-3 p-0">
                 {history.slice(0, 8).map((h) => {
-                  const change = h.changeEst1RM;
+                  /*
+                   * Say what actually happened, in the numbers that were
+                   * logged.
+                   *
+                   * This line used to read "up 12 lb", which was the
+                   * change in ESTIMATED one-rep max — a derived figure
+                   * from a formula, for a lift nobody performed. It is a
+                   * reasonable thing to plot and a confusing thing to
+                   * lead with, because it is not a weight anyone put on
+                   * a bar. The heaviest set is.
+                   */
+                  const first = h.points[0];
+                  const heavier = h.latest.topWeight - first.topWeight;
                   const trend =
-                    change === null
-                      ? "one session so far"
-                      : change > 0
-                        ? `up ${change} ${units}`
-                        : change < 0
-                          ? `down ${Math.abs(change)} ${units}`
-                          : "holding steady";
+                    h.points.length < 2
+                      ? "first time logged"
+                      : heavier > 0
+                        ? `up ${heavier} ${units} since ${first.date.slice(5)}`
+                        : heavier < 0
+                          ? `${Math.abs(heavier)} ${units} below your opener`
+                          : "same top weight so far";
+                  const best = h.best.topWeight > 0 ? `best ${h.best.topWeight} ${units}` : null;
                   return (
                     <li key={h.name} className="flex items-center justify-between gap-3">
                       <span className="min-w-0">
                         <span className="block truncate font-medium">{h.name}</span>
+                        <span className="aur-meta block">
+                          {h.latest.topWeight > 0
+                            ? `Last: ${h.latest.topWeight} ${units} × ${h.latest.bestReps}`
+                            : `Last: ${h.latest.bestReps} reps`}
+                          {best ? ` · ${best}` : ""}
+                        </span>
                         <span className="aur-meta">
-                          {h.latest.topWeight > 0 ? `${h.latest.topWeight} ${units} · ` : ""}
                           {h.sessions} {h.sessions === 1 ? "session" : "sessions"} · {trend}
                         </span>
                       </span>
                       <Sparkline
-                        values={h.points.map((p) => p.est1RM || p.bestReps)}
-                        label={`${h.name}: estimated one-rep max across ${h.sessions} sessions, ${trend}`}
+                        values={h.points.map((p) => p.topWeight || p.bestReps)}
+                        label={`${h.name}: heaviest set across ${h.sessions} sessions, ${trend}`}
                       />
                     </li>
                   );
                 })}
               </ul>
               <p className="aur-meta m-0 mt-3">
-                Estimated from your heaviest completed set each day. An estimate, not a max you
-                have tested.
+                Your heaviest completed set each day, and how it has moved. Nothing is estimated
+                or extrapolated — these are weights you actually lifted.
               </p>
             </motion.section>
           )}
