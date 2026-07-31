@@ -12,6 +12,7 @@ import { useAsync } from "../hooks/useAsync";
 import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import { loadProof, loadTimeline } from "../features/proof/proofRepo";
 import { Timeline } from "../components/Timeline";
+import { displayName } from "../features/exercises/displayName";
 import { loadExerciseHistory } from "../features/history/historyRepo";
 import { Sparkline } from "../components/Sparkline";
 import { useUiStore } from "../state/ui";
@@ -112,7 +113,21 @@ export function Proof() {
           {/* Per-lift progress — drawn only from completed sets. */}
           {history && history.length > 0 && (
             <motion.section {...rise} className="mt-4 aur-chrome-surface p-5" aria-label="Per-lift progress">
-              <p className="aur-label m-0">Per-lift progress</p>
+              {/*
+                One question, answered per lift: is this going up?
+
+                It previously led with a change in ESTIMATED one-rep max
+                and a row of four figures, which answered a question
+                nobody asked. Now the heaviest set is the headline, the
+                trend is a sentence, and the explanation sits at the TOP
+                where it can frame what follows instead of at the bottom
+                where it arrives too late.
+              */}
+              <p className="aur-label m-0">Are you getting stronger?</p>
+              <p className="aur-meta m-0 mt-1">
+                Every lift you have logged, with the heaviest set you completed most recently.
+                The line traces that weight over time.
+              </p>
               <ul className="m-0 mt-3 flex list-none flex-col gap-3 p-0">
                 {history.slice(0, 8).map((h) => {
                   /*
@@ -128,40 +143,54 @@ export function Proof() {
                    */
                   const first = h.points[0];
                   const heavier = h.latest.topWeight - first.topWeight;
+                  const atBest = h.latest.topWeight >= h.best.topWeight && h.best.topWeight > 0;
+
+                  /* One sentence, in plain words. "Up 15 lb" is a fact
+                     about the bar; "up 12 lb of estimated 1RM" was a
+                     fact about a formula. */
                   const trend =
                     h.points.length < 2
-                      ? "first time logged"
+                      ? "First time logged — no trend yet."
                       : heavier > 0
-                        ? `up ${heavier} ${units} since ${first.date.slice(5)}`
+                        ? `Up ${heavier} ${units} since you started this lift.`
                         : heavier < 0
-                          ? `${Math.abs(heavier)} ${units} below your opener`
-                          : "same top weight so far";
-                  const best = h.best.topWeight > 0 ? `best ${h.best.topWeight} ${units}` : null;
+                          ? `${Math.abs(heavier)} ${units} lighter than your first session.`
+                          : "Same weight as when you started.";
+
+                  const headline =
+                    h.latest.topWeight > 0
+                      ? `${h.latest.topWeight} ${units} × ${h.latest.bestReps}`
+                      : `${h.latest.bestReps} reps`;
+
                   return (
                     <li key={h.name} className="flex items-center justify-between gap-3">
                       <span className="min-w-0">
-                        <span className="block truncate font-medium">{h.name}</span>
-                        <span className="aur-meta block">
-                          {h.latest.topWeight > 0
-                            ? `Last: ${h.latest.topWeight} ${units} × ${h.latest.bestReps}`
-                            : `Last: ${h.latest.bestReps} reps`}
-                          {best ? ` · ${best}` : ""}
+                        <span className="block truncate font-medium">{displayName(h.name)}</span>
+                        <span className="mt-0.5 flex items-baseline gap-2">
+                          <span className="aur-metric" style={{ color: "var(--aur-chrome-50)" }}>
+                            {headline}
+                          </span>
+                          {atBest && h.points.length > 1 && (
+                            <span className="aur-meta" style={{ color: "var(--aur-chrome-50)" }}>
+                              best yet
+                            </span>
+                          )}
                         </span>
-                        <span className="aur-meta">
-                          {h.sessions} {h.sessions === 1 ? "session" : "sessions"} · {trend}
+                        <span className="aur-meta block">
+                          {trend} {h.sessions} {h.sessions === 1 ? "session" : "sessions"} logged.
                         </span>
                       </span>
                       <Sparkline
                         values={h.points.map((p) => p.topWeight || p.bestReps)}
-                        label={`${h.name}: heaviest set across ${h.sessions} sessions, ${trend}`}
+                        label={`${displayName(h.name)}: heaviest set across ${h.sessions} sessions. ${trend}`}
                       />
                     </li>
                   );
                 })}
               </ul>
               <p className="aur-meta m-0 mt-3">
-                Your heaviest completed set each day, and how it has moved. Nothing is estimated
-                or extrapolated — these are weights you actually lifted.
+                Nothing here is estimated or extrapolated. Every number is a set you completed
+                and marked done.
               </p>
             </motion.section>
           )}

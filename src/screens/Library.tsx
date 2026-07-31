@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { ExercisePreview } from "../components/ExercisePreview";
+import { displayName } from "../features/exercises/displayName";
 import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import { commitImport } from "../features/asf/importSplit";
 import {
@@ -136,7 +137,7 @@ export function Library() {
                         {d.exercises.map((e) => (
                           <li key={e.name}>
                             <div className="flex items-baseline justify-between gap-3">
-                              <span className="min-w-0 truncate text-small">{e.name}</span>
+                              <span className="min-w-0 truncate text-small">{displayName(e.name)}</span>
                               <span className="aur-metric shrink-0 text-small" style={{ color: "var(--aur-ink-muted)" }}>
                                 {e.sets}×{e.repMin ?? "?"}–{e.repMax ?? "?"}
                               </span>

@@ -154,9 +154,35 @@ export function buildTimeline(sources: TimelineSources, limit = 60): TimelineDay
       if (session.notes?.trim()) {
         notes.push({ source: "Session note", body: session.notes.trim() });
       }
-      const logs = (logsBySession.get(session.id) ?? []).sort(
-        (a, b) => a.setIndex - b.setIndex,
-      );
+      /*
+       * IN THE ORDER YOU DID THEM.
+       *
+       * Sorting by setIndex alone interleaves the whole session — every
+       * exercise's first set, then every second set — so the exercise
+       * order fell out of whichever set-0 row Dexie happened to return
+       * first. That is arbitrary, and it made an opened day read as a
+       * jumble that did not match the workout.
+       *
+       * The session's own snapshot holds the prescribed order, which IS
+       * the order it was performed in. Sort by that first, then by set
+       * within each exercise. Anything not in the snapshot (an exercise
+       * added or renamed since) sorts after, alphabetically, so it is
+       * still deterministic rather than merely different each read.
+       */
+      const snapshotOrder = new Map<string, number>();
+      const snapshotExercises =
+        (session.splitDaySnapshot as { exercises?: { key: string }[] } | null)?.exercises ?? [];
+      snapshotExercises.forEach((ex, i) => snapshotOrder.set(ex.key, i));
+
+      const rank = (key: string) => snapshotOrder.get(key) ?? Number.MAX_SAFE_INTEGER;
+      const logs = (logsBySession.get(session.id) ?? []).slice().sort((a, b) => {
+        const byExerciseOrder = rank(a.exerciseKey) - rank(b.exerciseKey);
+        if (byExerciseOrder !== 0) return byExerciseOrder;
+        const byName = a.exerciseName.localeCompare(b.exerciseName);
+        if (byName !== 0) return byName;
+        return a.setIndex - b.setIndex;
+      });
+
       const byExercise = new Map<string, TimelineExercise>();
       for (const l of logs) {
         if (!l.done) continue; // the record is what was DONE, not what was planned
