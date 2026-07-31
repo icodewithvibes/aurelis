@@ -187,3 +187,81 @@ describe("labels", () => {
     expect(activityLabel({ kind: "swim" } as ActivityRow)).toBe("Swim");
   });
 });
+
+describe("an opened day reads in the order you did it", () => {
+  const snapshot = {
+    dayName: "Push Day",
+    exercises: [{ key: "bench" }, { key: "ohp" }, { key: "fly" }],
+  };
+
+  const s = (id: string, date: string) =>
+    ({
+      id, dateLocal: date, splitDaySnapshot: snapshot, status: "completed", qualified: true,
+      startedAt: 0, updatedAt: 0, deletedAt: null, deviceId: "d",
+    }) as unknown as SessionRow;
+
+  const l = (id: string, key: string, name: string, i: number, w: number, r: number) =>
+    ({
+      id, sessionId: "s1", exerciseKey: key, exerciseName: name, setIndex: i,
+      weight: w, reps: r, done: true, updatedAt: 0, deletedAt: null,
+    }) as SetLogRow;
+
+  it("follows the split's order, not the order rows come back from the database", () => {
+    // Deliberately shuffled, and interleaved by set index — which is
+    // exactly what a naive sort produced: every set 0, then every set 1.
+    const shuffled = [
+      l("a", "fly", "Dumbbell Flyes", 0, 30, 12),
+      l("b", "bench", "Barbell Bench Press - Medium Grip", 1, 185, 8),
+      l("c", "ohp", "Barbell Shoulder Press", 0, 95, 8),
+      l("d", "bench", "Barbell Bench Press - Medium Grip", 0, 185, 8),
+      l("e", "fly", "Dumbbell Flyes", 1, 30, 11),
+      l("f", "ohp", "Barbell Shoulder Press", 1, 95, 7),
+    ];
+
+    const days = buildTimeline({
+      ...empty,
+      events: [evt({ dateLocal: "2026-07-20", type: "workout", title: "Push Day" })],
+      sessions: [s("s1", "2026-07-20")],
+      setLogs: shuffled,
+    });
+
+    expect(days[0].detail.exercises.map((e) => e.name)).toEqual([
+      "Barbell Bench Press - Medium Grip",
+      "Barbell Shoulder Press",
+      "Dumbbell Flyes",
+    ]);
+  });
+
+  it("keeps each lift's sets in the order they were performed", () => {
+    const outOfOrder = [
+      l("b", "bench", "Barbell Bench Press - Medium Grip", 2, 185, 6),
+      l("a", "bench", "Barbell Bench Press - Medium Grip", 0, 185, 8),
+      l("c", "bench", "Barbell Bench Press - Medium Grip", 1, 185, 7),
+    ];
+    const days = buildTimeline({
+      ...empty,
+      events: [evt({ dateLocal: "2026-07-20", type: "workout", title: "Push Day" })],
+      sessions: [s("s1", "2026-07-20")],
+      setLogs: outOfOrder,
+    });
+    expect(days[0].detail.exercises[0].sets.map((x) => x.reps)).toEqual([8, 7, 6]);
+  });
+
+  it("is deterministic for a lift the snapshot does not know about", () => {
+    const withStranger = [
+      l("a", "bench", "Barbell Bench Press - Medium Grip", 0, 185, 8),
+      l("b", "zzz", "Added Later", 0, 50, 10),
+    ];
+    const days = buildTimeline({
+      ...empty,
+      events: [evt({ dateLocal: "2026-07-20", type: "workout", title: "Push Day" })],
+      sessions: [s("s1", "2026-07-20")],
+      setLogs: withStranger,
+    });
+    // Unknown lifts sort last rather than at random.
+    expect(days[0].detail.exercises.map((e) => e.name)).toEqual([
+      "Barbell Bench Press - Medium Grip",
+      "Added Later",
+    ]);
+  });
+});

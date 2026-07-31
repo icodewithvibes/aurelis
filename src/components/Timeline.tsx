@@ -22,6 +22,7 @@
 import { useState } from "react";
 import { CrestEmblem } from "./CrestEmblem";
 import { railDate, setLabel, activityLabel, type TimelineDay } from "../features/proof/timeline";
+import { displayName } from "../features/exercises/displayName";
 
 interface TimelineProps {
   days: TimelineDay[];
@@ -149,13 +150,41 @@ function DayDetail({ day, units }: { day: TimelineDay; units: string }) {
       {detail.exercises.length > 0 && (
         <div>
           <p className="aur-label m-0">Logged</p>
-          <ul className="m-0 mt-1.5 flex list-none flex-col gap-1.5 p-0">
+          {/*
+            One row per set, numbered, in the order they were performed.
+            This used to be every set joined into a single line of text
+            per lift, which turned a session into a paragraph you had to
+            parse. A set is a discrete thing that happened; it gets its
+            own line, and the numbers line up so a session can be read
+            down the column rather than across the sentence.
+          */}
+          <ul className="m-0 mt-2 flex list-none flex-col gap-3 p-0">
             {detail.exercises.map((ex) => (
               <li key={ex.name}>
-                <span className="block truncate text-small font-medium">{ex.name}</span>
-                <span className="aur-meta">
-                  {ex.sets.map((s) => setLabel(s, units)).join("  ·  ")}
-                </span>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="min-w-0 truncate text-small font-medium">
+                    {displayName(ex.name)}
+                  </span>
+                  <span className="aur-meta shrink-0">
+                    {ex.sets.length} {ex.sets.length === 1 ? "set" : "sets"}
+                  </span>
+                </div>
+                <ul className="m-0 mt-1 flex list-none flex-col gap-0.5 p-0">
+                  {ex.sets.map((s, i) => (
+                    <li key={i} className="flex items-baseline gap-2.5">
+                      <span
+                        className="aur-metric shrink-0 text-right"
+                        style={{ width: "1.1rem", color: "var(--aur-ink-faint)", fontSize: "0.6875rem" }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="aur-metric text-small">{setLabel(s, units)}</span>
+                      {s.note && (
+                        <span className="aur-meta min-w-0 truncate">— {s.note}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
           </ul>

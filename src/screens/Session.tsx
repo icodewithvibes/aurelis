@@ -26,6 +26,7 @@ import { crestStateForSessions } from "../lib/crest";
 import { useUiStore } from "../state/ui";
 import { restReason, restSecondsFor } from "../features/training/rest";
 import { suggestNext, suggestionLabel, VERDICT_LABEL, type LiftDay } from "../features/training/progression";
+import { displayName } from "../features/exercises/displayName";
 import { getDbStatus, onDbStatus, type DbStatus } from "../data/db";
 
 interface Cell {
@@ -312,17 +313,17 @@ export function Session() {
           })();
 
           return (
-            <section key={ex.key} className="aur-chrome-surface p-4" aria-label={ex.name}>
+            <section key={ex.key} className="aur-chrome-surface p-4" aria-label={displayName(ex.name)}>
               {exerciseDone ? (
                 <ExerciseDone
-                  name={ex.name}
+                  name={displayName(ex.name)}
                   summary={doneSummary}
                   open={isOpen}
                   onToggle={() => setReopened((r) => ({ ...r, [ex.key]: !isOpen }))}
                 />
               ) : (
                 <div className="flex items-baseline justify-between gap-2">
-                  <h2 className="aur-section">{ex.name}</h2>
+                  <h2 className="aur-section">{displayName(ex.name)}</h2>
                   <span className="aur-metric text-small" style={{ color: "var(--aur-ink-muted)" }}>
                     {ex.sets} × {repRangeHint(ex)}
                   </span>

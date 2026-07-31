@@ -19,8 +19,9 @@ import {
   hasReference,
   musclesLabel,
   cleanDescription,
-  type ExerciseInfo,
 } from "../features/exercises/exerciseDb";
+import { displayName } from "../features/exercises/displayName";
+import type { ExerciseInfo } from "../features/exercises/exerciseDb";
 
 type State =
   | { phase: "closed" }
@@ -167,7 +168,7 @@ export function ExercisePreview({ name }: ExercisePreviewProps) {
                 {!state.imageFailed && (
                   <img
                     src={exerciseImageUrl(state.info.i)}
-                    alt={`Demonstration of ${state.info.n}`}
+                    alt={`Demonstration of ${displayName(state.info.n)}`}
                     /* Intrinsic size reserves the box before the photo
                        arrives, so nothing jumps and the layout does not
                        depend on aspect-ratio support. */
@@ -185,7 +186,7 @@ export function ExercisePreview({ name }: ExercisePreviewProps) {
                 )}
 
                 <div className="px-5 pt-4">
-                  <h2 className="aur-heading">{state.info.n}</h2>
+                  <h2 className="aur-heading">{displayName(state.info.n)}</h2>
 
                   <ul className="m-0 mt-2 flex list-none flex-wrap gap-1.5 p-0">
                     {state.info.e && <Chip>{state.info.e}</Chip>}
