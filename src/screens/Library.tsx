@@ -48,7 +48,7 @@ export function Library() {
   return (
     <ScreenSurface labelledBy="library-heading">
       <motion.header {...rise} className="pt-2">
-        <h1 id="library-heading" className="aur-title">Split library</h1>
+        <h1 id="library-heading" data-tour="split-library" className="aur-title">Split library</h1>
         <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
           Ready-made programs. Adopt one, then edit it however you like.
         </p>

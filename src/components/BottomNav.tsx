@@ -95,6 +95,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
+      data-tour="nav"
       className="aur-navbar fixed inset-x-0 bottom-0 z-40"
       style={{
         /* Layered glass: a translucent tint over a saturated blur, with a
@@ -113,6 +114,7 @@ export function BottomNav() {
         {DESTINATIONS.map((d) => (
           <li key={d.to} className="flex-1">
             <NavLink
+              data-tour={`nav-${d.label.toLowerCase()}`}
               to={d.to}
               className="aur-press aur-touch relative flex flex-col items-center justify-center gap-0.5 no-underline"
               style={({ isActive }) => ({

@@ -3,14 +3,15 @@
  * bottom nav, with the global grain overlay. HashRouter keeps SPA
  * routes portable (and Pages-safe for a future, out-of-scope deploy).
  */
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { rememberRoute } from "./lib/resume";
 import { BottomNav } from "./components/BottomNav";
 import { GrainOverlay } from "./components/GrainOverlay";
-import { Tutorial } from "./components/Tutorial";
+import { TutorialCoach } from "./components/TutorialCoach";
 import { Today } from "./screens/Today";
 import { firstRunDecision, markTutorialSeen } from "./features/onboarding/tutorialRepo";
+import { takeSnapshot, revertToSnapshot, describeRevert, type TourSnapshot } from "./features/onboarding/tourLedger";
 import { useUiStore } from "./state/ui";
 
 /**
@@ -86,6 +87,26 @@ export function App() {
   const tutorialOpen = useUiStore((s) => s.tutorialOpen);
   const closeTutorial = useUiStore((s) => s.closeTutorial);
 
+  /*
+   * The state of the database the instant the tour opened.
+   *
+   * Captured here rather than inside the coach so it is taken BEFORE
+   * the first step can navigate anywhere or create anything — a
+   * snapshot taken a moment late would treat the tour's own first row
+   * as pre-existing and refuse to undo it.
+   */
+  const snapshotRef = useRef<TourSnapshot | null>(null);
+  useEffect(() => {
+    if (!tutorialOpen) return;
+    let alive = true;
+    void takeSnapshot().then((s) => {
+      if (alive) snapshotRef.current = s;
+    });
+    return () => {
+      alive = false;
+    };
+  }, [tutorialOpen]);
+
   return (
     <HashRouter>
       <a
@@ -125,10 +146,17 @@ export function App() {
       <BottomNav />
       <GrainOverlay />
       {tutorialOpen && (
-        <Tutorial
+        <TutorialCoach
           onClose={() => {
             closeTutorial();
             void markTutorialSeen();
+          }}
+          onRevert={async () => {
+            /* Snapshot is taken when the tour opens, so this can only
+               ever remove rows the tour itself created. */
+            const snap = snapshotRef.current;
+            if (!snap) return "Nothing to undo.";
+            return describeRevert(await revertToSnapshot(snap));
           }}
         />
       )}
