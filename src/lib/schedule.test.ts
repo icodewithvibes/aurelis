@@ -20,9 +20,29 @@ const SAT = d(2026, 7, 25);
 const MWF = [1, 3, 5];
 
 describe("scheduleSlots", () => {
-  it("de-duplicates and orders weekdays Sunday-first", () => {
-    expect(scheduleSlots([5, 1, 3, 1])).toEqual([1, 3, 5]);
-    expect(scheduleSlots([6, 0])).toEqual([0, 6]);
+  /*
+   * Ordering runs from the FIRST weekday written, not from Sunday.
+   *
+   * The data model calls this order LOCKED — "order preserved as
+   * written" — and sorting ascending quietly threw it away. That got a
+   * shipped split wrong: "Mon, Wed, Fri, Sun" over [Easy, Intervals,
+   * Easy, Long] put Sunday at slot 0, making Sunday the easy run and
+   * dropping the long run on a Friday.
+   */
+  it("de-duplicates and orders from the first weekday written", () => {
+    expect(scheduleSlots([5, 1, 3, 1])).toEqual([5, 1, 3]); // Fri, Mon, Wed
+    expect(scheduleSlots([6, 0])).toEqual([6, 0]); // Sat, Sun
+  });
+
+  it("leaves an already-ascending schedule exactly as it was", () => {
+    // Every split without a wrapping weekday is untouched by the change.
+    expect(scheduleSlots([1, 3, 5])).toEqual([1, 3, 5]);
+    expect(scheduleSlots([1, 2, 4, 5])).toEqual([1, 2, 4, 5]);
+  });
+
+  it("keeps a schedule that wraps past Sunday in the author's order", () => {
+    expect(scheduleSlots([1, 3, 5, 0])).toEqual([1, 3, 5, 0]); // Mon, Wed, Fri, Sun
+    expect(scheduleSlots([2, 4, 6, 0])).toEqual([2, 4, 6, 0]); // Tue, Thu, Sat, Sun
   });
 
   it("normalises out-of-range weekdays", () => {

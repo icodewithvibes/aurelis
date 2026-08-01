@@ -24,7 +24,7 @@ describe("library shape", () => {
   });
 
   it("finds a template by id", () => {
-    expect(findTemplate("ppl-6")?.name).toBe("Push / Pull / Legs 6×");
+    expect(findTemplate("ppl-6")?.name).toBe("The Three Gates 6×");
     expect(findTemplate("nope")).toBeUndefined();
   });
 
