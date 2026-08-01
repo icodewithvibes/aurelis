@@ -62,6 +62,14 @@ const DISPLAY_NAMES: Record<string, string> = {
   "Standing Barbell Press Behind Neck": "Behind-the-Neck Press",
   "Barbell Shrug Behind The Back": "Behind-the-Back Shrug",
   "Cable Rope Overhead Triceps Extension": "Overhead Triceps Extension",
+  // Grip and forearms.
+  "Palms-Up Barbell Wrist Curl Over A Bench": "Wrist Curl",
+  "Palms-Down Wrist Curl Over A Bench": "Reverse Wrist Curl",
+  "Standing Dumbbell Reverse Curl": "Reverse Curl",
+  "Finger Curls": "Finger Curl",
+  "Plate Pinch": "Plate Pinch",
+  "Wrist Roller": "Wrist Roller",
+  "Zottman Curl": "Zottman Curl",
 };
 
 /**

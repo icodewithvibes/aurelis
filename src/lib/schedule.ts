@@ -43,22 +43,58 @@ export function weekdayName(weekday: number): string {
   return WEEKDAY_NAMES[((weekday % 7) + 7) % 7];
 }
 
-/** Scheduled weekdays as ordered, de-duplicated slots (Sunday first). */
+/**
+ * Scheduled weekdays as ordered, de-duplicated slots.
+ *
+ * ORDERED FROM THE FIRST WEEKDAY THE AUTHOR WROTE, not from Sunday.
+ *
+ * This used to sort ascending, which silently discarded the written
+ * order the data model calls LOCKED — and got a real split wrong.
+ * "SCHEDULE: Mon, Wed, Fri, Sun" against days [Easy, Intervals, Easy,
+ * Long] plainly means Monday easy and Sunday long. Sorting put Sunday
+ * at slot 0, so Sunday became the EASY run and Monday the intervals:
+ * the whole week shifted by one, and the long run landed on a Friday.
+ *
+ * Ordering by distance from the first written weekday keeps the
+ * author's pairing, and keeps the slot sequence chronological within
+ * the training week — which the rotation arithmetic below depends on.
+ * Any schedule already written in ascending order from its first day
+ * (every other split here) is completely unaffected.
+ */
 export function scheduleSlots(scheduleWeekdays: readonly number[]): number[] {
-  return [...new Set(scheduleWeekdays.map((d) => ((d % 7) + 7) % 7))].sort((a, b) => a - b);
+  const unique = [...new Set(scheduleWeekdays.map((d) => ((d % 7) + 7) % 7))];
+  if (unique.length === 0) return unique;
+  const start = unique[0];
+  return unique.sort(
+    (a, b) => ((a - start + 7) % 7) - ((b - start + 7) % 7),
+  );
 }
 
-/** Whole weeks since the epoch for a device-local date, weeks starting Sunday. */
-function weekIndex(date: Date): number {
+/**
+ * Whole training weeks elapsed, where a week begins on the split's own
+ * first scheduled weekday rather than on Sunday.
+ *
+ * Anchoring the boundary to the schedule is what lets the slot sequence
+ * stay monotonic: with a Sunday-start boundary, a split written
+ * "Mon … Sun" would see its last slot occur first each week and the
+ * rotation counter would run backwards.
+ */
+function weekIndex(date: Date, startWeekday = 0): number {
   const days = Math.floor(
     Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / MS_PER_DAY,
   );
-  return Math.floor((days + EPOCH_SUNDAY_OFFSET) / 7);
+  const shift = ((EPOCH_SUNDAY_OFFSET - startWeekday) % 7 + 7) % 7;
+  return Math.floor((days + shift) / 7);
 }
 
 /**
  * Index into the split's day list for `date`, or null when the date is
  * not a scheduled training day.
+ *
+ * The weekday keeps a stable meaning: with three slots and three days,
+ * Wednesday is always the Wednesday session no matter which day you
+ * imported on. Rotation only comes into play when the split has more
+ * days than the week has slots.
  */
 export function dayIndexForDate(
   scheduleWeekdays: readonly number[],
@@ -74,7 +110,7 @@ export function dayIndexForDate(
   if (slotIndex < 0) return null;
 
   // Whole weeks elapsed since the split started; zero in its first week.
-  const weeks = anchor ? weekIndex(date) - weekIndex(anchor) : 0;
+  const weeks = anchor ? weekIndex(date, slots[0]) - weekIndex(anchor, slots[0]) : 0;
   const offset = weeks * slots.length;
   return (((slotIndex + offset) % dayCount) + dayCount) % dayCount;
 }
