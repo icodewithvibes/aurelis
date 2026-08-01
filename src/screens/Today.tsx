@@ -97,7 +97,7 @@ export function Today() {
         />
       )}
 
-      <motion.section {...stagger(1)} aria-label="Today" className="aur-chrome-surface p-5">
+      <motion.section {...stagger(1)} data-tour="today-primary" aria-label="Today" className="aur-chrome-surface p-5">
         {loading && <p className="m-0 text-body" style={{ color: "var(--aur-ink-muted)" }}>Loading…</p>}
 
         {!loading && data && !data.hasSplit && (

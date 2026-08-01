@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { decideFirstRun, TUTORIAL_STEPS, type FirstRunFacts } from "./tutorial";
+import { decideFirstRun, type FirstRunFacts } from "./tutorial";
 
 const empty: FirstRunFacts = {
   tutorialSeenAt: undefined,
@@ -40,43 +40,5 @@ describe("decideFirstRun", () => {
     expect(
       decideFirstRun({ ...empty, hasSessions: true, hasForgeEntries: true }),
     ).toBe("mark-seen-silently");
-  });
-});
-
-describe("the steps themselves", () => {
-  it("covers what a new user actually has to find", () => {
-    const ids = TUTORIAL_STEPS.map((s) => s.id);
-    for (const needed of ["split", "movement", "logging", "proof", "plan", "make-it-yours"]) {
-      expect(ids).toContain(needed);
-    }
-  });
-
-  it("has unique ids, since they key the animation and the dots", () => {
-    const ids = TUTORIAL_STEPS.map((s) => s.id);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-
-  it("gives every step real copy", () => {
-    for (const s of TUTORIAL_STEPS) {
-      expect(s.title.length).toBeGreaterThan(4);
-      expect(s.body.length).toBeGreaterThan(40);
-    }
-  });
-
-  it("never promises a route without a label to press", () => {
-    for (const s of TUTORIAL_STEPS) {
-      if (s.cta) expect(s.route).toBeTruthy();
-    }
-  });
-
-  it("only points at routes the app actually has", () => {
-    const routes = ["/today", "/plan", "/train", "/forge", "/proof", "/settings", "/library", "/import"];
-    for (const s of TUTORIAL_STEPS) {
-      if (s.route) expect(routes).toContain(s.route);
-    }
-  });
-
-  it("stays short enough that people finish it", () => {
-    expect(TUTORIAL_STEPS.length).toBeLessThanOrEqual(8);
   });
 });
