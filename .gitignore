@@ -84,3 +84,6 @@ Desktop.ini
 # ── Logs ──
 logs/
 *.log
+
+# Research inputs — third-party transcripts, kept local only
+youtube transcripts for context and learning and applying/
