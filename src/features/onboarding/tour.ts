@@ -37,7 +37,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "welcome",
     title: "Two minutes, and it's yours",
     body:
-      "AURELIS records what you actually did — no streaks you can buy back, no points, nothing invented. Everything stays on this phone. I'll point at each thing as we go, and you can leave at any time.",
+      "FORGE records what you actually did — no streaks you can buy back, no points, nothing invented. Everything stays on this phone. I'll point at each thing as we go, and you can leave at any time.",
   },
   {
     id: "nav",

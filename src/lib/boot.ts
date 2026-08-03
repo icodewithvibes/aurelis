@@ -1,6 +1,6 @@
 /**
  * Boot gate — everything the first screen needs, fetched and decoded
- * BEFORE the app is revealed, so opening AURELIS never shows pieces
+ * BEFORE the app is revealed, so opening FORGE never shows pieces
  * arriving one at a time.
  *
  * What gets waited on, and why only these:

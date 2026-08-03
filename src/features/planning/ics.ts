@@ -7,7 +7,7 @@
  * Scheduled local notifications do not exist in the web platform
  * either — the Notifications API can only fire immediately, and Web
  * Push, which does reach a closed iOS web app, needs a SERVER to send
- * it. AURELIS has no server on purpose.
+ * it. FORGE has no server on purpose.
  *
  * So instead of faking it, this feeds the widget iOS already ships.
  *
@@ -174,10 +174,10 @@ export function buildCalendar(
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//AURELIS//Planner//EN",
+    "PRODID:-//FORGE//Planner//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "X-WR-CALNAME:AURELIS Plan",
+    "X-WR-CALNAME:FORGE Plan",
   ];
 
   const horizon = new Date(`${today}T00:00:00`);
@@ -214,4 +214,4 @@ export function calendarEventCount(
   return (buildCalendar(items, today, days).match(/BEGIN:VEVENT/g) ?? []).length;
 }
 
-export const CALENDAR_FILENAME = "aurelis-plan.ics";
+export const CALENDAR_FILENAME = "forge-plan.ics";

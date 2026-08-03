@@ -1,11 +1,11 @@
 /**
- * AURELIS movement art — the restyled reference images.
+ * FORGE movement art — the restyled reference images.
  *
  * The source photographs come from free-exercise-db (Unlicense, public
  * domain). Each one was passed back through an image model to redraw it
  * in the app's own language: the same pose, grip and camera, the same
  * equipment, but rendered as a stylized figure in a chrome helm against
- * the cobalt night the rest of AURELIS lives in. The pose is the part
+ * the cobalt night the rest of FORGE lives in. The pose is the part
  * that must not drift — these are instructional, so a picture that looks
  * good and shows the wrong movement is worse than no picture.
  *

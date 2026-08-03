@@ -105,7 +105,7 @@ export function Today() {
             <p className={LABEL_CLASS}>No split yet</p>
             <h2 className="aur-heading mt-1">Import your program</h2>
             <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
-              Paste a split in AURELIS Split Format to know exactly what to train.
+              Paste a split in FORGE Split Format to know exactly what to train.
             </p>
             <button type="button" onClick={() => nav("/import")} className="aur-touch mt-4 w-full rounded-full text-body font-medium"
               style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.875rem 1.5rem" }}>

@@ -1,4 +1,4 @@
-/* AURELIS Stage 1 — global styles. Tailwind v4 + Ceremonial Chrome tokens. */
+/* FORGE Stage 1 — global styles. Tailwind v4 + Ceremonial Chrome tokens. */
 @import "tailwindcss";
 @import "./design/tokens.css";
 /* Theme overrides must follow the base tokens they replace. */
@@ -90,7 +90,7 @@ body {
  *   npm run build && grep -o '[-a-z]*backdrop-filter:' dist/assets/*.css | sort | uniq -c
  * The two counts must match.
  */
-/* Forged-glass panel — original AURELIS surface (see 05 §3). */
+/* Forged-glass panel — original FORGE surface (see 05 §3). */
 .aur-glass {
   position: relative;
   background: var(--aur-glass-bg);

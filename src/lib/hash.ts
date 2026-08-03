@@ -1,7 +1,7 @@
 /**
  * FNV-1a — small, stable, dependency-free string hash.
  *
- * Used wherever AURELIS needs a choice that is varied but REPRODUCIBLE:
+ * Used wherever FORGE needs a choice that is varied but REPRODUCIBLE:
  * the time-of-day hero variant and the Forge template variant. Never
  * use Math.random for those — the same input must always give the same
  * output so the app is testable and never flickers.

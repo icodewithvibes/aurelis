@@ -233,7 +233,7 @@ export function Forge() {
                 {resourceLineFor(response.safetyCategory!, resources ?? undefined)}
               </p>
               <p className="aur-meta m-0 mt-3">
-                AURELIS reads your note on this device to stay gentle when it matters. It isn't a
+                FORGE reads your note on this device to stay gentle when it matters. It isn't a
                 diagnosis and it isn't medical advice.
               </p>
 
