@@ -3,7 +3,13 @@
  * the proof engine from the event log, never stored as truth and never
  * inflated: the crest tier, the exact kept count, the current run, this
  * week's completion, all-time records, and a chronological timeline.
- * No XP, no coins, no fabricated progress.
+ *
+ * There IS an XP number now, and it is worth being precise about why
+ * that does not break the promise this screen makes. It is derived on
+ * every read from days kept and your own PRs, never written down, and
+ * shown alongside the arithmetic that produced it. Delete a session and
+ * it goes down. The weight you type is never scored. So: no coins, no
+ * fabricated progress, and no points you can buy back.
  */
 import { motion } from "framer-motion";
 import { ScreenSurface } from "../components/ScreenSurface";
@@ -16,6 +22,8 @@ import { displayName } from "../features/exercises/displayName";
 import { loadExerciseHistory } from "../features/history/historyRepo";
 import { Sparkline } from "../components/Sparkline";
 import { useUiStore } from "../state/ui";
+import { RankCard } from "../components/RankCard";
+import { loadRank } from "../features/rank/rankRepo";
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -30,6 +38,7 @@ export function Proof() {
   const { data, loading } = useAsync(loadProof);
   const { data: history } = useAsync(loadExerciseHistory);
   const { data: timeline } = useAsync(loadTimeline);
+  const { data: rank } = useAsync(loadRank);
   const units = useUiStore((s) => s.units);
   const reduce = useMotionDisabled();
   const rise = reduce ? {} : {
@@ -68,6 +77,12 @@ export function Proof() {
                   : "Highest crest reached. It keeps counting because the record is the point, not the tier."}
             </p>
           </motion.section>
+
+          {rank && (
+            <motion.section {...rise} className="mt-6">
+              <RankCard state={rank.state} breakdown={rank.breakdown} />
+            </motion.section>
+          )}
 
           <motion.section {...rise} className="mt-6 aur-chrome-surface p-5" aria-label="Records">
             <p className="aur-label m-0">Records</p>

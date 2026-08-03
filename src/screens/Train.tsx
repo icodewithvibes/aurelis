@@ -95,7 +95,7 @@ export function Train() {
         <motion.section {...rise} className="mt-6 aur-chrome-surface p-5">
           <p className="aur-label m-0">No split yet</p>
           <p className="m-0 mt-2 text-body">
-            Pick a ready-made program, or paste your own in AURELIS Split Format.
+            Pick a ready-made program, or paste your own in FORGE Split Format.
           </p>
           <button type="button" onClick={() => nav("/library")} className="aur-press aur-touch mt-4 w-full rounded-full text-body font-medium"
             style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.875rem 1.5rem" }}>

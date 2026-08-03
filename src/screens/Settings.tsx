@@ -223,7 +223,7 @@ export function Settings() {
 
       <Card
         title="Effort check"
-        hint="After a set, AURELIS can ask how hard it felt. Simple mode uses plain language; advanced shows the RPE scale; hidden leaves it out."
+        hint="After a set, FORGE can ask how hard it felt. Simple mode uses plain language; advanced shows the RPE scale; hidden leaves it out."
       >
         <SegmentedControl
           label="Effort check mode"
@@ -318,7 +318,7 @@ export function Settings() {
           <div className="aur-hairline" />
         </div>
         <p className="aur-meta m-0 mt-3">
-          AURELIS is local-first: no account, no server, no sync, no tracking. Your splits,
+          FORGE is local-first: no account, no server, no sync, no tracking. Your splits,
           sessions and Forge entries are stored in this browser and never sent anywhere.
         </p>
 
@@ -377,7 +377,7 @@ export function Settings() {
       </Group>
 
       <Group title="About">
-      <Card title="Install on iPhone" hint="AURELIS runs as a home-screen app, offline and account-free.">
+      <Card title="Install on iPhone" hint="FORGE runs as a home-screen app, offline and account-free.">
         <ol
           className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0 text-small"
           style={{ color: "var(--aur-ink-muted)" }}

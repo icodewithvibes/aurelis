@@ -40,7 +40,7 @@ export interface ExerciseInfo {
 const CDN = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
 
 /**
- * Prefer the bundled AURELIS art, fall back to the source photo.
+ * Prefer the bundled FORGE art, fall back to the source photo.
  *
  * The art is same-origin and works offline; the CDN is the safety net
  * for movements whose art has not been made yet, and for the ~820

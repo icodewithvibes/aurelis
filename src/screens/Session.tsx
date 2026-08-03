@@ -152,7 +152,7 @@ export function Session() {
     persist(exKey, exName, i, next)
       .then(() => setWriteError(false))
       .catch((err) => {
-        console.error("[aurelis] could not save that set", err);
+        console.error("[forge] could not save that set", err);
         setWriteError(true);
       });
     if (recorded) setSaved(false); // the replay is now out of date
@@ -179,7 +179,7 @@ export function Session() {
         });
       }
     } catch (err) {
-      console.error("[aurelis] could not save that set", err);
+      console.error("[forge] could not save that set", err);
       setWriteError(true);
       setGrid((g) => ({ ...g, [k]: { ...next, done: !done } })); // don't claim it saved
     }
@@ -201,7 +201,7 @@ export function Session() {
     try {
       setResult(await recordProof(id, true));
     } catch (err) {
-      console.error("[aurelis] could not record proof", err);
+      console.error("[forge] could not record proof", err);
       setFinishing(false);
       nav("/today");
     }
@@ -220,7 +220,7 @@ export function Session() {
       await replayDerivedState();
       setSaved(true);
     } catch (err) {
-      console.error("[aurelis] could not replay derived state", err);
+      console.error("[forge] could not replay derived state", err);
     } finally {
       setFinishing(false);
     }

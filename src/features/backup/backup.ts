@@ -30,8 +30,16 @@ export const BACKUP_TABLES = [
 
 export type BackupTable = (typeof BACKUP_TABLES)[number];
 
+/**
+ * The app was called AURELIS before it was called FORGE. Backups written
+ * under the old name are still the user's own training history, so both
+ * discriminators are accepted forever. New files are written as "forge".
+ */
+export const BACKUP_APP_IDS = ["forge", "aurelis"] as const;
+export type BackupAppId = (typeof BACKUP_APP_IDS)[number];
+
 export interface BackupFile {
-  app: "aurelis";
+  app: BackupAppId;
   schema: number;
   exportedAt: string;
   data: Record<BackupTable, unknown[]>;
@@ -41,7 +49,7 @@ export function buildBackup(
   data: Record<BackupTable, unknown[]>,
   exportedAt = new Date().toISOString(),
 ): BackupFile {
-  return { app: "aurelis", schema: BACKUP_SCHEMA, exportedAt, data };
+  return { app: "forge", schema: BACKUP_SCHEMA, exportedAt, data };
 }
 
 export type ValidationResult =
@@ -59,8 +67,8 @@ export function validateBackup(value: unknown): ValidationResult {
   }
 
   const file = value as Partial<BackupFile>;
-  if (file.app !== "aurelis") {
-    return { ok: false, error: "That file wasn't exported by AURELIS." };
+  if (!BACKUP_APP_IDS.includes(file.app as BackupAppId)) {
+    return { ok: false, error: "That file wasn't exported by FORGE." };
   }
   if (typeof file.schema !== "number") {
     return { ok: false, error: "That backup has no schema version." };
@@ -68,7 +76,7 @@ export function validateBackup(value: unknown): ValidationResult {
   if (file.schema > BACKUP_SCHEMA) {
     return {
       ok: false,
-      error: `That backup is from a newer version of AURELIS (schema ${file.schema}). Update the app first.`,
+      error: `That backup is from a newer version of FORGE (schema ${file.schema}). Update the app first.`,
     };
   }
   if (typeof file.data !== "object" || file.data === null) {
@@ -91,12 +99,12 @@ export function validateBackup(value: unknown): ValidationResult {
   return { ok: true, file: file as BackupFile, counts };
 }
 
-/** "aurelis-backup-2026-07-25.json" */
+/** "forge-backup-2026-07-25.json" */
 export function backupFilename(exportedAt = new Date()): string {
   const y = exportedAt.getFullYear();
   const m = String(exportedAt.getMonth() + 1).padStart(2, "0");
   const d = String(exportedAt.getDate()).padStart(2, "0");
-  return `aurelis-backup-${y}-${m}-${d}.json`;
+  return `forge-backup-${y}-${m}-${d}.json`;
 }
 
 /** A short, human summary of what a validated backup holds. */

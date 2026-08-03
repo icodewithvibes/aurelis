@@ -1,5 +1,5 @@
 /**
- * Threshold Arch — the AURELIS Chrome Crest (Direction B, APPROVED).
+ * Threshold Arch — the FORGE Chrome Crest (Direction B, APPROVED).
  * Exact layered SVG per 03_assets/03_chrome-crest.md §Threshold Arch:
  *   viewBox 0 0 64 64 · stroke-based · stroke-linecap round ·
  *   min stroke 1.5 units · 7 cumulative layers L0..L6 ·

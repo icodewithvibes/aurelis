@@ -175,7 +175,7 @@ export function SorenessCheck({ days, onStart }: SorenessCheckProps) {
       </div>
 
       <p className="aur-meta m-0 mt-3">
-        General training guidance, not medical advice. AURELIS never diagnoses anything.
+        General training guidance, not medical advice. FORGE never diagnoses anything.
       </p>
     </section>
   );

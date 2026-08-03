@@ -95,7 +95,7 @@ async function boot() {
   } catch (err) {
     // A boot that cannot warm up still has to open. Whatever failed
     // here degrades to the CSS atmosphere and default preferences.
-    console.error("[aurelis] boot warm-up failed; opening anyway.", err);
+    console.error("[forge] boot warm-up failed; opening anyway.", err);
   }
   await minimumSplashDelay(startedAt);
 }

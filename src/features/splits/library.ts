@@ -1,5 +1,5 @@
 /**
- * Split library (Stage 7) — ready-made programs in AURELIS Split Format.
+ * Split library (Stage 7) — ready-made programs in FORGE Split Format.
  *
  * What the current evidence actually supports, and what these encode:
  *

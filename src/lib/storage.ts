@@ -1,7 +1,7 @@
 /**
  * Storage durability (Stage 6).
  *
- * AURELIS keeps everything on the device, so storage that quietly fails
+ * FORGE keeps everything on the device, so storage that quietly fails
  * or gets evicted is not a degraded experience — it is total data loss.
  * Two protections live here:
  *

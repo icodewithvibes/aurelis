@@ -35,7 +35,7 @@ async function seed() {
 }
 
 describe("validateBackup", () => {
-  it("rejects anything that is not an AURELIS backup", () => {
+  it("rejects anything that is not a FORGE backup", () => {
     expect(validateBackup(null).ok).toBe(false);
     expect(validateBackup("nope").ok).toBe(false);
     expect(validateBackup({ app: "other", schema: 1, data: {} }).ok).toBe(false);
@@ -57,6 +57,15 @@ describe("validateBackup", () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.counts.notes).toBe(0);
   });
+
+  it("still accepts backups written before the app was renamed to FORGE", () => {
+    // The app shipped as AURELIS. A file exported under that name is still
+    // the user's own training history and must never stop importing.
+    const legacy = validateBackup({ app: "aurelis", schema: 1, data: { sessions: [] } });
+    const current = validateBackup({ app: "forge", schema: 1, data: { sessions: [] } });
+    expect(legacy.ok).toBe(true);
+    expect(current.ok).toBe(true);
+  });
 });
 
 describe("export and restore", () => {
@@ -65,7 +74,7 @@ describe("export and restore", () => {
     const before = await loadProof();
     const file = await exportBackup();
 
-    expect(file.app).toBe("aurelis");
+    expect(file.app).toBe("forge");
     expect(file.data.sessions).toHaveLength(1);
     expect(file.data.setLogs).toHaveLength(1);
 
@@ -127,7 +136,7 @@ describe("export and restore", () => {
 
 describe("presentation helpers", () => {
   it("names the file by date", () => {
-    expect(backupFilename(new Date(2026, 6, 25))).toBe("aurelis-backup-2026-07-25.json");
+    expect(backupFilename(new Date(2026, 6, 25))).toBe("forge-backup-2026-07-25.json");
   });
 
   it("summarises what a backup holds", () => {

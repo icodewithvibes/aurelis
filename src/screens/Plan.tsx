@@ -385,7 +385,7 @@ export function Plan() {
           <motion.section {...rise} className="mt-4 aur-chrome-surface p-5" aria-label="Reminders">
             <p className="aur-label m-0">Reminders and widgets</p>
             <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
-              AURELIS is a web app, and a web app cannot create an iPhone widget or schedule a
+              FORGE is a web app, and a web app cannot create an iPhone widget or schedule a
               notification on its own — those need a native app and a server. What it can do is
               hand your plan to the Calendar app, which already has both.
             </p>
@@ -411,7 +411,7 @@ export function Plan() {
                   </li>
                   <li>
                     2. Settings → Notifications → Calendar must be on, and that calendar must not be
-                    hidden. Alerts come from Calendar, not from AURELIS, so its settings win.
+                    hidden. Alerts come from Calendar, not from FORGE, so its settings win.
                   </li>
                 </ol>
                 <p className="aur-meta m-0 mt-2">

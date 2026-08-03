@@ -54,7 +54,7 @@ export function Import() {
           Import a split
         </h1>
         <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
-          Paste your program in AURELIS Split Format. Review, then save.
+          Paste your program in FORGE Split Format. Review, then save.
         </p>
       </header>
 

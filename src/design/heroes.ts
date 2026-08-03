@@ -136,7 +136,7 @@ export const HERO_SCENES: Record<TimeBand, HeroScene[]> = {
   night: [nightKnight, nightFacing],
 };
 
-/** The single image that best represents AURELIS (onboarding, share). */
+/** The single image that best represents FORGE (onboarding, share). */
 export const SIGNATURE_HERO = riderHorse;
 
 export const DEFAULT_HERO = chromeRider;

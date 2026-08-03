@@ -1,5 +1,5 @@
 /**
- * AURELIS Split Format (ASF) parser — Stage 2.
+ * FORGE Split Format (ASF) parser — Stage 2.
  * Implements 02_strategy/03_asf-spec.md and the exact ParseResult shape,
  * error taxonomy, and severity model in 02_strategy/07 (binding via the
  * fixtures in 02_strategy/fixtures/, asserted in parse.test.ts).

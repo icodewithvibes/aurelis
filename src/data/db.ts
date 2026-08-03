@@ -1,5 +1,5 @@
 /**
- * AURELIS Dexie/IndexedDB — Stage 1 SHELL ONLY.
+ * FORGE Dexie/IndexedDB — Stage 1 SHELL ONLY.
  *
  * This file defines the object stores, indexes, and version from
  * 02_strategy/04_data-model.md §1 and opens the database on boot.
@@ -411,7 +411,7 @@ export async function initDb(): Promise<DbStatus> {
     await seedDefaults();
     setDbStatus("ready");
   } catch (err) {
-    console.error("[aurelis] IndexedDB unavailable — nothing can be saved on this device.", err);
+    console.error("[forge] IndexedDB unavailable — nothing can be saved on this device.", err);
     setDbStatus("unavailable", err);
   }
   return dbStatus;
