@@ -6,16 +6,45 @@
  * cannot audit is a rank you cannot trust, and the entire argument for
  * this ladder is that it is earned rather than issued.
  */
+import { useState } from "react";
 import type { RankBreakdown, RankState } from "../features/rank/rank";
+import { canShare } from "../features/share/shareCard";
+import { shareRankCard } from "../features/share/shareRankCard";
+import { CREST_SRC } from "./CrestEmblem";
 
 interface RankCardProps {
   state: RankState;
   breakdown: RankBreakdown[];
+  /** Consecutive kept days, for the shared card. */
+  streak?: number;
+  /** Total kept days, for the shared card. */
+  keptDays?: number;
 }
 
-export function RankCard({ state, breakdown }: RankCardProps) {
+export function RankCard({ state, breakdown, streak = 0, keptDays = 0 }: RankCardProps) {
   const pct = Math.round(state.progress * 100);
   const earned = breakdown.filter((row) => row.count > 0);
+  const [sharing, setSharing] = useState(false);
+  const [shareNote, setShareNote] = useState<string | null>(null);
+
+  const shareData = {
+    rankName: state.name,
+    xp: state.xp,
+    streak,
+    keptDays,
+    progress: state.progress,
+    nextRankName: state.nextName,
+  };
+  const shareable = canShare(shareData);
+
+  async function onShare() {
+    setSharing(true);
+    setShareNote(null);
+    const result = await shareRankCard(shareData, CREST_SRC[state.level]);
+    setSharing(false);
+    if (result.ok && result.via === "download") setShareNote("Saved to your downloads.");
+    else if (!result.ok && result.reason === "failed") setShareNote("Couldn't make the image.");
+  }
 
   return (
     <div className="aur-glass rounded-2xl p-4" aria-label="Rank">
@@ -81,6 +110,25 @@ export function RankCard({ state, breakdown }: RankCardProps) {
         Rank comes from days kept and your own progress. The weight you lift is
         never scored, so nobody can type their way up the ladder.
       </p>
+
+      {shareable && (
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={onShare}
+            disabled={sharing}
+            className="aur-button w-full rounded-xl px-4 py-3 text-center disabled:opacity-60"
+            style={{ minHeight: 44 }}
+          >
+            {sharing ? "Making the image…" : "Share your rank"}
+          </button>
+          {shareNote && (
+            <p className="aur-meta mt-2 text-center" aria-live="polite">
+              {shareNote}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
