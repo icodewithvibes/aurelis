@@ -35,9 +35,13 @@ export interface TourStep {
 export const TOUR_STEPS: TourStep[] = [
   {
     id: "welcome",
-    title: "Two minutes, and it's yours",
+    // Leads with the OUTCOME, then the method. The previous version
+    // opened with what the app refuses to do, which is a principle
+    // rather than a reason to stay — you earn a rank for turning up,
+    // and it is worth something precisely because it cannot be faked.
+    title: "Earn a rank that means something",
     body:
-      "FORGE records what you actually did — no streaks you can buy back, no points, nothing invented. Everything stays on this phone. I'll point at each thing as we go, and you can leave at any time.",
+      "Every day you keep moves you up a ladder of seven crests. It counts days you actually trained, never the weight you type — so nobody can shortcut past you. No streaks you can buy back, no points, nothing invented, and everything stays on this phone.",
   },
   {
     id: "nav",

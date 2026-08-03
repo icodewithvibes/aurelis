@@ -30,6 +30,13 @@ import crest6 from "../design/assets/crest/crest_L7_320.webp";
 /** Index = CrestLevel; the files are numbered from 1. */
 const MEDALLIONS = [crest0, crest1, crest2, crest3, crest4, crest5, crest6] as const;
 
+/**
+ * The same medallion URLs, indexed by CrestLevel, for callers that need
+ * the raw asset rather than the component — the share card draws it
+ * onto a canvas.
+ */
+export const CREST_SRC = MEDALLIONS;
+
 /** Below this the engraving stops resolving, so the SVG reads better. */
 const MEDALLION_MIN_PX = 96;
 

@@ -80,7 +80,12 @@ export function Proof() {
 
           {rank && (
             <motion.section {...rise} className="mt-6">
-              <RankCard state={rank.state} breakdown={rank.breakdown} />
+              <RankCard
+                state={rank.state}
+                breakdown={rank.breakdown}
+                streak={data.streak}
+                keptDays={data.keptCount}
+              />
             </motion.section>
           )}
 
