@@ -14,6 +14,7 @@ import { localDay, localWeekday } from "../lib/date";
 import { planSchedule, relativeDayLabel } from "../lib/schedule";
 import { collectDayFacts } from "../features/proof/proofRepo";
 import { computeStreak, countKeptDays } from "../features/proof/engine";
+import { rankInputFrom, xpFor } from "../features/rank/rank";
 
 export interface NextUp {
   day: DayWithExercises;
@@ -39,6 +40,8 @@ export interface HomeData {
   nextUp: NextUp | null;
   /** Kept DAYS, derived by the proof engine — not a raw session tally. */
   sessionsKept: number;
+  /** Total XP, so Today's crest matches Proof's exactly. */
+  xp: number;
   /** Current unbroken run of kept obligations. */
   streak: number;
   todaySessionByDay: Record<string, { id: string; status: string }>;
@@ -58,6 +61,13 @@ export async function loadHome(): Promise<HomeData> {
   const facts = await collectDayFacts(today);
   const sessionsKept = countKeptDays(facts, today);
   const streak = computeStreak(facts, today);
+  const xp = xpFor(
+    rankInputFrom({
+      keptDays: sessionsKept,
+      setLogs: await db.setLogs.toArray(),
+      prs: await db.prs.toArray(),
+    }),
+  );
 
   const todaySessionByDay: Record<string, { id: string; status: string }> = {};
   for (const s of await db.sessions.where("dateLocal").equals(today).toArray()) {
@@ -78,6 +88,7 @@ export async function loadHome(): Promise<HomeData> {
       otherDays: [],
       nextUp: null,
       sessionsKept,
+      xp,
       streak,
       todaySessionByDay,
     };
@@ -114,6 +125,7 @@ export async function loadHome(): Promise<HomeData> {
     otherDays,
     nextUp,
     sessionsKept,
+    xp,
     streak,
     todaySessionByDay,
   };

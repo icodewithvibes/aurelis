@@ -13,7 +13,8 @@ import { getActiveSplit } from "../../data/repositories/splitRepo";
 import { newId } from "../../lib/id";
 import { addDays, daysBetween, localDay, nowMs, parseLocalDay, weekOf } from "../../lib/date";
 import { dayIndexForDate } from "../../lib/schedule";
-import { crestStateForSessions } from "../../lib/crest";
+import { crestStateForXp } from "../../lib/crest";
+import { rankInputFrom, xpFor } from "../rank/rank";
 import type { CrestLevel } from "../../components/ThresholdArch";
 import { buildTimeline, type TimelineDay } from "./timeline";
 import {
@@ -96,7 +97,9 @@ export interface ProofState {
   streak: number;
   bestStreak: number;
   week: WeekCompletion;
-  crest: ReturnType<typeof crestStateForSessions>;
+  crest: ReturnType<typeof crestStateForXp>;
+  /** Total XP — the single number the crest and the rank both come from. */
+  xp: number;
   totalWorkoutsCompleted: number;
   timeline: ProofEventRow[];
   prs: PrRow[];
@@ -111,12 +114,14 @@ export async function loadProof(today = localDay()): Promise<ProofState> {
   ]);
 
   const keptCount = countKeptDays(facts, today);
+  const xp = xpFor(rankInputFrom({ keptDays: keptCount, setLogs: await db.setLogs.toArray(), prs }));
   return {
     keptCount,
+    xp,
     streak: computeStreak(facts, today),
     bestStreak: computeBestStreak(facts, today),
     week: weekCompletion(facts, weekOf(today), today),
-    crest: crestStateForSessions(keptCount),
+    crest: crestStateForXp(xp),
     totalWorkoutsCompleted: sessions.filter(
       (s) => !s.deletedAt && s.status === "completed" && s.qualified,
     ).length,
@@ -255,6 +260,8 @@ export async function replayDerivedState(today = localDay()): Promise<void> {
 
 export interface ProofResult {
   keptCount: number;
+  /** Total XP after this completion — drives the crest in the reveal. */
+  xp: number;
   streak: number;
   /** Non-null when this completion crossed into a new crest tier. */
   crestLevelUp: { level: CrestLevel; name: string } | null;
@@ -351,7 +358,14 @@ export async function recordProof(sessionId: string, qualified = true): Promise<
   const facts = await collectDayFacts(today);
   const keptCount = countKeptDays(facts, today);
   const streak = computeStreak(facts, today);
-  const crest = crestStateForSessions(keptCount);
+  const xp = xpFor(
+    rankInputFrom({
+      keptDays: keptCount,
+      setLogs: await db.setLogs.toArray(),
+      prs: await db.prs.toArray(),
+    }),
+  );
+  const crest = crestStateForXp(xp);
 
   const crestLevelUp =
     crest.level > priorLevel ? { level: crest.level, name: crest.name } : null;
@@ -361,7 +375,7 @@ export async function recordProof(sessionId: string, qualified = true): Promise<
       dateLocal: today,
       type: "crest_levelup",
       title: crest.name,
-      summary: `${keptCount} ${keptCount === 1 ? "session" : "sessions"} kept`,
+      summary: `${xp.toLocaleString()} XP`,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
@@ -382,7 +396,7 @@ export async function recordProof(sessionId: string, qualified = true): Promise<
     await db.settings.update("app", { lastCrestLevel: crest.level, updatedAt: now });
   }
 
-  return { keptCount, streak, crestLevelUp, prs };
+  return { keptCount, xp, streak, crestLevelUp, prs };
 }
 
 /** Mark a day as honored recovery — bridges a run without incrementing. */

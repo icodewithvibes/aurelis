@@ -78,6 +78,44 @@ export function xpFor(input: RankInput): number {
   );
 }
 
+/* Minimal row shapes, so this stays pure and importable from anywhere
+   without dragging in Dexie or creating an import cycle. */
+export interface SetLogLike {
+  sessionId: string;
+  done: boolean;
+  deletedAt: number | null;
+}
+export interface PrLike {
+  metric: string;
+  deletedAt: number | null;
+}
+
+/**
+ * Build the rank input from already-loaded rows.
+ *
+ * Pure on purpose: both the proof repo and the rank repo need this, and
+ * the proof repo must not import the rank repo (the rank repo reads day
+ * facts FROM the proof repo, so the dependency only runs one way).
+ */
+export function rankInputFrom(args: {
+  keptDays: number;
+  setLogs: readonly SetLogLike[];
+  prs: readonly PrLike[];
+}): RankInput {
+  const perSession = new Map<string, number>();
+  for (const row of args.setLogs) {
+    if (!row.done || row.deletedAt) continue;
+    perSession.set(row.sessionId, (perSession.get(row.sessionId) ?? 0) + 1);
+  }
+  const live = args.prs.filter((p) => !p.deletedAt);
+  return {
+    keptDays: args.keptDays,
+    creditedSets: cappedSets([...perSession.values()]),
+    repPRs: live.filter((p) => p.metric === "repPR").length,
+    progressionSteps: live.filter((p) => p.metric === "topWeight").length,
+  };
+}
+
 export interface RankTier {
   level: CrestLevel;
   name: string;

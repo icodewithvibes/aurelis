@@ -11,6 +11,7 @@ import type { RankBreakdown, RankState } from "../features/rank/rank";
 import { canShare } from "../features/share/shareCard";
 import { shareRankCard } from "../features/share/shareRankCard";
 import { CREST_SRC } from "./CrestEmblem";
+import { RankLadder } from "./RankLadder";
 
 interface RankCardProps {
   state: RankState;
@@ -62,10 +63,14 @@ export function RankCard({ state, breakdown, streak = 0, keptDays = 0 }: RankCar
         <span className="aur-meta">XP</span>
       </div>
 
+      <div className="mt-4">
+        <RankLadder level={state.level} xp={state.xp} />
+      </div>
+
       {state.nextName ? (
         <>
           <div
-            className="mt-3 h-1.5 w-full overflow-hidden rounded-full"
+            className="mt-4 h-1.5 w-full overflow-hidden rounded-full"
             style={{ background: "var(--aur-hairline)" }}
             role="progressbar"
             aria-valuenow={pct}

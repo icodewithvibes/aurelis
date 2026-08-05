@@ -85,7 +85,7 @@ export function Today() {
             </p>
           )}
         </div>
-        {data && <ProofSystem sessionsKept={data.sessionsKept} variant="compact" />}
+        {data && <ProofSystem xp={data.xp} variant="compact" />}
       </motion.header>
 
       <div className="flex-1" />
