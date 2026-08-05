@@ -1,54 +1,58 @@
 /**
- * Crest tier DISPLAY mapping (Stage 1).
+ * Crest tier mapping.
  *
- * Maps a session-kept count to a Threshold Arch tier for the visual
- * proof language. This is presentation only — it does NOT compute
- * streaks from events (the real streak engine is Stage 3, per
- * 02_strategy/04). It exists so the mock Proof surface can communicate
- * what the future experience will feel like.
+ * THERE IS ONLY ONE LADDER. The crest you see and the rank you earn are
+ * the same thing measured once, in XP, by `features/rank/rank.ts`.
  *
- * Thresholds mirror the locked crest progression (02_strategy/00_INDEX).
+ * This file used to hold a SECOND ladder keyed off kept-day counts
+ * (1, 3, 7, 14…) while the rank card used XP thresholds. Both used the
+ * same tier names, so the app could — and did — tell the user they were
+ * "First Mark" in one place and "Polished Mark" in another on the same
+ * screen. Two ladders wearing the same names is not a tuning problem,
+ * it is a correctness problem, so the kept-day ladder is gone.
+ *
+ * What remains here is the display shape the Proof surfaces already
+ * speak, backed entirely by RANK_TIERS.
  */
 import type { CrestLevel } from "../components/ThresholdArch";
+import { RANK_TIERS, rankFor } from "../features/rank/rank";
 
 export interface CrestTier {
   level: CrestLevel;
   name: string;
+  /** XP at which this tier begins. */
   min: number;
 }
 
-export const CREST_TIERS: CrestTier[] = [
-  { level: 0, name: "Unmarked", min: 0 },
-  { level: 1, name: "First Mark", min: 1 },
-  { level: 2, name: "Polished Mark", min: 3 },
-  { level: 3, name: "Silver Crest", min: 7 },
-  { level: 4, name: "Cobalt Crest", min: 14 },
-  { level: 5, name: "Prismatic Crest", min: 30 },
-  { level: 6, name: "Ascendant Crest", min: 60 },
-];
+/** Derived from the rank ladder so the two can never drift apart. */
+export const CREST_TIERS: CrestTier[] = RANK_TIERS.map((t) => ({
+  level: t.level,
+  name: t.name,
+  min: t.minXp,
+}));
 
 export interface CrestState {
   level: CrestLevel;
   name: string;
   nextName: string | null;
-  toNext: number; // sessions until the next tier (0 at max)
-  progress: number; // 0..1 within the current tier toward the next
+  /** XP until the next tier (0 at max). */
+  toNext: number;
+  /** 0..1 within the current tier toward the next. */
+  progress: number;
 }
 
-export function crestStateForSessions(n: number): CrestState {
-  const tier =
-    [...CREST_TIERS].reverse().find((t) => n >= t.min) ?? CREST_TIERS[0];
-  const next = CREST_TIERS[tier.level + 1];
-  if (!next) {
-    return { level: tier.level, name: tier.name, nextName: null, toNext: 0, progress: 1 };
-  }
-  const span = next.min - tier.min;
-  const progress = Math.min(1, Math.max(0, (n - tier.min) / span));
+/**
+ * The crest for an XP total. This is `rankFor` in the shape the Proof
+ * components already consume — deliberately a thin adapter rather than
+ * a second implementation.
+ */
+export function crestStateForXp(xp: number): CrestState {
+  const r = rankFor(xp);
   return {
-    level: tier.level,
-    name: tier.name,
-    nextName: next.name,
-    toNext: Math.max(0, next.min - n),
-    progress,
+    level: r.level,
+    name: r.name,
+    nextName: r.nextName,
+    toNext: r.toNext,
+    progress: r.progress,
   };
 }

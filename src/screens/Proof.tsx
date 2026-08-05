@@ -63,17 +63,17 @@ export function Proof() {
       {!loading && data && (
         <>
           <motion.section {...rise} className="mt-6" aria-label="Crest">
-            <ProofSystem sessionsKept={data.keptCount} variant="hero" />
+            <ProofSystem xp={data.xp} variant="hero" />
             {/* What actually moves this number, phrased against the
                 user's own data rather than a generic rule. */}
             <p
               className="m-0 mx-auto mt-4 max-w-[19rem] text-center text-small"
               style={{ color: "var(--aur-ink-muted)" }}
             >
-              {data.keptCount === 0
-                ? "The crest is marked by kept days. Record one session and it begins."
+              {data.xp === 0
+                ? "The crest is the rank made visible. Keep one day and it begins."
                 : data.crest.nextName
-                  ? `The crest counts kept days, not workouts — several sessions in one day still count once. ${data.crest.toNext} more ${data.crest.toNext === 1 ? "day" : "days"} reaches ${data.crest.nextName}.`
+                  ? `Days kept are most of it — several sessions in one day still count as one day, though the extra sets still earn. ${data.crest.toNext.toLocaleString()} more XP reaches ${data.crest.nextName}.`
                   : "Highest crest reached. It keeps counting because the record is the point, not the tier."}
             </p>
           </motion.section>

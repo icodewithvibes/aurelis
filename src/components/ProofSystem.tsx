@@ -10,16 +10,21 @@
  */
 import { CrestEmblem } from "./CrestEmblem";
 import { PrismaticGlint } from "./PrismaticGlint";
-import { crestStateForSessions } from "../lib/crest";
+import { crestStateForXp } from "../lib/crest";
 
 interface ProofSystemProps {
-  sessionsKept: number;
+  /**
+   * Total XP. The crest is the rank made visible, so it is driven by
+   * the same number the rank card shows — passing a session count here
+   * is what previously let the two disagree on screen.
+   */
+  xp: number;
   /** hero = large centered ceremony; compact = inline summary. */
   variant?: "hero" | "compact";
 }
 
-export function ProofSystem({ sessionsKept, variant = "hero" }: ProofSystemProps) {
-  const s = crestStateForSessions(sessionsKept);
+export function ProofSystem({ xp, variant = "hero" }: ProofSystemProps) {
+  const s = crestStateForXp(xp);
 
   if (variant === "compact") {
     return (
@@ -39,7 +44,7 @@ export function ProofSystem({ sessionsKept, variant = "hero" }: ProofSystemProps
       <div className="text-center">
         <p className="aur-section">{s.name}</p>
         <p className="aur-metric m-0 mt-0.5 text-small" style={{ color: "var(--aur-ink-muted)" }}>
-          {sessionsKept} {sessionsKept === 1 ? "session" : "sessions"} kept
+          {xp.toLocaleString()} XP
         </p>
       </div>
 

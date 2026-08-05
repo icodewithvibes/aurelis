@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   suggestNext, workingWeight, hasStalled, roundToStep, suggestionLabel,
   STEP_LB, type LiftDay, type RepTarget,
+  dayGap,
 } from "./progression";
 
 const target: RepTarget = { sets: 3, repMin: 5, repMax: 8 };
@@ -177,5 +178,94 @@ describe("suggestionLabel", () => {
 
   it("omits a weight it does not have", () => {
     expect(suggestionLabel(suggestNext([], target), "lb")).toBe("5–8 reps");
+  });
+});
+
+describe("today is not evidence about today", () => {
+  const target = { sets: 3, repMin: 5, repMax: 8 };
+  const clean = (date: string, weight = 100) => ({
+    dateLocal: date,
+    sets: [
+      { weight, reps: 8 },
+      { weight, reps: 8 },
+      { weight, reps: 8 },
+    ],
+  });
+
+  it("does not add weight off the session you are currently in", () => {
+    // The reported bug: finish three sets at the top of the range and the
+    // app immediately says "add weight" — while sets remain. The verdict
+    // must ignore today entirely.
+    const s = suggestNext([clean("2026-08-03")], target, "lb", "2026-08-03");
+    expect(s.verdict).toBe("first-time");
+  });
+
+  it("stays put as the current session fills in", () => {
+    // Whatever happens today, the plan for today must not move.
+    const history = [clean("2026-07-28")];
+    const before = suggestNext(history, target, "lb", "2026-08-03");
+    const during = suggestNext(
+      [...history, { dateLocal: "2026-08-03", sets: [{ weight: 105, reps: 8 }] }],
+      target,
+      "lb",
+      "2026-08-03",
+    );
+    expect(during.verdict).toBe(before.verdict);
+    expect(during.weight).toBe(before.weight);
+  });
+});
+
+describe("an earned increase waits for recovery", () => {
+  const target = { sets: 3, repMin: 5, repMax: 8 };
+  const clean = (date: string, weight = 100) => ({
+    dateLocal: date,
+    sets: [
+      { weight, reps: 8 },
+      { weight, reps: 8 },
+      { weight, reps: 8 },
+    ],
+  });
+
+  it("adds weight when the lift has rested", () => {
+    const s = suggestNext([clean("2026-08-01")], target, "lb", "2026-08-04");
+    expect(s.verdict).toBe("add-weight");
+    expect(s.weight).toBeGreaterThan(100);
+  });
+
+  it("holds the jump when the lift was trained yesterday", () => {
+    // Loading up the morning after tests recovery, not strength.
+    const s = suggestNext([clean("2026-08-02")], target, "lb", "2026-08-03");
+    expect(s.verdict).toBe("hold");
+    expect(s.weight).toBe(100);
+    expect(s.reason).toMatch(/rest|day/i);
+  });
+
+  it("requires the whole prescription, not two good sets", () => {
+    // Two sets at the top of a three-set target is a partial session.
+    const partial = {
+      dateLocal: "2026-08-01",
+      sets: [
+        { weight: 100, reps: 8 },
+        { weight: 100, reps: 8 },
+      ],
+    };
+    const s = suggestNext([partial], target, "lb", "2026-08-04");
+    expect(s.verdict).not.toBe("add-weight");
+  });
+
+  it("still refuses to invent a first weight", () => {
+    expect(suggestNext([], target, "lb", "2026-08-03").weight).toBeNull();
+  });
+});
+
+describe("dayGap", () => {
+  it("counts whole days across a month boundary", () => {
+    expect(dayGap("2026-07-31", "2026-08-03")).toBe(3);
+  });
+  it("is zero for the same day", () => {
+    expect(dayGap("2026-08-03", "2026-08-03")).toBe(0);
+  });
+  it("survives junk rather than throwing", () => {
+    expect(dayGap("nope", "2026-08-03")).toBe(0);
   });
 });

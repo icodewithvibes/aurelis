@@ -13,9 +13,9 @@ import { countKeptDays } from "../proof/engine";
 import { collectDayFacts } from "../proof/proofRepo";
 import {
   breakdownFor,
-  cappedSets,
   masteryFor,
   rankForInput,
+  rankInputFrom,
   xpFor,
   type MasteryState,
   type RankBreakdown,
@@ -31,29 +31,14 @@ export async function loadRankInput(today = localDay()): Promise<RankInput> {
   ]);
 
   // Kept days come straight from the proof engine so the rank and the
-  // streak can never disagree about what counted.
-  const keptDays = countKeptDays(facts, today);
-
-  // Count completed sets per session, then cap each session. Grouping
-  // first is the whole point — capping the global total would punish
-  // people who simply train a lot.
-  const perSession = new Map<string, number>();
-  for (const row of setLogs) {
-    if (!row.done || row.deletedAt) continue;
-    perSession.set(row.sessionId, (perSession.get(row.sessionId) ?? 0) + 1);
-  }
-  const creditedSets = cappedSets([...perSession.values()]);
-
-  const live = prs.filter((p) => !p.deletedAt);
-  const repPRs = live.filter((p) => p.metric === "repPR").length;
-
-  // A load PR counts as one progression step and is worth the same
-  // whether you added 2.5kg or 200kg. The MAGNITUDE of the weight is
-  // never scored, so inflating the number buys a single step and then
-  // strands you — every later PR has to beat the inflated one.
-  const progressionSteps = live.filter((p) => p.metric === "topWeight").length;
-
-  return { keptDays, creditedSets, repPRs, progressionSteps };
+  // streak can never disagree about what counted. The rest is assembled
+  // by the same pure function the proof repo uses, so the XP behind the
+  // crest and the XP behind the rank card are computed once, not twice.
+  return rankInputFrom({
+    keptDays: countKeptDays(facts, today),
+    setLogs,
+    prs,
+  });
 }
 
 export interface RankSnapshot {

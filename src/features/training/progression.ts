@@ -37,6 +37,23 @@ const INCREMENT_RATIO = 0.025;
 const STALL_SESSIONS = 3;
 /** How far to back off when stalled. */
 const DELOAD_RATIO = 0.9;
+/**
+ * Days a lift needs between sessions before a heavier attempt is a fair
+ * test. Hitting the top of the range and then loading up again the next
+ * morning tests recovery, not strength — the earned jump is held until
+ * the lift has actually had a day off.
+ */
+export const MIN_RECOVERY_DAYS = 2;
+
+/** Whole days between two YYYY-MM-DD local days. */
+export function dayGap(fromIso: string, toIso: string): number {
+  const [fy, fm, fd] = fromIso.split("-").map(Number);
+  const [ty, tm, td] = toIso.split("-").map(Number);
+  if ([fy, fm, fd, ty, tm, td].some((n) => !Number.isFinite(n))) return 0;
+  const a = Date.UTC(fy, fm - 1, fd);
+  const b = Date.UTC(ty, tm - 1, td);
+  return Math.round((b - a) / 86_400_000);
+}
 
 export interface CompletedSet {
   weight: number;
@@ -60,6 +77,8 @@ export type Verdict =
   | "first-time"
   /** Top of the range on every set: earn the increase. */
   | "add-weight"
+  /** Earned the increase, but the lift has not had enough rest yet. */
+  | "hold"
   /** Inside the range: same weight, chase reps. */
   | "add-reps"
   /** Short of the bottom: run it back before adding. */
@@ -143,8 +162,25 @@ export function suggestNext(
   days: readonly LiftDay[],
   target: RepTarget,
   units: "lb" | "kg" = "lb",
+  today?: string,
 ): Suggestion {
-  const withWork = days.filter((d) => d.sets.length > 0);
+  /*
+   * TODAY IS NOT EVIDENCE ABOUT TODAY.
+   *
+   * The history this reads from includes the session in progress, which
+   * is right for showing what you just lifted and wrong for deciding
+   * what to lift. Left in, finishing your sets at the top of the range
+   * flipped the suggestion to "add weight" mid-session — telling you to
+   * load the bar heavier with sets still to go, on the evidence of the
+   * very sets you were in the middle of. A suggestion that moves while
+   * you work is not a plan, it is a mirror.
+   *
+   * So the verdict is computed from completed PRIOR days only, and it
+   * stays put for the whole session.
+   */
+  const withWork = days.filter(
+    (d) => d.sets.length > 0 && (today === undefined || d.dateLocal < today),
+  );
   const last = withWork[withWork.length - 1];
 
   if (!last) {
@@ -176,16 +212,41 @@ export function suggestNext(
     };
   }
 
-  // Top of the range on every set, and enough sets to mean it.
-  if (worst >= target.repMax && setsAtWeight >= Math.min(target.sets, 2)) {
+  /*
+   * The increase has to be EARNED on the whole prescription, not on a
+   * couple of good sets. Requiring only two used to promote a lift off
+   * a partial session, which is how you end up adding weight to work
+   * you never actually finished.
+   */
+  const earnedIncrease = worst >= target.repMax && setsAtWeight >= target.sets;
+
+  if (earnedIncrease) {
+    const rest = today ? dayGap(last.dateLocal, today) : MIN_RECOVERY_DAYS;
     const raised = roundToStep(weight * (1 + INCREMENT_RATIO), units);
     const next = raised <= weight ? weight + step(units) : raised;
+
+    // Earned, but the lift has not had a day off. Loading up again this
+    // soon tests recovery rather than strength, so the jump waits.
+    if (rest < MIN_RECOVERY_DAYS) {
+      return {
+        verdict: "hold",
+        weight,
+        repsLow: target.repMin,
+        repsHigh: target.repMax,
+        reason:
+          rest <= 0
+            ? `You already trained this today (${shown}). The jump to ${next} is earned — take it on your next session, once this lift has had a rest day.`
+            : `You earned ${next} with ${shown}, but that was only ${rest} day ago. Repeat ${weight} ${units} today, or come back to it after a rest day and take the jump then.`,
+        basedOn: last.dateLocal,
+      };
+    }
+
     return {
       verdict: "add-weight",
       weight: next,
       repsLow: target.repMin,
       repsHigh: target.repMax,
-      reason: `You hit ${target.repMax} on every set at ${weight} ${units} (${shown}). That earns the jump — go to ${next} and start back at ${target.repMin}.`,
+      reason: `You hit ${target.repMax} on all ${setsAtWeight} sets at ${weight} ${units} (${shown}), ${rest} days ago. That earns the jump — go to ${next} and start back at ${target.repMin}.`,
       basedOn: last.dateLocal,
     };
   }
@@ -214,6 +275,7 @@ export function suggestNext(
 export const VERDICT_LABEL: Record<Verdict, string> = {
   "first-time": "First time",
   "add-weight": "Add weight",
+  hold: "Earned — rest first",
   "add-reps": "Chase reps",
   repeat: "Run it back",
   deload: "Back off",

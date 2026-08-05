@@ -22,7 +22,8 @@ import {
   type SessionSnapshotExercise,
 } from "../data/repositories/sessionRepo";
 import { recordProof, replayDerivedState, type ProofResult } from "../features/proof/proofRepo";
-import { crestStateForSessions } from "../lib/crest";
+import { crestStateForXp } from "../lib/crest";
+import { localDay } from "../lib/date";
 import { useUiStore } from "../state/ui";
 import { restReason, restSecondsFor } from "../features/training/rest";
 import { suggestNext, suggestionLabel, VERDICT_LABEL, type LiftDay } from "../features/training/progression";
@@ -243,7 +244,7 @@ export function Session() {
       {result && (
         <CompletionReveal
           result={result}
-          crestLevel={crestStateForSessions(result.keptCount).level}
+          crestLevel={crestStateForXp(result.xp).level}
           onDone={() => nav("/today")}
         />
       )}
@@ -280,7 +281,11 @@ export function Session() {
       )}
 
       <div className="mt-4 flex flex-col gap-4">
+        {/* The live session is today's, and the progression engine must
+            know that so it never advances a lift on the strength of the
+            sets you are in the middle of. */}
         {snapshot?.exercises.map((ex) => {
+          const todayIso = localDay();
           // Effort check: advanced always shows it, simple hides it behind
           // a plain-language disclosure, hidden leaves it out entirely.
           const disclosed = advanced[ex.key] ?? false;
@@ -293,6 +298,7 @@ export function Session() {
               repMax: ex.repMax ?? ex.repMin ?? 12,
             },
             units,
+            todayIso,
           );
           /* Every set marked = this lift is finished, so the block of
              inputs folds away to one line. Re-openable, because a
