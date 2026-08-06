@@ -103,13 +103,19 @@ export function Today() {
         {!loading && data && !data.hasSplit && (
           <>
             <p className={LABEL_CLASS}>No split yet</p>
-            <h2 className="aur-heading mt-1">Import your program</h2>
+            <h2 className="aur-heading mt-1">Find your program</h2>
             <p className="m-0 mt-2 text-body" style={{ color: "var(--aur-ink-muted)" }}>
-              Paste a split in FORGE Split Format to know exactly what to train.
+              Answer four questions and I'll pick one, and show you why.
             </p>
-            <button type="button" onClick={() => nav("/import")} className="aur-touch mt-4 w-full rounded-full text-body font-medium"
+            {/* The guided path leads. Fourteen programs is a good library
+                and a terrible first decision, so nobody has to make it. */}
+            <button type="button" onClick={() => nav("/choose")} className="aur-touch mt-4 w-full rounded-full text-body font-medium"
               style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.875rem 1.5rem" }}>
-              Import a split
+              Help me choose
+            </button>
+            <button type="button" onClick={() => nav("/import")} className="aur-touch mt-2 w-full rounded-full text-body"
+              style={{ background: "transparent", color: "var(--aur-ink-muted)", border: "1px solid var(--aur-glass-rim)", padding: "0.875rem 1.5rem" }}>
+              I already have a split
             </button>
           </>
         )}
