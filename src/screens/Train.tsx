@@ -95,10 +95,14 @@ export function Train() {
         <motion.section {...rise} className="mt-6 aur-chrome-surface p-5">
           <p className="aur-label m-0">No split yet</p>
           <p className="m-0 mt-2 text-body">
-            Pick a ready-made program, or paste your own in FORGE Split Format.
+            Answer four questions and I'll pick one, or browse all fourteen yourself.
           </p>
-          <button type="button" onClick={() => nav("/library")} className="aur-press aur-touch mt-4 w-full rounded-full text-body font-medium"
+          <button type="button" onClick={() => nav("/choose")} className="aur-press aur-touch mt-4 w-full rounded-full text-body font-medium"
             style={{ background: "var(--aur-chrome-50)", color: "var(--aur-night)", border: "none", padding: "0.875rem 1.5rem" }}>
+            Help me choose
+          </button>
+          <button type="button" onClick={() => nav("/library")} className="aur-press aur-touch mt-2 w-full rounded-full text-body"
+            style={{ background: "transparent", color: "var(--aur-ink-muted)", border: "1px solid var(--aur-glass-rim)", padding: "0.875rem 1.5rem" }}>
             Browse the split library
           </button>
           <button type="button" onClick={() => nav("/import")} className="aur-press aur-touch mt-2 w-full rounded-full text-body"

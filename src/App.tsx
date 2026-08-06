@@ -27,6 +27,7 @@ const Proof = lazy(() => import("./screens/Proof").then((m) => ({ default: m.Pro
 const Settings = lazy(() => import("./screens/Settings").then((m) => ({ default: m.Settings })));
 const Import = lazy(() => import("./screens/Import").then((m) => ({ default: m.Import })));
 const Library = lazy(() => import("./screens/Library").then((m) => ({ default: m.Library })));
+const Choose = lazy(() => import("./screens/Choose").then((m) => ({ default: m.Choose })));
 const Plan = lazy(() => import("./screens/Plan").then((m) => ({ default: m.Plan })));
 const Session = lazy(() => import("./screens/Session").then((m) => ({ default: m.Session })));
 
@@ -135,6 +136,7 @@ export function App() {
             <Route path="/train" element={<Train />} />
             <Route path="/import" element={<Import />} />
             <Route path="/library" element={<Library />} />
+            <Route path="/choose" element={<Choose />} />
             <Route path="/session/:id" element={<Session />} />
             <Route path="/forge" element={<Forge />} />
             <Route path="/proof" element={<Proof />} />
