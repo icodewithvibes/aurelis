@@ -1,23 +1,34 @@
 /**
  * "Help me choose" — the goal-first way into a program.
  *
- * The split library is fourteen programs deep, which is useless as a
- * first screen: someone new cannot tell "Twin Anvils 4×" from "The
- * Armory 5×" and will either pick at random or leave. Four short
- * questions and a free-text box turn that into one recommendation with
- * its reasoning shown.
+ * REBUILT after real users got stuck. The first version put all four
+ * questions on one long scroll and rendered the recommendation only
+ * once a goal was set. Because experience, days and equipment all had
+ * defaults, the goal was the ONLY unanswered question and nothing said
+ * so — so a new user scrolled to the bottom, found the page simply
+ * ended, and concluded it was broken. There was not a single call to
+ * action on the screen.
  *
- * The reasoning is not decoration. This app's whole argument is that it
- * does not hand you numbers you cannot check, and a program chosen for
- * you is the biggest unchecked number of all — so the pick is always
- * argued, and the runners-up stay one tap away.
+ * Three rules this version holds to:
+ *
+ * 1. ONE QUESTION AT A TIME, with a visible position. You always know
+ *    how far through you are and what the next tap is.
+ * 2. NEVER A DEAD END. Every step has a primary action. The result step
+ *    cannot be reached without an answer, so "nothing happened" is not
+ *    a reachable state.
+ * 3. SHOW THE WORK BEFORE ASKING FOR COMMITMENT. The result lists the
+ *    actual exercises with their reference images, because people were
+ *    adopting programs without realising they could look at them first.
  */
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
+import { ExercisePreview } from "../components/ExercisePreview";
 import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import { commitImport } from "../features/asf/importSplit";
+import { parseASF } from "../features/asf/parse";
+import { displayName } from "../features/exercises/displayName";
 import type { SplitTemplate } from "../features/splits/library";
 import { GOALS, GOAL_BLURB, GOAL_LABEL, readGoalText, type Goal } from "../features/onboarding/goals";
 import {
@@ -29,6 +40,7 @@ import {
 } from "../features/onboarding/recommend";
 
 const DAYS = [2, 3, 4, 5, 6];
+const STEPS = ["Goal", "Experience", "Days", "Equipment", "Your program"] as const;
 
 function Choice({
   selected,
@@ -48,9 +60,11 @@ function Choice({
       aria-pressed={selected}
       className="w-full rounded-xl px-4 py-3 text-left"
       style={{
-        minHeight: 44,
+        minHeight: 56,
         background: selected ? "rgba(42,79,168,0.22)" : "rgba(255,255,255,0.04)",
-        boxShadow: selected ? "inset 0 0 0 1px var(--aur-chrome)" : "inset 0 0 0 1px var(--aur-hairline)",
+        boxShadow: selected
+          ? "inset 0 0 0 1px var(--aur-chrome)"
+          : "inset 0 0 0 1px var(--aur-hairline)",
       }}
     >
       <span className="aur-section block">{title}</span>
@@ -63,28 +77,39 @@ export function Choose() {
   const nav = useNavigate();
   const reduce = useMotionDisabled();
 
+  const [step, setStep] = useState(0);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [custom, setCustom] = useState("");
-  const [experience, setExperience] = useState<Experience>("new");
-  const [daysPerWeek, setDaysPerWeek] = useState(3);
-  const [equipment, setEquipment] = useState<Equipment>("gym");
+  const [experience, setExperience] = useState<Experience | null>(null);
+  const [daysPerWeek, setDaysPerWeek] = useState<number | null>(null);
+  const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [adopting, setAdopting] = useState<string | null>(null);
 
-  const rise = reduce ? {} : {
-    initial: { opacity: 0, y: 10 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
-  };
+  const rise = reduce
+    ? {}
+    : {
+        initial: { opacity: 0, y: 8 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const },
+      };
 
-  // Typing a goal is treated as an answer in its own right, so someone
-  // who describes their goal never has to also tick the box that
-  // approximates it.
   const reading = useMemo(() => readGoalText(custom), [custom]);
   const effectiveGoal: Goal | null = goal ?? reading.goal;
 
+  // Nothing is answered on your behalf any more. If a default is not a
+  // real answer it must not look like one, or the only unanswered
+  // question becomes invisible — which is exactly what went wrong.
+  const answered = [
+    effectiveGoal !== null,
+    experience !== null,
+    daysPerWeek !== null,
+    equipment !== null,
+  ];
+  const canAdvance = step < 4 ? answered[step] : true;
+
   const recs = useMemo(
     () =>
-      effectiveGoal
+      effectiveGoal && experience && daysPerWeek && equipment
         ? recommendSplits({
             goal: effectiveGoal,
             experience,
@@ -106,179 +131,282 @@ export function Choose() {
     }
   }
 
+  const top = recs[0];
+
   return (
     <ScreenSurface labelledBy="choose-heading">
       <motion.header {...rise} className="pt-2">
         <h1 id="choose-heading" className="aur-title">Find your program</h1>
         <p className="aur-date m-0 mt-1">
-          Four questions. You can change any of it afterwards.
+          Step {Math.min(step + 1, STEPS.length)} of {STEPS.length} · {STEPS[step]}
         </p>
+        {/* A visible finish line. Without it there was no way to tell
+            whether anything else was coming. */}
+        <div
+          className="mt-3 flex gap-1"
+          role="progressbar"
+          aria-valuenow={step + 1}
+          aria-valuemin={1}
+          aria-valuemax={STEPS.length}
+          aria-label={`Step ${step + 1} of ${STEPS.length}`}
+        >
+          {STEPS.map((s, i) => (
+            <div
+              key={s}
+              className="h-1 flex-1 rounded-full"
+              style={{
+                background: i <= step ? "var(--aur-chrome)" : "var(--aur-hairline)",
+              }}
+            />
+          ))}
+        </div>
       </motion.header>
 
-      <motion.section {...rise} className="mt-6" aria-labelledby="q-goal">
-        <h2 id="q-goal" className="aur-label m-0">What are you after?</h2>
-        <div className="mt-3 flex flex-col gap-2">
-          {GOALS.map((gk) => (
-            <Choice
-              key={gk}
-              selected={effectiveGoal === gk}
-              onClick={() => setGoal(gk)}
-              title={GOAL_LABEL[gk]}
-              blurb={GOAL_BLURB[gk]}
-            />
-          ))}
-        </div>
-
-        <label className="mt-3 block">
-          <span className="aur-meta">Or say it in your own words</span>
-          <input
-            value={custom}
-            onChange={(e) => {
-              setCustom(e.target.value);
-              // Typing overrides an earlier tap, so the text always wins.
-              setGoal(null);
-            }}
-            placeholder="e.g. lose the belly before June"
-            className="mt-1 w-full rounded-xl px-3 py-3"
-            style={{
-              minHeight: 44,
-              background: "rgba(255,255,255,0.05)",
-              boxShadow: "inset 0 0 0 1px var(--aur-hairline)",
-              color: "var(--aur-ink)",
-            }}
-          />
-        </label>
-        {custom.trim() !== "" && (
-          <p className="aur-meta mt-2" aria-live="polite">
-            {reading.goal
-              ? `Read as: ${GOAL_LABEL[reading.goal].toLowerCase()}. Tap a card above if that's wrong.`
-              : "Couldn't tell from that — pick one above and it'll still work."}
-          </p>
-        )}
-      </motion.section>
-
-      <motion.section {...rise} className="mt-6" aria-labelledby="q-exp">
-        <h2 id="q-exp" className="aur-label m-0">How much have you trained?</h2>
-        <div className="mt-3 flex flex-col gap-2">
-          {(["new", "returning", "experienced"] as Experience[]).map((k) => (
-            <Choice
-              key={k}
-              selected={experience === k}
-              onClick={() => setExperience(k)}
-              title={EXPERIENCE_LABEL[k]}
-            />
-          ))}
-        </div>
-      </motion.section>
-
-      <motion.section {...rise} className="mt-6" aria-labelledby="q-days">
-        <h2 id="q-days" className="aur-label m-0">Days a week you can really hold</h2>
-        <p className="aur-meta m-0 mt-1">
-          Answer honestly — a week you finish beats one you abandon.
-        </p>
-        <div className="mt-3 flex gap-2">
-          {DAYS.map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setDaysPerWeek(d)}
-              aria-pressed={daysPerWeek === d}
-              className="aur-metric flex-1 rounded-xl py-3"
-              style={{
-                minHeight: 44,
-                background: daysPerWeek === d ? "rgba(42,79,168,0.22)" : "rgba(255,255,255,0.04)",
-                boxShadow:
-                  daysPerWeek === d
-                    ? "inset 0 0 0 1px var(--aur-chrome)"
-                    : "inset 0 0 0 1px var(--aur-hairline)",
-              }}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-      </motion.section>
-
-      <motion.section {...rise} className="mt-6" aria-labelledby="q-kit">
-        <h2 id="q-kit" className="aur-label m-0">What can you train with?</h2>
-        <div className="mt-3 flex flex-col gap-2">
-          {(["gym", "home", "bodyweight"] as Equipment[]).map((k) => (
-            <Choice
-              key={k}
-              selected={equipment === k}
-              onClick={() => setEquipment(k)}
-              title={EQUIPMENT_LABEL[k]}
-            />
-          ))}
-        </div>
-      </motion.section>
-
-      {effectiveGoal && recs.length > 0 && (
-        <motion.section {...rise} className="mt-8" aria-labelledby="rec-heading">
-          <h2 id="rec-heading" className="aur-label m-0">What I'd pick for you</h2>
-
-          <div className="aur-chrome-surface mt-3 p-5">
-            <p className="aur-section m-0">{recs[0].template.name}</p>
-            <p className="aur-meta m-0 mt-1">{recs[0].template.summary}</p>
-
-            <ul className="m-0 mt-3 flex list-none flex-col gap-2 p-0">
-              {recs[0].reasons.map((r) => (
-                <li key={r} className="aur-meta">— {r}</li>
+      <div className="mt-6">
+        {step === 0 && (
+          <motion.section {...rise} key="goal" aria-labelledby="q-goal">
+            <h2 id="q-goal" className="aur-label m-0">What are you after?</h2>
+            <div className="mt-3 flex flex-col gap-2">
+              {GOALS.map((gk) => (
+                <Choice
+                  key={gk}
+                  selected={effectiveGoal === gk}
+                  onClick={() => {
+                    setGoal(gk);
+                    setCustom("");
+                  }}
+                  title={GOAL_LABEL[gk]}
+                  blurb={GOAL_BLURB[gk]}
+                />
               ))}
-            </ul>
+            </div>
 
-            <button
-              type="button"
-              onClick={() => void adopt(recs[0].template)}
-              disabled={adopting !== null}
-              className="aur-button mt-4 w-full rounded-xl px-4 py-3 disabled:opacity-60"
-              style={{ minHeight: 44 }}
-            >
-              {adopting === recs[0].template.id
-                ? "Setting it up…"
-                : `Use ${recs[0].template.name}`}
-            </button>
-          </div>
-
-          {recs.length > 1 && (
-            <>
-              <p className="aur-meta mt-4">
-                Close seconds, in case you disagree:
+            <label className="mt-4 block">
+              <span className="aur-meta">Or say it in your own words</span>
+              <input
+                value={custom}
+                onChange={(e) => {
+                  setCustom(e.target.value);
+                  setGoal(null);
+                }}
+                placeholder="e.g. lose the belly before June"
+                className="mt-1 w-full rounded-xl px-3 py-3"
+                style={{
+                  minHeight: 48,
+                  background: "rgba(255,255,255,0.05)",
+                  boxShadow: "inset 0 0 0 1px var(--aur-hairline)",
+                  color: "var(--aur-ink)",
+                }}
+              />
+            </label>
+            {custom.trim() !== "" && (
+              <p className="aur-meta mt-2" aria-live="polite">
+                {reading.goal
+                  ? `Read as: ${GOAL_LABEL[reading.goal].toLowerCase()}. Tap a card if that's wrong.`
+                  : "Couldn't tell from that — tap one above instead."}
               </p>
-              <div className="mt-2 flex flex-col gap-2">
-                {recs.slice(1).map((r) => (
-                  <button
-                    key={r.template.id}
-                    type="button"
-                    onClick={() => void adopt(r.template)}
-                    disabled={adopting !== null}
-                    className="w-full rounded-xl px-4 py-3 text-left disabled:opacity-60"
-                    style={{
-                      minHeight: 44,
-                      background: "rgba(255,255,255,0.04)",
-                      boxShadow: "inset 0 0 0 1px var(--aur-hairline)",
-                    }}
-                  >
-                    <span className="aur-section block">{r.template.name}</span>
-                    <span className="aur-meta mt-0.5 block">
-                      {r.template.daysPerWeek} days · {r.template.summary}
-                    </span>
-                  </button>
+            )}
+          </motion.section>
+        )}
+
+        {step === 1 && (
+          <motion.section {...rise} key="exp" aria-labelledby="q-exp">
+            <h2 id="q-exp" className="aur-label m-0">How much have you trained?</h2>
+            <div className="mt-3 flex flex-col gap-2">
+              {(["new", "returning", "experienced"] as Experience[]).map((k) => (
+                <Choice
+                  key={k}
+                  selected={experience === k}
+                  onClick={() => setExperience(k)}
+                  title={EXPERIENCE_LABEL[k]}
+                />
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {step === 2 && (
+          <motion.section {...rise} key="days" aria-labelledby="q-days">
+            <h2 id="q-days" className="aur-label m-0">Days a week you can really hold</h2>
+            <p className="aur-meta m-0 mt-1">
+              Answer honestly — a week you finish beats one you abandon.
+            </p>
+            <div className="mt-3 flex gap-2">
+              {DAYS.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDaysPerWeek(d)}
+                  aria-pressed={daysPerWeek === d}
+                  className="aur-metric flex-1 rounded-xl py-4"
+                  style={{
+                    minHeight: 56,
+                    background:
+                      daysPerWeek === d ? "rgba(42,79,168,0.22)" : "rgba(255,255,255,0.04)",
+                    boxShadow:
+                      daysPerWeek === d
+                        ? "inset 0 0 0 1px var(--aur-chrome)"
+                        : "inset 0 0 0 1px var(--aur-hairline)",
+                  }}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {step === 3 && (
+          <motion.section {...rise} key="kit" aria-labelledby="q-kit">
+            <h2 id="q-kit" className="aur-label m-0">What can you train with?</h2>
+            <div className="mt-3 flex flex-col gap-2">
+              {(["gym", "home", "bodyweight"] as Equipment[]).map((k) => (
+                <Choice
+                  key={k}
+                  selected={equipment === k}
+                  onClick={() => setEquipment(k)}
+                  title={EQUIPMENT_LABEL[k]}
+                />
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {step === 4 && top && (
+          <motion.section {...rise} key="result" aria-labelledby="rec-heading">
+            <h2 id="rec-heading" className="aur-label m-0">What I'd pick for you</h2>
+
+            <div className="aur-chrome-surface mt-3 p-5">
+              <p className="aur-section m-0">{top.template.name}</p>
+              <p className="aur-meta m-0 mt-1">{top.template.summary}</p>
+
+              <ul className="m-0 mt-3 flex list-none flex-col gap-2 p-0">
+                {top.reasons.map((r) => (
+                  <li key={r} className="aur-meta">— {r}</li>
+                ))}
+              </ul>
+            </div>
+
+            {/* The exercises, with their reference images.
+                People were adopting programs without knowing they could
+                look inside one first, so the look is no longer optional. */}
+            <div className="mt-4">
+              <p className="aur-label m-0">What's in it</p>
+              <p className="aur-meta m-0 mt-1">
+                Tap any movement to see how it's done.
+              </p>
+              <div className="mt-3 flex flex-col gap-3">
+                {parseASF(top.template.asf).program.days.map((d) => (
+                  <div key={d.name} className="aur-chrome-surface p-4">
+                    <p className="aur-section m-0">{d.name}</p>
+                    <ul className="m-0 mt-2 flex list-none flex-col gap-2 p-0">
+                      {d.exercises.map((e) => (
+                        <li
+                          key={e.name}
+                          className="flex items-center justify-between gap-2"
+                        >
+                          <span className="aur-meta min-w-0 truncate">
+                            {displayName(e.name)}
+                          </span>
+                          <ExercisePreview name={e.name} />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
               </div>
-            </>
-          )}
+            </div>
 
-          <button
-            type="button"
-            onClick={() => nav("/library")}
-            className="aur-meta mt-4 w-full rounded-xl px-4 py-3"
-            style={{ minHeight: 44, background: "transparent" }}
-          >
-            Or browse all 14 programs
-          </button>
-        </motion.section>
-      )}
+            {recs.length > 1 && (
+              <div className="mt-5">
+                <p className="aur-meta">Close seconds, if you disagree:</p>
+                <div className="mt-2 flex flex-col gap-2">
+                  {recs.slice(1).map((r) => (
+                    <button
+                      key={r.template.id}
+                      type="button"
+                      onClick={() => void adopt(r.template)}
+                      disabled={adopting !== null}
+                      className="w-full rounded-xl px-4 py-3 text-left disabled:opacity-60"
+                      style={{
+                        minHeight: 56,
+                        background: "rgba(255,255,255,0.04)",
+                        boxShadow: "inset 0 0 0 1px var(--aur-hairline)",
+                      }}
+                    >
+                      <span className="aur-section block">{r.template.name}</span>
+                      <span className="aur-meta mt-0.5 block">
+                        {r.template.daysPerWeek} days · {r.template.summary}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => nav("/library")}
+              className="aur-meta mt-4 w-full rounded-xl px-4 py-3"
+              style={{ minHeight: 44, background: "transparent" }}
+            >
+              Or browse all 14 programs
+            </button>
+          </motion.section>
+        )}
+      </div>
+
+      {/* The primary action is always present. There is no state in this
+          screen where the next tap is unclear. */}
+      <div className="sticky bottom-0 mt-6 pb-4 pt-3" style={{ background: "var(--aur-bg-fade, transparent)" }}>
+        {step < 4 ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setStep((s) => s + 1)}
+              disabled={!canAdvance}
+              className="aur-button w-full rounded-xl px-4 py-4 disabled:opacity-40"
+              style={{ minHeight: 52 }}
+            >
+              {canAdvance ? "Next" : `Pick one to continue`}
+            </button>
+            {step > 0 && (
+              <button
+                type="button"
+                onClick={() => setStep((s) => s - 1)}
+                className="aur-meta mt-2 w-full rounded-xl px-4 py-3"
+                style={{ minHeight: 44, background: "transparent" }}
+              >
+                Back
+              </button>
+            )}
+          </>
+        ) : (
+          top && (
+            <>
+              <button
+                type="button"
+                onClick={() => void adopt(top.template)}
+                disabled={adopting !== null}
+                className="aur-button w-full rounded-xl px-4 py-4 disabled:opacity-60"
+                style={{ minHeight: 52 }}
+              >
+                {adopting === top.template.id
+                  ? "Setting it up…"
+                  : `Start ${top.template.name}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep(0)}
+                className="aur-meta mt-2 w-full rounded-xl px-4 py-3"
+                style={{ minHeight: 44, background: "transparent" }}
+              >
+                Change my answers
+              </button>
+            </>
+          )
+        )}
+      </div>
     </ScreenSurface>
   );
 }
