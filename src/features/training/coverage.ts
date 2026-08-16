@@ -179,10 +179,15 @@ export function gapSentence(gaps: readonly Gap[]): string | null {
       ? xs[0] ?? ""
       : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`;
 
+  // "Forearms and glutes only ever assists" is wrong, and this string is
+  // shown to the user on the program-review screen.
+  const assist = soft.length === 1 ? "assists" : "assist";
+  const sentenceCase = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`;
+
   if (hard.length === 0 && soft.length === 0) return null;
   if (hard.length > 0 && soft.length > 0) {
-    return `Nothing in this trains ${list(hard)}. ${list(soft)[0].toUpperCase()}${list(soft).slice(1)} only ever assists.`;
+    return `Nothing in this trains ${list(hard)}. ${sentenceCase(list(soft))} only ever ${assist}.`;
   }
   if (hard.length > 0) return `Nothing in this trains ${list(hard)}.`;
-  return `${list(soft)[0].toUpperCase()}${list(soft).slice(1)} only ever assists — never trained directly.`;
+  return `${sentenceCase(list(soft))} only ever ${assist} — never trained directly.`;
 }

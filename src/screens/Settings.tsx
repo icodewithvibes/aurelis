@@ -6,6 +6,7 @@
  * anywhere: there is no account, no server and no sync to configure.
  */
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
 import { SegmentedControl } from "../components/SegmentedControl";
 import { SCHEMA_VERSION, type ImageMode, type RpeMode, type ThemeName } from "../data/db";
@@ -93,6 +94,7 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 }
 
 export function Settings() {
+  const nav = useNavigate();
   const prefs = useUiStore();
   const [confirmClear, setConfirmClear] = useState(false);
   const [cleared, setCleared] = useState(false);
@@ -184,6 +186,23 @@ export function Settings() {
       </Group>
 
       <Group title="Training">
+      {/* Where someone actually looks when a split stops fitting. The
+          flow itself starts from what they have been doing rather than
+          from a blank questionnaire. */}
+      <Card
+        title="Change your program"
+        hint="Reads what you've been training, finds what it never hits, and builds you the next one."
+      >
+        <button
+          type="button"
+          onClick={() => nav("/rebuild")}
+          className="aur-button mt-3 w-full rounded-xl px-4 py-3"
+          style={{ minHeight: 48 }}
+        >
+          Review my program
+        </button>
+      </Card>
+
       <Card title="Weight units" hint="Used in the logger, your records and every suggestion.">
         <SegmentedControl
           label="Weight units"
