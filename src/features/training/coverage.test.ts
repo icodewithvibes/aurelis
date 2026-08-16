@@ -128,6 +128,21 @@ describe("gapSentence", () => {
     expect(s!.toLowerCase()).toContain("lower back");
   });
 
+  it("gets subject-verb agreement right for one gap and for several", () => {
+    // "Forearms and glutes only ever assists" is wrong, and this string
+    // is shown on the program-review screen.
+    const one = gapSentence([
+      { group: "forearms", label: "Forearms", severity: "indirectOnly", assistedBy: ["Row"] },
+    ])!;
+    const many = gapSentence([
+      { group: "forearms", label: "Forearms", severity: "indirectOnly", assistedBy: ["Row"] },
+      { group: "glutes", label: "Glutes", severity: "indirectOnly", assistedBy: ["Squat"] },
+    ])!;
+    expect(one).toContain("only ever assists");
+    expect(many).toContain("only ever assist ");
+    expect(many).not.toContain("only ever assists");
+  });
+
   it("reads as prose, not a list dump", () => {
     const s = gapSentence(findGaps(coverageOf(UPPER_LOWER)))!;
     expect(s).toMatch(/ and /);

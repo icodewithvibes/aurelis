@@ -28,6 +28,7 @@ const Settings = lazy(() => import("./screens/Settings").then((m) => ({ default:
 const Import = lazy(() => import("./screens/Import").then((m) => ({ default: m.Import })));
 const Library = lazy(() => import("./screens/Library").then((m) => ({ default: m.Library })));
 const Choose = lazy(() => import("./screens/Choose").then((m) => ({ default: m.Choose })));
+const Rebuild = lazy(() => import("./screens/Rebuild").then((m) => ({ default: m.Rebuild })));
 const Plan = lazy(() => import("./screens/Plan").then((m) => ({ default: m.Plan })));
 const Session = lazy(() => import("./screens/Session").then((m) => ({ default: m.Session })));
 
@@ -137,6 +138,7 @@ export function App() {
             <Route path="/import" element={<Import />} />
             <Route path="/library" element={<Library />} />
             <Route path="/choose" element={<Choose />} />
+            <Route path="/rebuild" element={<Rebuild />} />
             <Route path="/session/:id" element={<Session />} />
             <Route path="/forge" element={<Forge />} />
             <Route path="/proof" element={<Proof />} />
