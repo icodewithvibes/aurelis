@@ -83,6 +83,45 @@ export async function startSession(day: DayWithExercises): Promise<string> {
   return id;
 }
 
+/**
+ * Start a standalone stack session.
+ *
+ * Deliberately has no `splitDayId`. A stack is not part of the program:
+ * giving it one would put it in the split, which would change the day
+ * count and shift the weekly rotation for everything else. Without one
+ * it is simply a session that happened, which is exactly what it is —
+ * it still logs sets, still counts toward the rank, still feeds
+ * progression.
+ */
+export async function startStackSession(snapshot: SessionSnapshot): Promise<string> {
+  const now = nowMs();
+  const today = localDay();
+
+  // Resume rather than duplicate if this stack is already open today.
+  const existing = (await db.sessions.where("dateLocal").equals(today).toArray()).find(
+    (s) =>
+      s.splitDayId === undefined &&
+      s.status === "active" &&
+      !s.deletedAt &&
+      (s.splitDaySnapshot as SessionSnapshot | undefined)?.dayName === snapshot.dayName,
+  );
+  if (existing) return existing.id;
+
+  const id = newId();
+  await db.sessions.put({
+    id,
+    dateLocal: today,
+    splitDaySnapshot: snapshot,
+    status: "active",
+    qualified: false,
+    startedAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    deviceId: getDeviceId(),
+  });
+  return id;
+}
+
 export async function getSession(id: string): Promise<SessionWithLogs | null> {
   const session = await db.sessions.get(id);
   if (!session || session.deletedAt) return null;
