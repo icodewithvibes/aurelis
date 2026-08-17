@@ -122,6 +122,78 @@ export async function startStackSession(snapshot: SessionSnapshot): Promise<stri
   return id;
 }
 
+/**
+ * Swap one exercise in a live session for something else.
+ *
+ * The machine is taken, or this gym hasn't got the kit. This edits the
+ * SESSION SNAPSHOT only — the split is untouched, which is the same
+ * principle the rest of the app runs on: a session owns its own copy of
+ * the day, so what you actually did stays true no matter what the
+ * program says later.
+ *
+ * Two modes, decided by whether the exercise has been trained yet:
+ *
+ * - REPLACED. Nothing logged against it, so the substitute takes its
+ *   place. Any empty set rows left behind are soft-deleted, because a
+ *   blank row carrying the old lift's name is a record of nothing.
+ * - APPENDED. Sets are already logged. Those sets happened, and no swap
+ *   is worth rewriting them, so the original stays exactly as it is and
+ *   the substitute is inserted directly after it.
+ *
+ * The substitute always gets a NEW key. Set logs are keyed by exercise
+ * key, so reusing the old one would let a stale row attach itself to a
+ * movement it was never performed on.
+ */
+export type SwapMode = "replaced" | "appended";
+
+export async function swapSessionExercise(
+  sessionId: string,
+  exerciseKey: string,
+  newName: string,
+): Promise<SwapMode | null> {
+  const name = newName.trim();
+  if (!name) return null;
+
+  const session = await db.sessions.get(sessionId);
+  if (!session || session.deletedAt) return null;
+  const snapshot = session.splitDaySnapshot as SessionSnapshot | undefined;
+  if (!snapshot) return null;
+
+  const index = snapshot.exercises.findIndex((e) => e.key === exerciseKey);
+  if (index === -1) return null;
+  const original = snapshot.exercises[index];
+
+  const rows = (await db.setLogs.where("sessionId").equals(sessionId).toArray()).filter(
+    (l) => l.exerciseKey === exerciseKey && !l.deletedAt,
+  );
+  // "Trained" means something was actually put on the record — a ticked
+  // set, or a number typed into one. A row of empty strings is not work.
+  const trained = rows.some((l) => l.done || l.weight != null || l.reps != null);
+
+  const now = nowMs();
+  const substitute: SessionSnapshotExercise = {
+    ...original,
+    key: `${exerciseKey}~swap${now.toString(36)}`,
+    name,
+  };
+
+  const exercises = [...snapshot.exercises];
+  if (trained) {
+    exercises.splice(index + 1, 0, substitute);
+  } else {
+    exercises.splice(index, 1, substitute);
+    for (const l of rows) {
+      await db.setLogs.update(l.id, { deletedAt: now, updatedAt: now });
+    }
+  }
+
+  await db.sessions.update(sessionId, {
+    splitDaySnapshot: { ...snapshot, exercises },
+    updatedAt: now,
+  });
+  return trained ? "appended" : "replaced";
+}
+
 export async function getSession(id: string): Promise<SessionWithLogs | null> {
   const session = await db.sessions.get(id);
   if (!session || session.deletedAt) return null;

@@ -17,6 +17,7 @@ import { loadHome } from "../data/access";
 import { loadWeek } from "../features/planning/planningRepo";
 import { WeekStrip } from "../components/WeekStrip";
 import { LogActivity } from "../components/LogActivity";
+import { Stacks } from "../components/Stacks";
 import { startSession, pendingHalfSessions } from "../data/repositories/sessionRepo";
 import { HalfSessionNote } from "../components/HalfSessionNote";
 import { bandFor, greetingFor, subtitleFor, type GreetingInput } from "../features/training/greeting";
@@ -157,6 +158,10 @@ export function Today() {
                 Nothing is scheduled today. Recovery is part of the work.
               </p>
             )}
+            {/* …but "rest day" and "I want to do fifteen minutes of core"
+                are not in conflict, and the app used to have no answer
+                for the second one. Offered here, never prescribed. */}
+            {!primary && <Stacks variant="rest" limit={3} />}
 
             {data.nextUp && (
               <p className="m-0 mt-3 text-small" style={{ color: "var(--aur-ink-faint)" }}>

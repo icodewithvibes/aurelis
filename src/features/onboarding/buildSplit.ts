@@ -62,8 +62,10 @@ export const POOL: MovementSpec[] = [
   { name: "Triceps Pushdown", group: "triceps", compound: false, needsBarbell: false, bodyweight: false },
   { name: "Cable Rope Overhead Triceps Extension", group: "triceps", compound: false, needsBarbell: false, bodyweight: false },
   { name: "Dips - Triceps Version", group: "triceps", compound: true, needsBarbell: false, bodyweight: true },
-  // Forearms
-  { name: "Wrist Roller", group: "forearms", compound: false, needsBarbell: false, bodyweight: false },
+  // Forearms. No wrist roller: it is the one item in here you have to
+  // buy yourself, and most gyms do not have one — a generated program
+  // that opens with a movement you cannot perform is a dead program.
+  { name: "Standing Dumbbell Reverse Curl", group: "forearms", compound: false, needsBarbell: false, bodyweight: false },
   { name: "Palms-Up Barbell Wrist Curl Over A Bench", group: "forearms", compound: false, needsBarbell: true, bodyweight: false },
   { name: "Palms-Down Wrist Curl Over A Bench", group: "forearms", compound: false, needsBarbell: true, bodyweight: false },
   { name: "Plate Pinch", group: "forearms", compound: false, needsBarbell: false, bodyweight: false },

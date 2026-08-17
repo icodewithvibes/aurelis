@@ -136,6 +136,13 @@ const ALIASES: Record<string, string> = {
   "calf raise": "standing calf raises",
   "hip thrust": "barbell hip thrust",
   plank: "plank",
+  /* The apostrophe. The index says "Farmer's Walk", every split and
+     stack in the app says "Farmers Walk", and the token matcher scores
+     that at 0.46 — under threshold, so it resolved to nothing and the
+     movement silently had no photo and no muscle data. */
+  "farmers walk": "farmer s walk",
+  "farmer walk": "farmer s walk",
+  "farmers carry": "farmer s walk",
 };
 
 /** Words that carry no identifying information when matching. */
