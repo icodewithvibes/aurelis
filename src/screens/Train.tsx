@@ -7,6 +7,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useMotionDisabled } from "../hooks/useMotionDisabled";
 import { SplitEditor } from "../components/SplitEditor";
+import { Stacks } from "../components/Stacks";
 import { SorenessCheck } from "../components/SorenessCheck";
 import { useNavigate } from "react-router-dom";
 import { ScreenSurface } from "../components/ScreenSurface";
@@ -115,6 +116,9 @@ export function Train() {
       {!loading && data?.hasSplit && !editing && (
         <SorenessCheck days={data.days} onStart={(d) => void start(d)} />
       )}
+
+      {/* Add-on blocks, ordered by what the split actually misses. */}
+      {!loading && data?.hasSplit && !editing && <Stacks />}
 
       {!loading && data?.hasSplit && editing && (
         <>
