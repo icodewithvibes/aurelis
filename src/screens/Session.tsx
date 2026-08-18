@@ -12,6 +12,7 @@ import { ScreenSurface } from "../components/ScreenSurface";
 import { RestTimer } from "../components/RestTimer";
 import { CompletionReveal } from "../components/CompletionReveal";
 import { ExercisePreview } from "../components/ExercisePreview";
+import { SwapExercise } from "../components/SwapExercise";
 import { SetCheck } from "../components/SetCheck";
 import { ExerciseDone, Collapsible } from "../components/ExerciseDone";
 import {
@@ -28,6 +29,7 @@ import { useUiStore } from "../state/ui";
 import { restReason, restSecondsFor } from "../features/training/rest";
 import { suggestNext, suggestionLabel, VERDICT_LABEL, type LiftDay } from "../features/training/progression";
 import { displayName } from "../features/exercises/displayName";
+import { isTimedMovement, setUnit } from "../features/exercises/measure";
 import { getDbStatus, onDbStatus, type DbStatus } from "../data/db";
 
 interface Cell {
@@ -46,7 +48,9 @@ function targetReps(ex: SessionSnapshotExercise): string {
 }
 function repRangeHint(ex: SessionSnapshotExercise): string {
   if (ex.repMin == null || ex.repMax == null) return "AMRAP";
-  return ex.repMin === ex.repMax ? `${ex.repMin} reps` : `${ex.repMin}–${ex.repMax} reps`;
+  // A plank's "reps" are seconds. Saying reps was simply untrue.
+  const unit = setUnit(ex.name);
+  return ex.repMin === ex.repMax ? `${ex.repMin} ${unit}` : `${ex.repMin}–${ex.repMax} ${unit}`;
 }
 
 export function Session() {
@@ -76,6 +80,10 @@ export function Session() {
   /** A write actually failed — never let that pass unnoticed. */
   const [writeError, setWriteError] = useState(false);
   const [dbStatus, setDbStatusState] = useState<DbStatus>(getDbStatus());
+  /* Bumped after an exercise is swapped, so the snapshot is re-read from
+     the record rather than patched in two places. */
+  const [reloadToken, setReloadToken] = useState(0);
+  const [swapNote, setSwapNote] = useState<string | null>(null);
 
   useEffect(() => onDbStatus(setDbStatusState), []);
 
@@ -122,7 +130,7 @@ export function Session() {
     return () => {
       alive = false;
     };
-  }, [id]);
+  }, [id, reloadToken]);
 
   const cell = (k: string): Cell => grid[k] ?? { weight: "", reps: "", rpe: "", done: false };
 
@@ -269,6 +277,22 @@ export function Session() {
         </div>
       )}
 
+      {/* What the swap actually did. A substitution that silently
+          rearranges the screen is indistinguishable from a bug. */}
+      {swapNote && (
+        <div className="mt-3 rounded-xl p-3" style={{ background: "var(--aur-glass-tint)", border: "1px solid var(--aur-glass-rim)" }}>
+          <p className="m-0 text-small" style={{ color: "var(--aur-ink)" }}>{swapNote}</p>
+          <button
+            type="button"
+            onClick={() => setSwapNote(null)}
+            className="aur-touch mt-1 text-small"
+            style={{ background: "transparent", border: "none", color: "var(--aur-ink-muted)", padding: "0.25rem 0" }}
+          >
+            Got it
+          </button>
+        </div>
+      )}
+
       {rest && (
         <div className="sticky top-2 z-10 mt-3">
           <RestTimer
@@ -290,6 +314,12 @@ export function Session() {
           // a plain-language disclosure, hidden leaves it out entirely.
           const disclosed = advanced[ex.key] ?? false;
           const showEffort = rpeMode === "advanced" || (rpeMode === "simple" && disclosed);
+          /* Holds and carries are logged in seconds, and every sentence
+             the progression engine writes is about reps and load. Rather
+             than print "pick a weight you could manage about 62 reps
+             with" over a plank, timed movements get their own line. */
+          const timed = isTimedMovement(ex.name);
+          const unit = setUnit(ex.name);
           const suggestion = suggestNext(
             liftDays[ex.key] ?? [],
             {
@@ -350,7 +380,12 @@ export function Session() {
                 The reason is always shown. A suggestion you cannot
                 argue with is just an instruction.
               */}
-              {suggestion.weight != null && (
+              {timed && (
+                <p className="aur-meta m-0 mt-2">
+                  Held for time — log the seconds you managed. Weight only if you're loading it.
+                </p>
+              )}
+              {!timed && suggestion.weight != null && (
                 <div className="mt-2">
                   <button
                     type="button"
@@ -387,12 +422,29 @@ export function Session() {
                   <p className="aur-meta m-0 mt-1">{suggestion.reason}</p>
                 </div>
               )}
-              {suggestion.weight == null && (
+              {!timed && suggestion.weight == null && (
                 <p className="aur-meta m-0 mt-2">{suggestion.reason}</p>
               )}
 
-              {/* "Not sure what this looks like?" — a photo on demand. */}
-              <ExercisePreview name={ex.name} />
+              {/* "Not sure what this looks like?" — a photo on demand.
+                  Next to it, the answer to a busy gym: same muscle,
+                  different station, without abandoning the session. */}
+              <div className="flex flex-wrap items-center gap-x-4">
+                <ExercisePreview name={ex.name} />
+                <SwapExercise
+                  sessionId={id}
+                  exerciseKey={ex.key}
+                  name={ex.name}
+                  onSwapped={(mode, newName) => {
+                    setSwapNote(
+                      mode === "appended"
+                        ? `${displayName(newName)} added after ${displayName(ex.name)} — the sets you already logged stay on the record.`
+                        : `Swapped to ${displayName(newName)} for this session. Your split is unchanged.`,
+                    );
+                    setReloadToken((t) => t + 1);
+                  }}
+                />
+              </div>
 
               <div className="mt-3 flex flex-col gap-2">
                 {Array.from({ length: Math.max(1, ex.sets) }).map((_, i) => {
@@ -414,12 +466,14 @@ export function Session() {
                         />
                       </div>
                       <span className="aur-meta shrink-0" style={{ width: 14 }}>×</span>
-                      <label className="sr-only" htmlFor={`${k}-r`}>{`Set ${i + 1} reps`}</label>
+                      <label className="sr-only" htmlFor={`${k}-r`}>
+                        {timed ? `Set ${i + 1} seconds held` : `Set ${i + 1} reps`}
+                      </label>
                       <input
                         id={`${k}-r`}
                         value={c.reps}
                         inputMode="numeric"
-                        placeholder="reps"
+                        placeholder={unit}
                         onChange={(e) => update(ex.key, ex.name, i, { reps: e.target.value.replace(/[^\d]/g, "") })}
                         className="aur-touch w-14 shrink-0 rounded-lg px-2 text-center aur-metric"
                         style={{ height: 44, color: "var(--aur-ink)", background: "rgba(7,12,24,0.55)", border: "1px solid rgba(210,217,230,0.14)" }}

@@ -212,6 +212,73 @@ export async function addTemplateExercise(
   return id;
 }
 
+/**
+ * Move an exercise one place up (-1) or down (+1) within its day.
+ *
+ * Order inside a session is not decoration — the first movement gets the
+ * effort the last one doesn't, which is exactly why gap work is placed
+ * early. Reordering days was already possible; reordering the exercises
+ * inside one is the same argument at a smaller scale.
+ *
+ * Swaps `order` with the neighbour rather than renumbering, so nothing
+ * else in the day shifts underneath the user.
+ */
+export async function moveTemplateExercise(id: string, direction: -1 | 1): Promise<void> {
+  const ex = await db.templateExercises.get(id);
+  if (!ex || ex.deletedAt) return;
+
+  const siblings = (await db.templateExercises.where("dayId").equals(ex.dayId).toArray())
+    .filter((e) => !e.deletedAt)
+    .sort((a, b) => a.order - b.order);
+
+  const index = siblings.findIndex((e) => e.id === id);
+  const target = siblings[index + direction];
+  if (!target) return; // already at the end — a no-op, not an error
+
+  const now = nowMs();
+  await db.transaction("rw", db.templateExercises, async () => {
+    await db.templateExercises.update(ex.id, { order: target.order, updatedAt: now });
+    await db.templateExercises.update(target.id, { order: ex.order, updatedAt: now });
+  });
+}
+
+/** Is this id an exercise in the current split? Cheap enough to ask. */
+export async function templateExerciseExists(id: string): Promise<boolean> {
+  const ex = await db.templateExercises.get(id);
+  return Boolean(ex && !ex.deletedAt);
+}
+
+/**
+ * Add a training day to the active split.
+ *
+ * Days could be removed and renamed but never added, which made the
+ * editor a one-way door: a five-day week could shrink to four and never
+ * grow back without re-importing the whole program.
+ *
+ * NOTE: the schedule rotates through days by COUNT, so a new day changes
+ * which session lands on which weekday from here on. That is what adding
+ * a day to a program means, and the editor says so.
+ */
+export async function addSplitDay(splitId: string, name: string): Promise<string | null> {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+
+  const existing = (await db.splitDays.where("splitId").equals(splitId).toArray()).filter(
+    (d) => !d.deletedAt,
+  );
+  const now = nowMs();
+  const id = newId();
+  await db.splitDays.put({
+    id,
+    splitId,
+    name: trimmed,
+    order: existing.length,
+    updatedAt: now,
+    deletedAt: null,
+  });
+  return id;
+}
+
 /** Soft-delete a whole day and its exercises. */
 export async function removeSplitDay(dayId: string): Promise<void> {
   const now = nowMs();
