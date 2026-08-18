@@ -69,7 +69,7 @@ export const POOL: MovementSpec[] = [
   { name: "Palms-Up Barbell Wrist Curl Over A Bench", group: "forearms", compound: false, needsBarbell: true, bodyweight: false },
   { name: "Palms-Down Wrist Curl Over A Bench", group: "forearms", compound: false, needsBarbell: true, bodyweight: false },
   { name: "Plate Pinch", group: "forearms", compound: false, needsBarbell: false, bodyweight: false },
-  { name: "Farmers Walk", group: "forearms", compound: true, needsBarbell: false, bodyweight: false },
+  { name: "Farmer's Walk", group: "forearms", compound: true, needsBarbell: false, bodyweight: false },
   // Abs
   { name: "Hanging Leg Raise", group: "abs", compound: false, needsBarbell: false, bodyweight: true },
   { name: "Plank", group: "abs", compound: false, needsBarbell: false, bodyweight: true },

@@ -65,11 +65,32 @@ const DISPLAY_NAMES: Record<string, string> = {
   // Grip and forearms.
   "Palms-Up Barbell Wrist Curl Over A Bench": "Wrist Curl",
   "Palms-Down Wrist Curl Over A Bench": "Reverse Wrist Curl",
+  "Palms-Up Dumbbell Wrist Curl Over A Bench": "Dumbbell Wrist Curl",
+  "Palms-Down Dumbbell Wrist Curl Over A Bench": "Dumbbell Reverse Wrist Curl",
+  "Seated Dumbbell Palms-Up Wrist Curl": "Seated Wrist Curl",
+  "Seated Dumbbell Palms-Down Wrist Curl": "Seated Reverse Wrist Curl",
+  "Cable Wrist Curl": "Cable Wrist Curl",
   "Standing Dumbbell Reverse Curl": "Reverse Curl",
   "Finger Curls": "Finger Curl",
   "Plate Pinch": "Plate Pinch",
+  "Farmer's Walk": "Farmer's Walk",
   "Wrist Roller": "Wrist Roller",
   "Zottman Curl": "Zottman Curl",
+  // Core.
+  "Ab Roller": "Ab Wheel Rollout",
+  "Side Bridge": "Side Plank",
+  "Cable Crunch": "Cable Crunch",
+  "Pallof Press": "Pallof Press",
+  "Dead Bug": "Dead Bug",
+  // Everything else the stacks prescribe.
+  "Hyperextensions (Back Extensions)": "Back Extension",
+  "Butt Lift (Bridge)": "Glute Bridge",
+  "Pull Through": "Cable Pull-Through",
+  "One-Legged Cable Kickback": "Cable Glute Kickback",
+  "Calf Press On The Leg Press Machine": "Calf Press",
+  "Donkey Calf Raises": "Donkey Calf Raise",
+  "Reverse Machine Flyes": "Reverse Pec Deck",
+  "Cable Crossover": "Cable Crossover",
 };
 
 /**

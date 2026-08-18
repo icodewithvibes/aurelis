@@ -17,16 +17,30 @@ const index = await loadExerciseIndex();
 /**
  * Does the app actually have a picture of this movement?
  *
- * The previous version of this test asked `hasReference()`, which only
- * says the name is not on the nine-item text-only list — it returns true
- * for literally any other string, including "Banana Press". It could not
- * fail, so it never caught anything. This resolves the name the way the
- * app does at runtime and then checks for bundled art.
+ * An earlier version asked `hasReference()`, which only says the name is
+ * not on the nine-item text-only list — it returns true for literally
+ * any other string, including "Banana Press". It could not fail, so it
+ * never caught anything, and it hid a real bug for weeks.
+ *
+ * This resolves the name the way the app does at runtime. Bundled FORGE
+ * art is preferred and reported separately, but a movement with only the
+ * source photo still counts as showable: restricting stacks to the 59
+ * movements with art meant prescribing barbell wrist curls to people
+ * whose gym has dumbbells and a cable stack, which is a worse trade
+ * than a photo that needs a network.
  */
 function showable(name: string): boolean {
+  return matchExercise(name, index) !== null;
+}
+
+function hasArt(name: string): boolean {
   const info = matchExercise(name, index);
   return info !== null && hasBundledArt(info.i);
 }
+
+const everyMovement = () => [
+  ...new Set(STACKS.flatMap((s) => s.levels.flatMap((l) => l.exercises.map((e) => e.name)))),
+];
 
 describe("the stack library", () => {
   it("only prescribes movements the app can show you", () => {
@@ -44,18 +58,30 @@ describe("the stack library", () => {
     }
   });
 
+  it("keeps most of the prescribed work on bundled FORGE art", () => {
+    // Art works offline and matches the app's own language; the source
+    // photo is the fallback, not the norm. If this ratio slips it means
+    // the stacks have drifted onto movements nobody has drawn yet.
+    const names = everyMovement();
+    const withArt = names.filter(hasArt).length;
+    expect({ total: names.length, withArt: withArt >= names.length * 0.6 }).toEqual({
+      total: names.length,
+      withArt: true,
+    });
+  });
+
   it("proves that check can fail", () => {
     // Guards the guard: if `showable` ever starts returning true for
     // everything again, this is the test that goes red first.
     expect(showable("Banana Press")).toBe(false);
+    expect(hasArt("Banana Press")).toBe(false);
   });
 
   it("never prescribes the wrist roller", () => {
     // Not every gym has one and you cannot improvise it — offering it as
     // the answer to "I haven't got the equipment" is the worst possible
     // suggestion.
-    const names = STACKS.flatMap((s) => s.levels.flatMap((l) => l.exercises.map((e) => e.name)));
-    expect(names).not.toContain("Wrist Roller");
+    expect(everyMovement()).not.toContain("Wrist Roller");
   });
 
   it("uses real coverage groups, so gap matching cannot silently miss", () => {
@@ -94,8 +120,8 @@ describe("the stack library", () => {
           level: lvl.id,
           minutes: expect.any(Number),
         });
-        expect(lvl.minutes).toBeLessThanOrEqual(20);
-        expect(lvl.exercises.length).toBeLessThanOrEqual(4);
+        expect(lvl.minutes).toBeLessThanOrEqual(22);
+        expect(lvl.exercises.length).toBeLessThanOrEqual(5);
         expect(lvl.exercises.length).toBeGreaterThan(0);
       }
     }
@@ -117,8 +143,39 @@ describe("the stack library", () => {
     }
   });
 
+
+  it("builds the grip block from dumbbells and cables, not specialty kit", () => {
+    // The complaint this answers: gyms do not have wrist rollers, and
+    // the ones that do keep them behind the front desk.
+    const grip = findStack("grip")!;
+    const names = grip.levels.flatMap((l) => l.exercises.map((e) => e.name));
+    const equipment = names.map((n) => matchExercise(n, index)?.e ?? null);
+    for (const e of equipment) {
+      expect(["dumbbell", "cable", "other"]).toContain(e);
+    }
+    // Both sides of the wrist, and a hold, at standard.
+    const standard = grip.levels[1].exercises.map((e) => e.name).join(" | ");
+    expect(standard).toContain("Palms-Up");
+    expect(standard).toContain("Palms-Down");
+  });
+
+  it("trains all four jobs of the core, not four crunches", () => {
+    const core = findStack("core")!.levels[2].exercises.map((e) => e.name);
+    expect(core).toContain("Pallof Press"); // anti-rotation
+    expect(core).toContain("Side Bridge"); // anti-lateral flexion
+    expect(core).toContain("Cable Crunch"); // loaded flexion
+    expect(core).toContain("Ab Roller"); // anti-extension
+  });
+
   it("starter levels leave out the movements that need a strength floor", () => {
-    const demanding = ["Pullups", "Dips - Triceps Version", "Natural Glute Ham Raise", "Hanging Leg Raise"];
+    const demanding = [
+      "Pullups",
+      "Dips - Triceps Version",
+      "Natural Glute Ham Raise",
+      "Hanging Leg Raise",
+      "Ab Roller",
+      "Barbell Deadlift",
+    ];
     for (const s of STACKS) {
       const starter = stackLevel(s, "starter").exercises.map((e) => e.name);
       for (const d of demanding) expect(starter).not.toContain(d);

@@ -185,7 +185,13 @@ export async function removeTemplateExercise(id: string): Promise<void> {
 
 export async function addTemplateExercise(
   dayId: string,
-  input: { name: string; sets?: number; repMin?: number | null; repMax?: number | null },
+  input: {
+    name: string;
+    sets?: number;
+    repMin?: number | null;
+    repMax?: number | null;
+    restSec?: number | null;
+  },
 ): Promise<string | null> {
   const name = input.name.trim();
   if (!name) return null;
@@ -206,6 +212,7 @@ export async function addTemplateExercise(
     repMax: input.repMax ?? 12,
     repScheme: "range",
     perSide: false,
+    restSec: input.restSec ?? undefined,
     updatedAt: now,
     deletedAt: null,
   });

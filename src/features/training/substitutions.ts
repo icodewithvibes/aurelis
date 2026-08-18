@@ -68,6 +68,7 @@ export type Pattern =
   | "hinge"
   | "kneeFlexion"
   | "hipThrust"
+  | "hipExtension"
   | "backExtension"
   | "calfRaise"
   | "wristFlexion"
@@ -75,6 +76,7 @@ export type Pattern =
   | "gripHold"
   | "carry"
   | "hipFlexion"
+  | "antiRotation"
   | "brace";
 
 export interface Movement {
@@ -103,6 +105,7 @@ export const MOVEMENTS: Movement[] = [
   { name: "Barbell Incline Bench Press - Medium Grip", group: "chest", pattern: "inclinePress", kit: "barbell", compound: true },
   { name: "Incline Dumbbell Press", group: "chest", pattern: "inclinePress", kit: "dumbbell", compound: true },
   { name: "Dumbbell Flyes", group: "chest", pattern: "fly", kit: "dumbbell", compound: false },
+  { name: "Cable Crossover", group: "chest", pattern: "fly", kit: "cable", compound: false },
 
   // Back
   { name: "Bent Over Barbell Row", group: "back", pattern: "horizontalPull", kit: "barbell", compound: true },
@@ -120,6 +123,7 @@ export const MOVEMENTS: Movement[] = [
   { name: "Dumbbell Shoulder Press", group: "shoulders", pattern: "verticalPress", kit: "dumbbell", compound: true },
   { name: "Side Lateral Raise", group: "shoulders", pattern: "lateralRaise", kit: "dumbbell", compound: false },
   { name: "Face Pull", group: "shoulders", pattern: "rearDelt", kit: "cable", compound: false },
+  { name: "Reverse Machine Flyes", group: "shoulders", pattern: "rearDelt", kit: "machine", compound: false },
 
   // Biceps
   { name: "Barbell Curl", group: "biceps", pattern: "curl", kit: "barbell", compound: false },
@@ -137,19 +141,29 @@ export const MOVEMENTS: Movement[] = [
   { name: "Palms-Up Barbell Wrist Curl Over A Bench", group: "forearms", pattern: "wristFlexion", kit: "barbell", compound: false },
   { name: "Finger Curls", group: "forearms", pattern: "wristFlexion", kit: "barbell", compound: false },
   { name: "Palms-Down Wrist Curl Over A Bench", group: "forearms", pattern: "wristExtension", kit: "barbell", compound: false },
+  { name: "Palms-Up Dumbbell Wrist Curl Over A Bench", group: "forearms", pattern: "wristFlexion", kit: "dumbbell", compound: false },
+  { name: "Palms-Down Dumbbell Wrist Curl Over A Bench", group: "forearms", pattern: "wristExtension", kit: "dumbbell", compound: false },
+  { name: "Seated Dumbbell Palms-Up Wrist Curl", group: "forearms", pattern: "wristFlexion", kit: "dumbbell", compound: false },
+  { name: "Cable Wrist Curl", group: "forearms", pattern: "wristFlexion", kit: "cable", compound: false },
   { name: "Standing Dumbbell Reverse Curl", group: "forearms", pattern: "reverseCurl", kit: "dumbbell", compound: false },
   { name: "Plate Pinch", group: "forearms", pattern: "gripHold", kit: "plate", compound: false },
-  { name: "Farmers Walk", group: "forearms", pattern: "carry", kit: "dumbbell", compound: true },
+  { name: "Farmer's Walk", group: "forearms", pattern: "carry", kit: "dumbbell", compound: true },
 
   // Abs
   { name: "Hanging Leg Raise", group: "abs", pattern: "hipFlexion", kit: "bodyweight", compound: false, demanding: true },
   { name: "Plank", group: "abs", pattern: "brace", kit: "bodyweight", compound: false },
   { name: "Mountain Climbers", group: "abs", pattern: "brace", kit: "bodyweight", compound: false },
+  { name: "Dead Bug", group: "abs", pattern: "brace", kit: "bodyweight", compound: false },
+  { name: "Side Bridge", group: "abs", pattern: "brace", kit: "bodyweight", compound: false },
+  { name: "Cable Crunch", group: "abs", pattern: "hipFlexion", kit: "cable", compound: false },
+  { name: "Pallof Press", group: "abs", pattern: "antiRotation", kit: "cable", compound: false },
+  { name: "Ab Roller", group: "abs", pattern: "brace", kit: "plate", compound: false, demanding: true },
 
   // Lower back
   { name: "Barbell Deadlift", group: "lowerBack", pattern: "hinge", kit: "barbell", compound: true },
   { name: "Good Morning", group: "lowerBack", pattern: "hinge", kit: "barbell", compound: true },
   { name: "Reverse Hyperextension", group: "lowerBack", pattern: "backExtension", kit: "machine", compound: false },
+  { name: "Hyperextensions (Back Extensions)", group: "lowerBack", pattern: "backExtension", kit: "bodyweight", compound: false },
 
   // Quads
   { name: "Barbell Squat", group: "quads", pattern: "squat", kit: "barbell", compound: true },
@@ -170,10 +184,16 @@ export const MOVEMENTS: Movement[] = [
 
   // Glutes
   { name: "Barbell Hip Thrust", group: "glutes", pattern: "hipThrust", kit: "barbell", compound: true },
+  { name: "Butt Lift (Bridge)", group: "glutes", pattern: "hipThrust", kit: "bodyweight", compound: true },
+  { name: "Pull Through", group: "glutes", pattern: "hipExtension", kit: "cable", compound: true },
+  { name: "One-Legged Cable Kickback", group: "glutes", pattern: "hipExtension", kit: "cable", compound: false },
 
   // Calves
   { name: "Standing Calf Raises", group: "calves", pattern: "calfRaise", kit: "machine", compound: false },
   { name: "Seated Calf Raise", group: "calves", pattern: "calfRaise", kit: "machine", compound: false },
+  { name: "Calf Press On The Leg Press Machine", group: "calves", pattern: "calfRaise", kit: "machine", compound: false },
+  { name: "Standing Dumbbell Calf Raise", group: "calves", pattern: "calfRaise", kit: "dumbbell", compound: false },
+  { name: "Donkey Calf Raises", group: "calves", pattern: "calfRaise", kit: "bodyweight", compound: false },
 ];
 
 /** Why you are asking for something else. */
