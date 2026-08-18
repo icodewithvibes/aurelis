@@ -12,6 +12,13 @@
  * tap. So there is a muscle filter above the list, and each block opens
  * to three levels rather than a single fixed prescription.
  *
+ * Each block offers TWO actions, and the difference between them is
+ * stated rather than implied. Training it now logs a standalone session
+ * — the sets count toward the rank, the day does not. Adding it to the
+ * split makes it work the program asks for, which is what a kept day is
+ * made of. Anything else would be the app quietly implying a six-minute
+ * calf block is worth the same as a training day.
+ *
  * The `rest` variant is the same component with different framing, for
  * the Today screen on a day with nothing scheduled — that is the day
  * someone most wants to train one thing on purpose.
@@ -21,6 +28,7 @@ import { useNavigate } from "react-router-dom";
 import { useAsync } from "../hooks/useAsync";
 import { startStackSession } from "../data/repositories/sessionRepo";
 import { coverageOfActiveSplit } from "../features/training/coverageRepo";
+import { loadHome } from "../data/access";
 import { GROUP_LABEL, type CoverageGroup } from "../features/training/coverage";
 import {
   LEVEL_LABEL,
@@ -33,6 +41,11 @@ import {
   type Stack,
   type StackLevelId,
 } from "../features/training/stacks";
+import {
+  addOutcomeSentence,
+  addStackToSplit,
+  type StackTarget,
+} from "../features/training/stackToSplit";
 import { ExercisePreview } from "./ExercisePreview";
 import { displayName } from "../features/exercises/displayName";
 
@@ -46,10 +59,14 @@ interface StacksProps {
 export function Stacks({ variant = "full", limit }: StacksProps) {
   const nav = useNavigate();
   const { data: coverage } = useAsync(coverageOfActiveSplit);
+  const { data: home, reload: reloadHome } = useAsync(loadHome);
   const [open, setOpen] = useState<string | null>(null);
   const [levels, setLevels] = useState<Record<string, StackLevelId>>({});
   const [filter, setFilter] = useState<CoverageGroup | null>(null);
   const [starting, setStarting] = useState<string | null>(null);
+  /** Which stack is showing the "add to split" choices. */
+  const [adding, setAdding] = useState<string | null>(null);
+  const [outcome, setOutcome] = useState<string | null>(null);
 
   const gaps = (coverage?.gaps ?? []).map((g) => g.group);
   const suggested = stacksForGaps(gaps);
@@ -57,6 +74,7 @@ export function Stacks({ variant = "full", limit }: StacksProps) {
   const ranked: Stack[] = [...suggested, ...STACKS.filter((s) => !suggestedIds.has(s.id))];
   const filtered = filter ? ranked.filter((s) => s.covers.includes(filter)) : ranked;
   const shown = limit ? filtered.slice(0, limit) : filtered;
+  const days = home?.days ?? [];
 
   async function start(stack: Stack, levelId: StackLevelId) {
     setStarting(stack.id);
@@ -68,14 +86,38 @@ export function Stacks({ variant = "full", limit }: StacksProps) {
     }
   }
 
+  async function addToSplit(stack: Stack, levelId: StackLevelId, target: StackTarget) {
+    const result = await addStackToSplit(stack, levelId, target);
+    setAdding(null);
+    setOutcome(result ? addOutcomeSentence(result) : "No active split to add this to.");
+    reloadHome();
+  }
+
   return (
     <section className="mt-4 aur-chrome-surface p-5" aria-label="Stacks">
       <p className="aur-label m-0">{variant === "rest" ? "Train one thing" : "Stacks"}</p>
       <p className="aur-meta m-0 mt-1">
         {variant === "rest"
-          ? "Nothing is scheduled, but a short block on one muscle costs you no recovery you needed. It's logged as its own session and still counts."
-          : "Short blocks you can train on their own. They don't change your split — they're logged as their own session and still count."}
+          ? "Nothing is scheduled, but a short block on one muscle costs you no recovery you needed. It's logged as its own session and the sets still count."
+          : "Short blocks you can train on their own. Train one now and it logs as its own session, or add it to your split so it counts as a kept day."}
       </p>
+
+      {outcome && (
+        <div
+          className="mt-3 rounded-xl p-3"
+          style={{ background: "var(--aur-glass-tint)", border: "1px solid var(--aur-glass-rim)" }}
+        >
+          <p className="m-0 text-small" style={{ color: "var(--aur-ink)" }}>{outcome}</p>
+          <button
+            type="button"
+            onClick={() => setOutcome(null)}
+            className="aur-touch mt-1 text-small"
+            style={{ background: "transparent", border: "none", color: "var(--aur-ink-muted)", padding: "0.25rem 0" }}
+          >
+            Got it
+          </button>
+        </div>
+      )}
 
       {/* One tap from "I want to hit core" to the core block. */}
       <div className="mt-3 flex flex-wrap gap-1.5" role="group" aria-label="Filter stacks by muscle">
@@ -161,6 +203,7 @@ export function Stacks({ variant = "full", limit }: StacksProps) {
                       </li>
                     ))}
                   </ul>
+
                   <button
                     type="button"
                     onClick={() => void start(s, levelId)}
@@ -172,6 +215,76 @@ export function Stacks({ variant = "full", limit }: StacksProps) {
                       ? "Starting…"
                       : `Train ${s.name} · ${LEVEL_LABEL[levelId].toLowerCase()}`}
                   </button>
+
+                  {/* The honest version of "make it count for more". */}
+                  {days.length > 0 && (
+                    <>
+                      <button
+                        type="button"
+                        aria-expanded={adding === s.id}
+                        onClick={() => setAdding(adding === s.id ? null : s.id)}
+                        className="aur-press aur-touch mt-2 w-full rounded-xl px-4 text-small"
+                        style={{
+                          minHeight: 44,
+                          background: "var(--aur-glass-tint)",
+                          color: "var(--aur-ink)",
+                          border: "1px solid var(--aur-glass-rim)",
+                        }}
+                      >
+                        {adding === s.id ? "Never mind" : "Add to my split"}
+                      </button>
+
+                      {adding === s.id && (
+                        <div className="mt-2">
+                          <p className="aur-meta m-0">
+                            Trained on its own, a stack logs its sets and they count toward your
+                            rank — but a kept day comes from work your program asked for. Put it in
+                            the split and it counts as a day.
+                          </p>
+                          <ul className="m-0 mt-2 flex list-none flex-col gap-1 p-0">
+                            {days.map((d) => (
+                              <li key={d.id}>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void addToSplit(s, levelId, { kind: "existingDay", dayId: d.id })
+                                  }
+                                  className="aur-press w-full rounded-lg px-3 py-2 text-left text-small"
+                                  style={{
+                                    minHeight: 44,
+                                    background: "rgba(255,255,255,0.04)",
+                                    border: "1px solid var(--aur-hairline)",
+                                    color: "var(--aur-ink)",
+                                  }}
+                                >
+                                  Add to {d.name}
+                                </button>
+                              </li>
+                            ))}
+                            <li>
+                              <button
+                                type="button"
+                                onClick={() => void addToSplit(s, levelId, { kind: "newDay" })}
+                                className="aur-press w-full rounded-lg px-3 py-2 text-left text-small"
+                                style={{
+                                  minHeight: 44,
+                                  background: "rgba(255,255,255,0.04)",
+                                  border: "1px solid var(--aur-hairline)",
+                                  color: "var(--aur-ink)",
+                                }}
+                              >
+                                Add as its own day
+                                <span className="aur-meta mt-0.5 block">
+                                  Your week rotates through {days.length} days now — a new one
+                                  shifts which session lands on which weekday.
+                                </span>
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
             </li>
@@ -213,7 +326,7 @@ function FilterChip({
       onClick={onClick}
       className="aur-press rounded-full px-3 text-small"
       style={{
-        minHeight: 36,
+        minHeight: 40,
         background: active ? "var(--aur-chrome-50)" : "var(--aur-glass-tint)",
         color: active ? "var(--aur-night)" : "var(--aur-ink-muted)",
         border: "1px solid var(--aur-glass-rim)",

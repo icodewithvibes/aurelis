@@ -12,6 +12,10 @@ import { COVERAGE_GROUPS } from "./coverage";
 const index = await loadExerciseIndex();
 
 function showable(name: string): boolean {
+  return matchExercise(name, index) !== null;
+}
+
+function hasArt(name: string): boolean {
   const info = matchExercise(name, index);
   return info !== null && hasBundledArt(info.i);
 }
@@ -20,7 +24,8 @@ describe("the substitution pool", () => {
   it("can show a picture of everything it suggests", () => {
     // The person asking for an alternative is being offered a movement
     // they may never have done. Without a picture that is a worse
-    // answer than the one they could not do.
+    // answer than the one they could not do. Bundled art is preferred
+    // (checked below); the source photo is an acceptable fallback.
     for (const m of MOVEMENTS) {
       expect({ movement: m.name, showable: showable(m.name) }).toEqual({
         movement: m.name,
@@ -31,6 +36,15 @@ describe("the substitution pool", () => {
 
   it("proves that check can fail", () => {
     expect(showable("Banana Press")).toBe(false);
+    expect(hasArt("Banana Press")).toBe(false);
+  });
+
+  it("keeps most of the pool on bundled FORGE art", () => {
+    const withArt = MOVEMENTS.filter((m) => hasArt(m.name)).length;
+    expect({ pool: MOVEMENTS.length, mostlyArt: withArt >= MOVEMENTS.length * 0.6 }).toEqual({
+      pool: MOVEMENTS.length,
+      mostlyArt: true,
+    });
   });
 
   it("never suggests the wrist roller", () => {
@@ -113,14 +127,34 @@ describe("alternatives when the station is taken", () => {
     }
   });
 
-  it("finds something even for a group with one movement in it", () => {
-    // Hip thrust is the only glute movement in the pool, so this has to
-    // fall through to the neighbouring muscle rather than give up.
+  it("answers a taken hip thrust with other glute work first", () => {
     const alts = alternativesFor("Barbell Hip Thrust", "taken");
     expect(alts.length).toBeGreaterThan(0);
-    expect(alts[0].why).toContain("Not the same muscle");
-    // …and the nearest muscle comes first: hamstrings before quads.
-    expect(alts[0].why).toContain("hamstrings");
+    expect(alts[0].why).not.toContain("Not the same muscle");
+  });
+
+  it("puts every same-muscle answer ahead of any near miss", () => {
+    // The ladder widens; it must not interleave. A hamstring movement
+    // should never sit above a glute one when the ask was glutes.
+    for (const m of MOVEMENTS) {
+      for (const r of SWAP_REASONS) {
+        const kinds = alternativesFor(m.name, r.id).map((a) =>
+          a.why.startsWith("Not the same muscle") ? "near" : "same",
+        );
+        const firstNear = kinds.indexOf("near");
+        if (firstNear === -1) continue;
+        expect({ movement: m.name, reason: r.id, clean: !kinds.slice(firstNear).includes("same") })
+          .toEqual({ movement: m.name, reason: r.id, clean: true });
+      }
+    }
+  });
+
+  it("still falls through to the nearest muscle when it has to", () => {
+    // Nothing else in the pool trains lower back with a barbell taken
+    // out AND the machine excluded, so this has to reach hamstrings.
+    const alts = alternativesFor("Reverse Hyperextension", "taken");
+    expect(alts.length).toBeGreaterThan(0);
+    expect(alts.some((a) => a.why.startsWith("Not the same muscle"))).toBe(true);
   });
 });
 
@@ -128,6 +162,14 @@ describe("alternatives when the gym hasn't got the kit", () => {
   it("prefers bodyweight and dumbbells, which every gym has", () => {
     const alts = alternativesFor("Wide-Grip Lat Pulldown", "noKit");
     expect(["bodyweight", "dumbbell"]).toContain(alts[0].kit);
+  });
+
+  it("answers a barbell wrist curl with dumbbell and cable work", () => {
+    // The exact complaint: forearm work has to survive a gym that keeps
+    // its specialty kit behind the front desk.
+    const alts = alternativesFor("Palms-Up Barbell Wrist Curl Over A Bench", "noKit");
+    expect(alts.length).toBeGreaterThan(0);
+    for (const a of alts) expect(["dumbbell", "cable", "plate"]).toContain(a.kit);
   });
 
   it("drops the missing kit entirely", () => {
